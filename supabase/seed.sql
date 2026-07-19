@@ -317,4 +317,29 @@ join public.ingredients i on i.name = v.ingredient
 join public.ingredients s on s.name = v.substitute
 on conflict (ingredient_id, substitute_id) do update set note = excluded.note;
 
+-- 5. Derivations (owning the source physically yields the derived ingredient).
+insert into public.ingredient_derivations (source_id, derived_id)
+select s.id, d.id
+from (values
+  ('lemon', 'lemon wedge'),
+  ('lemon', 'lemon wheel'),
+  ('lemon', 'lemon twist'),
+  ('lemon', 'lemon juice'),
+  ('lime', 'lime wedge'),
+  ('lime', 'lime wheel'),
+  ('lime', 'lime juice'),
+  ('orange', 'orange twist'),
+  ('orange', 'orange slice'),
+  ('orange', 'orange juice'),
+  ('grapefruit', 'grapefruit juice'),
+  ('pineapple', 'pineapple juice'),
+  ('fresh mint', 'mint sprig'),
+  ('whole egg', 'egg white'),
+  ('salt', 'salt rim'),
+  ('sugar', 'sugar rim')
+) as v (source, derived)
+join public.ingredients s on s.name = v.source
+join public.ingredients d on d.name = v.derived
+on conflict (source_id, derived_id) do nothing;
+
 commit;

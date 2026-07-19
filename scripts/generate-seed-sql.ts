@@ -8,6 +8,7 @@ import {
   ingredients,
   aliases,
   substitutions,
+  derivations,
 } from "../src/data/cocktail-seed.ts";
 
 const q = (s: string | null | undefined): string =>
@@ -35,6 +36,10 @@ const substitutionValues = join(
   substitutions.map(
     (s) => `  (${q(s.ingredient)}, ${q(s.substitute)}, ${q(s.note)})`,
   ),
+);
+
+const derivationValues = join(
+  derivations.map((d) => `  (${q(d.source)}, ${q(d.derived)})`),
 );
 
 const sql = `-- Recipeace — reference data seed (GENERATED — do not edit by hand).
@@ -81,11 +86,22 @@ join public.ingredients i on i.name = v.ingredient
 join public.ingredients s on s.name = v.substitute
 on conflict (ingredient_id, substitute_id) do update set note = excluded.note;
 
+-- 5. Derivations (owning the source physically yields the derived ingredient).
+insert into public.ingredient_derivations (source_id, derived_id)
+select s.id, d.id
+from (values
+${derivationValues}
+) as v (source, derived)
+join public.ingredients s on s.name = v.source
+join public.ingredients d on d.name = v.derived
+on conflict (source_id, derived_id) do nothing;
+
 commit;
 `;
 
 process.stdout.write(sql);
 process.stderr.write(
   `seed: ${ingredients.length} ingredients, ` +
-    `${aliases.length} aliases, ${substitutions.length} substitutions\n`,
+    `${aliases.length} aliases, ${substitutions.length} substitutions, ` +
+    `${derivations.length} derivations\n`,
 );

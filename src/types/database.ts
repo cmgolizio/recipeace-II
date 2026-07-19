@@ -45,6 +45,42 @@ export type Database = {
           },
         ];
       };
+      ingredient_derivations: {
+        Row: {
+          id: number;
+          source_id: number;
+          derived_id: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: number;
+          source_id: number;
+          derived_id: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: number;
+          source_id?: number;
+          derived_id?: number;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ingredient_derivations_derived_id_fkey";
+            columns: ["derived_id"];
+            isOneToOne: false;
+            referencedRelation: "ingredients";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ingredient_derivations_source_id_fkey";
+            columns: ["source_id"];
+            isOneToOne: false;
+            referencedRelation: "ingredients";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       ingredient_substitutions: {
         Row: {
           id: number;
@@ -287,6 +323,7 @@ export type Database = {
           exact_count: number;
           substitute_count: number;
           missing_count: number;
+          missing_ingredients: string[];
         }[];
       };
       search_ingredients: {
@@ -319,6 +356,7 @@ export type Database = {
           display_order: number;
           status: string;
           substitute_with: string | null;
+          derived_from: string | null;
         }[];
       };
     };

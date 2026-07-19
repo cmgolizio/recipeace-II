@@ -7,6 +7,7 @@
  *      parent_id in a second pass.
  *   2. Insert `aliases`, resolving `ingredient` names to ids.
  *   3. Insert `substitutions`, resolving both names to ids.
+ *   4. Insert `derivations`, resolving both names to ids.
  *   Upsert on ingredient `name` so the seed is safe to re-run.
  *
  * WHY THE HIERARCHY: owning a specific ingredient (e.g. bourbon) also satisfies
@@ -49,6 +50,11 @@ export interface SeedSubstitution {
   ingredient: string; // what the recipe calls for
   substitute: string; // what can stand in
   note?: string;
+}
+
+export interface SeedDerivation {
+  source: string; // owning this ingredient…
+  derived: string; // …physically yields this one (cut / juice / separate)
 }
 
 export const ingredients: SeedIngredient[] = [
@@ -350,4 +356,35 @@ export const substitutions: SeedSubstitution[] = [
   { ingredient: "absinthe", substitute: "pastis", note: "pastis (Herbsaint/Pernod) is sweeter and lower proof" },
   { ingredient: "orange curaçao", substitute: "triple sec", note: "close enough for most builds" },
   { ingredient: "scotch", substitute: "irish whiskey", note: "irish is lighter and smoother; loses peat character" },
+];
+
+// One-way physical derivations: owning `source` also counts as exactly having
+// `derived` — anything you can get by cutting, juicing, or separating, with no
+// real preparation (so no sugar → simple syrup). The matcher treats these as
+// "have", not "close". Direction matters: owning a lemon twist does NOT grant
+// a whole lemon.
+export const derivations: SeedDerivation[] = [
+  // whole citrus → its garnish cuts and fresh juice
+  { source: "lemon", derived: "lemon wedge" },
+  { source: "lemon", derived: "lemon wheel" },
+  { source: "lemon", derived: "lemon twist" },
+  { source: "lemon", derived: "lemon juice" },
+  { source: "lime", derived: "lime wedge" },
+  { source: "lime", derived: "lime wheel" },
+  { source: "lime", derived: "lime juice" },
+  { source: "orange", derived: "orange twist" },
+  { source: "orange", derived: "orange slice" },
+  { source: "orange", derived: "orange juice" },
+  { source: "grapefruit", derived: "grapefruit juice" },
+
+  // other fruit → juice (still just juicing)
+  { source: "pineapple", derived: "pineapple juice" },
+
+  // herbs & egg
+  { source: "fresh mint", derived: "mint sprig" },
+  { source: "whole egg", derived: "egg white" },
+
+  // staples → rims (dip the glass; no preparation)
+  { source: "salt", derived: "salt rim" },
+  { source: "sugar", derived: "sugar rim" },
 ];
