@@ -31,7 +31,7 @@ function StatusBadge({ row }: { row: StatusRow }) {
   if (row.status === "have") {
     return (
       <span className="shrink-0 text-xs font-medium text-green-700 dark:text-green-400">
-        ✓ in your bar
+        {row.derived_from ? `✓ via ${row.derived_from}` : "✓ in your bar"}
       </span>
     );
   }

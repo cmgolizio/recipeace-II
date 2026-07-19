@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 
-import { usePantry } from "../../lib/pantry/store";
+import { usePantry, usePantryReady } from "../../lib/pantry/store";
 import { createClient } from "../../lib/supabase/client";
 import type { Database } from "../../types/database";
 
@@ -30,11 +31,29 @@ type RecipeDetail = {
 
 type Match = MatchRow & { recipe: RecipeDetail };
 
-// Keyed to the pantry it was computed for, so loading/error/results are derived
-// during render rather than set synchronously in the effect.
+// Keyed to the pantry + filter it was computed for, so loading/error/results
+// are derived during render rather than set synchronously in the effect.
 type Outcome =
   | { key: string; matches: Match[] }
   | { key: string; error: string };
+
+type MaxMissing = 0 | 1 | 2;
+
+const FILTERS: { value: MaxMissing; label: string }[] = [
+  { value: 0, label: "Ready now" },
+  { value: 1, label: "Missing ≤ 1" },
+  { value: 2, label: "Missing ≤ 2" },
+];
+
+const SECTIONS: { missing: number; title: string }[] = [
+  { missing: 0, title: "Ready to make" },
+  { missing: 1, title: "Missing 1 ingredient" },
+  { missing: 2, title: "Missing 2 ingredients" },
+];
+
+function parseMaxMissing(raw: string | null): MaxMissing {
+  return raw === "0" ? 0 : raw === "1" ? 1 : 2;
+}
 
 function statusLabel(m: MatchRow): string {
   if (m.missing_count === 0) {
@@ -42,14 +61,97 @@ function statusLabel(m: MatchRow): string {
       ? `Ready · ${m.substitute_count} substitution${m.substitute_count > 1 ? "s" : ""}`
       : "Ready to make";
   }
-  return `Missing ${m.missing_count}`;
+  const names = m.missing_ingredients;
+  if (names.length === 0) return `Missing ${m.missing_count}`;
+  if (names.length <= 2) return `Missing: ${names.join(", ")}`;
+  return `Missing ${m.missing_count}: ${names[0]}, +${names.length - 1}`;
 }
 
-export default function MatchesPage() {
+/**
+ * The single missing ingredient that appears in the most missing_count=1
+ * matches — buying it unlocks all of them. Ties keep the first in match
+ * order; null when nothing would unlock at least 2 recipes.
+ */
+function buyNext(matches: Match[]): { name: string; unlocks: number } | null {
+  const counts = new Map<string, number>();
+  for (const m of matches) {
+    if (m.missing_count !== 1) continue;
+    const name = m.missing_ingredients[0];
+    if (name) counts.set(name, (counts.get(name) ?? 0) + 1);
+  }
+  let best: { name: string; unlocks: number } | null = null;
+  for (const [name, unlocks] of counts) {
+    if (!best || unlocks > best.unlocks) best = { name, unlocks };
+  }
+  return best !== null && best.unlocks >= 2 ? best : null;
+}
+
+function MatchCard({ match: m }: { match: Match }) {
+  const missing = new Set(m.missing_ingredients);
+  return (
+    <li className="rounded-xl border border-black/10 p-4 dark:border-white/15">
+      <div className="flex items-baseline justify-between gap-3">
+        <h3 className="text-lg font-semibold">
+          <Link href={`/recipes/${m.recipe.slug}`} className="hover:underline">
+            {m.recipe.name}
+          </Link>
+        </h3>
+        <span
+          className={
+            m.missing_count === 0
+              ? "shrink-0 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-950 dark:text-green-300"
+              : "shrink-0 rounded-full bg-black/[0.06] px-2.5 py-0.5 text-xs font-medium opacity-80 dark:bg-white/10"
+          }
+        >
+          {statusLabel(m)}
+        </span>
+      </div>
+      {(m.recipe.method || m.recipe.glass) && (
+        <p className="mt-0.5 text-xs uppercase tracking-wide opacity-50">
+          {[m.recipe.method, m.recipe.glass].filter(Boolean).join(" · ")}
+        </p>
+      )}
+      <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+        {[...m.recipe.recipe_ingredients]
+          .sort((a, b) => a.display_order - b.display_order)
+          .map((ri, idx) => (
+            <li
+              key={idx}
+              className={
+                ri.ingredients && missing.has(ri.ingredients.name)
+                  ? "text-red-600 dark:text-red-400"
+                  : "opacity-80"
+              }
+            >
+              {ri.amount != null && <span>{ri.amount} </span>}
+              {ri.unit && <span>{ri.unit} </span>}
+              {ri.ingredients?.name ?? "—"}
+              {ri.is_optional && <span className="opacity-50"> (optional)</span>}
+            </li>
+          ))}
+      </ul>
+    </li>
+  );
+}
+
+function MatchesLoading() {
+  return (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-semibold tracking-tight">Matches</h1>
+      <p className="opacity-60">Mixing…</p>
+    </div>
+  );
+}
+
+function MatchesContent() {
   const pantry = usePantry();
+  const ready = usePantryReady();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const maxMissing = parseMaxMissing(searchParams.get("missing"));
   const [outcome, setOutcome] = useState<Outcome | null>(null);
 
-  const key = [...pantry].sort((a, b) => a - b).join(",");
+  const key = `${maxMissing}:${[...pantry].sort((a, b) => a - b).join(",")}`;
 
   useEffect(() => {
     if (pantry.length === 0) return;
@@ -59,7 +161,7 @@ export default function MatchesPage() {
       const ids = [...pantry];
       const { data: ranked, error: matchErr } = await supabase.rpc(
         "match_recipes",
-        { pantry: ids },
+        { pantry: ids, max_missing: maxMissing },
       );
       if (ignore) return;
       if (matchErr) {
@@ -97,7 +199,10 @@ export default function MatchesPage() {
     return () => {
       ignore = true;
     };
-  }, [key, pantry]);
+  }, [key, pantry, maxMissing]);
+
+  // Wait for localStorage/auth hydration before deciding the bar is empty.
+  if (!ready) return <MatchesLoading />;
 
   if (pantry.length === 0) {
     return (
@@ -118,6 +223,18 @@ export default function MatchesPage() {
   const loading = current === null;
   const error = current && "error" in current ? current.error : null;
   const matches = current && "matches" in current ? current.matches : [];
+  const suggestion = buyNext(matches);
+  const sections = SECTIONS.map((s) => ({
+    ...s,
+    items: matches.filter((m) => m.missing_count === s.missing),
+  }));
+
+  function selectFilter(value: MaxMissing) {
+    // 2 is the default, so keep the URL clean for it.
+    router.replace(value === 2 ? "/matches" : `/matches?missing=${value}`, {
+      scroll: false,
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -129,69 +246,81 @@ export default function MatchesPage() {
         </p>
       </div>
 
+      <div
+        role="group"
+        aria-label="Filter by how many ingredients are missing"
+        className="inline-flex rounded-lg border border-black/10 p-0.5 text-sm dark:border-white/15"
+      >
+        {FILTERS.map((f) => (
+          <button
+            key={f.value}
+            type="button"
+            aria-pressed={maxMissing === f.value}
+            onClick={() => selectFilter(f.value)}
+            className={
+              maxMissing === f.value
+                ? "rounded-md bg-black/[0.06] px-3 py-1 font-medium dark:bg-white/10"
+                : "rounded-md px-3 py-1 opacity-60 hover:opacity-100"
+            }
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
       {loading && <p className="opacity-60">Mixing…</p>}
       {error && (
         <p className="text-red-600 dark:text-red-400">
           Couldn’t load matches: {error}
         </p>
       )}
-      {!loading && !error && matches.length === 0 && (
-        <p className="opacity-60">
-          No recipes in the database yet. Run{" "}
-          <code className="rounded bg-black/[0.06] px-1 dark:bg-white/10">
-            supabase/seed_test_recipes.sql
-          </code>{" "}
-          to add some.
-        </p>
-      )}
-
-      <ul className="space-y-3">
-        {matches.map((m) => (
-          <li
-            key={m.recipe_id}
-            className="rounded-xl border border-black/10 p-4 dark:border-white/15"
-          >
-            <div className="flex items-baseline justify-between gap-3">
-              <h2 className="text-lg font-semibold">
-                <Link
-                  href={`/recipes/${m.recipe.slug}`}
-                  className="hover:underline"
-                >
-                  {m.recipe.name}
-                </Link>
-              </h2>
-              <span
-                className={
-                  m.missing_count === 0
-                    ? "shrink-0 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-950 dark:text-green-300"
-                    : "shrink-0 rounded-full bg-black/[0.06] px-2.5 py-0.5 text-xs font-medium opacity-80 dark:bg-white/10"
-                }
-              >
-                {statusLabel(m)}
-              </span>
-            </div>
-            {(m.recipe.method || m.recipe.glass) && (
-              <p className="mt-0.5 text-xs uppercase tracking-wide opacity-50">
-                {[m.recipe.method, m.recipe.glass].filter(Boolean).join(" · ")}
-              </p>
-            )}
-            <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-              {[...m.recipe.recipe_ingredients]
-                .sort((a, b) => a.display_order - b.display_order)
-                .map((ri, idx) => (
-                  <li key={idx} className="opacity-80">
-                    {ri.amount != null && <span>{ri.amount} </span>}
-                    {ri.unit && <span>{ri.unit} </span>}
-                    {ri.ingredients?.name ?? "—"}
-                    {ri.is_optional && (
-                      <span className="opacity-50"> (optional)</span>
-                    )}
-                  </li>
-                ))}
-            </ul>
-          </li>
+      {!loading &&
+        !error &&
+        matches.length === 0 &&
+        (maxMissing < 2 ? (
+          <p className="opacity-60">
+            Nothing matches this filter — try allowing more missing
+            ingredients.
+          </p>
+        ) : (
+          <p className="opacity-60">
+            No recipes in the database yet. Run{" "}
+            <code className="rounded bg-black/[0.06] px-1 dark:bg-white/10">
+              supabase/seed_test_recipes.sql
+            </code>{" "}
+            to add some.
+          </p>
         ))}
-      </ul>
+
+      {sections.map((s) =>
+        s.items.length === 0 ? null : (
+          <section key={s.missing} className="space-y-3">
+            {s.missing === 1 && suggestion && (
+              <div className="rounded-xl bg-green-100 px-4 py-3 text-sm text-green-800 dark:bg-green-950 dark:text-green-300">
+                Add <span className="font-semibold">{suggestion.name}</span> to
+                unlock {suggestion.unlocks} more recipes.
+              </div>
+            )}
+            <h2 className="text-sm font-semibold uppercase tracking-wide opacity-60">
+              {s.title} · {s.items.length}
+            </h2>
+            <ul className="space-y-3">
+              {s.items.map((m) => (
+                <MatchCard key={m.recipe_id} match={m} />
+              ))}
+            </ul>
+          </section>
+        ),
+      )}
     </div>
+  );
+}
+
+export default function MatchesPage() {
+  // useSearchParams needs a Suspense boundary during prerendering.
+  return (
+    <Suspense fallback={<MatchesLoading />}>
+      <MatchesContent />
+    </Suspense>
   );
 }

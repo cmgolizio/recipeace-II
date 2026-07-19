@@ -3,11 +3,17 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { signOut, usePantry, useUser } from "../lib/pantry/store";
+import {
+  signOut,
+  usePantry,
+  usePantryReady,
+  useUser,
+} from "../lib/pantry/store";
 
 export function SiteHeader() {
   const router = useRouter();
   const pantry = usePantry();
+  const ready = usePantryReady();
   const user = useUser();
 
   async function handleSignOut() {
@@ -33,9 +39,9 @@ export function SiteHeader() {
           </Link>
           <span
             className="rounded-full bg-black/[0.06] px-2.5 py-0.5 text-xs tabular-nums dark:bg-white/10"
-            title={`${pantry.length} in your bar`}
+            title={ready ? `${pantry.length} in your bar` : "Loading your bar"}
           >
-            {pantry.length}
+            {ready ? pantry.length : "–"}
           </span>
           {user ? (
             <>
