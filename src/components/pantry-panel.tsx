@@ -16,20 +16,28 @@ export function PantryPanel() {
   const [cache, setCache] = useState<Ingredient[]>([]);
 
   useEffect(() => {
-    if (pantry.length === 0) return;
+    // Only fetch details for ids not already cached; skip entirely when the
+    // pantry change introduced nothing new (e.g. a removal).
+    const missing = pantry.filter((id) => !cache.some((it) => it.id === id));
+    if (missing.length === 0) return;
     let ignore = false;
     (async () => {
       const supabase = createClient();
       const { data } = await supabase
         .from("ingredients")
         .select("id,name,category")
-        .in("id", [...pantry]);
-      if (!ignore && data) setCache(data);
+        .in("id", missing);
+      if (!ignore && data) {
+        setCache((prev) => {
+          const have = new Set(prev.map((it) => it.id));
+          return [...prev, ...data.filter((it) => !have.has(it.id))];
+        });
+      }
     })();
     return () => {
       ignore = true;
     };
-  }, [pantry]);
+  }, [pantry, cache]);
 
   const items = cache
     .filter((it) => pantry.includes(it.id))

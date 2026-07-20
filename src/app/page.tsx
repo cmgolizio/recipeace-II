@@ -1,3 +1,4 @@
+import { IngredientBrowse } from "../components/ingredient-browse";
 import { IngredientSearch } from "../components/ingredient-search";
 import { PantryPanel } from "../components/pantry-panel";
 
@@ -13,6 +14,7 @@ export default function Home() {
         </p>
       </div>
       <IngredientSearch />
+      <IngredientBrowse />
       <PantryPanel />
     </div>
   );
