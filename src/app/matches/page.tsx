@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
+import { FavoriteHeart } from "../../components/favorite-heart";
 import { usePantry, usePantryReady } from "../../lib/pantry/store";
 import { createClient } from "../../lib/supabase/client";
 import type { Database } from "../../types/database";
@@ -94,7 +95,8 @@ function MatchCard({ match: m }: { match: Match }) {
         <h3 className="text-lg font-semibold">
           <Link href={`/recipes/${m.recipe.slug}`} className="hover:underline">
             {m.recipe.name}
-          </Link>
+          </Link>{" "}
+          <FavoriteHeart recipeId={m.recipe.id} />
         </h3>
         <span
           className={
@@ -284,11 +286,17 @@ function MatchesContent() {
           </p>
         ) : (
           <p className="opacity-60">
-            No recipes in the database yet. Run{" "}
-            <code className="rounded bg-black/[0.06] px-1 dark:bg-white/10">
-              supabase/seed_test_recipes.sql
-            </code>{" "}
-            to add some.
+            No recipes yet — check back soon.
+            {process.env.NODE_ENV === "development" && (
+              <>
+                {" "}
+                Run{" "}
+                <code className="rounded bg-black/[0.06] px-1 dark:bg-white/10">
+                  supabase/seed_test_recipes.sql
+                </code>{" "}
+                to add some.
+              </>
+            )}
           </p>
         ))}
 

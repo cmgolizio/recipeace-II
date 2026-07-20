@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { FavoriteHeart } from "../../components/favorite-heart";
 import { RecipesFilter } from "../../components/recipes-filter";
 import { createClient } from "../../lib/supabase/server";
 import type { Tables } from "../../types/database";
@@ -70,11 +71,17 @@ export default async function RecipesPage({
       )}
       {!error && total === 0 && q === "" && (
         <p className="opacity-60">
-          No recipes in the database yet. Run{" "}
-          <code className="rounded bg-black/[0.06] px-1 dark:bg-white/10">
-            supabase/seed_test_recipes.sql
-          </code>{" "}
-          to add some.
+          No recipes yet — check back soon.
+          {process.env.NODE_ENV === "development" && (
+            <>
+              {" "}
+              Run{" "}
+              <code className="rounded bg-black/[0.06] px-1 dark:bg-white/10">
+                supabase/seed_test_recipes.sql
+              </code>{" "}
+              to add some.
+            </>
+          )}
         </p>
       )}
       {!error && q !== "" && recipes.length === 0 && (
@@ -100,7 +107,9 @@ export default async function RecipesPage({
                 </div>
               )}
               <div className="p-4">
-                <h2 className="font-semibold">{r.name}</h2>
+                <h2 className="font-semibold">
+                  {r.name} <FavoriteHeart recipeId={r.id} />
+                </h2>
                 {(r.method || r.glass) && (
                   <p className="mt-0.5 text-xs uppercase tracking-wide opacity-50">
                     {[r.method, r.glass].filter(Boolean).join(" · ")}

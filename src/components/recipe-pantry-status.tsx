@@ -7,6 +7,8 @@ import { usePantry } from "../lib/pantry/store";
 import { createClient } from "../lib/supabase/client";
 import type { Database } from "../types/database";
 
+import { FavoriteButton } from "./favorite-button";
+
 /** A plain recipe ingredient row, fetched server-side by the detail page. */
 export type IngredientRow = {
   ingredient_id: number;
@@ -105,6 +107,8 @@ export function RecipePantryStatus({
 
   return (
     <>
+      <FavoriteButton recipeId={recipeId} />
+
       {statuses !== null && (
         <p
           className={

@@ -50,6 +50,39 @@ export function AuthForm() {
     router.refresh();
   }
 
+  async function forgotPassword() {
+    if (!email) {
+      setError("Enter your email above, then tap “Forgot password?”.");
+      return;
+    }
+    setPending(true);
+    setError(null);
+    setMessage(null);
+    const supabase = createClient();
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/reset`,
+    });
+    setPending(false);
+    if (error) setError(error.message);
+    else setMessage("Check your email for a password reset link.");
+  }
+
+  async function signInWithGoogle() {
+    setPending(true);
+    setError(null);
+    setMessage(null);
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
+    // On success the browser navigates away to Google; only errors land here.
+    if (error) {
+      setError(error.message);
+      setPending(false);
+    }
+  }
+
   return (
     <form
       onSubmit={(e) => {
@@ -89,6 +122,14 @@ export function AuthForm() {
           minLength={6}
           className="w-full rounded-lg border border-black/15 bg-transparent px-3 py-2 outline-none focus:border-black/40 dark:border-white/20 dark:focus:border-white/50"
         />
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => void forgotPassword()}
+          className="text-sm underline opacity-60 hover:opacity-100 disabled:opacity-40"
+        >
+          Forgot password?
+        </button>
       </div>
 
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
@@ -113,6 +154,21 @@ export function AuthForm() {
           Sign up
         </button>
       </div>
+
+      <div className="flex items-center gap-3" aria-hidden>
+        <span className="h-px flex-1 bg-black/10 dark:bg-white/15" />
+        <span className="text-xs uppercase tracking-wide opacity-50">or</span>
+        <span className="h-px flex-1 bg-black/10 dark:bg-white/15" />
+      </div>
+
+      <button
+        type="button"
+        disabled={pending}
+        onClick={() => void signInWithGoogle()}
+        className="w-full rounded-lg border border-black/15 px-4 py-2 text-sm font-medium hover:bg-black/[0.04] disabled:opacity-50 dark:border-white/20 dark:hover:bg-white/[0.06]"
+      >
+        Continue with Google
+      </button>
     </form>
   );
 }

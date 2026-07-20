@@ -37,6 +37,11 @@ export function SiteHeader() {
           <Link href="/matches" className="opacity-70 hover:opacity-100">
             Matches
           </Link>
+          {user && (
+            <Link href="/favorites" className="opacity-70 hover:opacity-100">
+              Favorites
+            </Link>
+          )}
           <span
             className="rounded-full bg-black/[0.06] px-2.5 py-0.5 text-xs tabular-nums dark:bg-white/10"
             title={ready ? `${pantry.length} in your bar` : "Loading your bar"}

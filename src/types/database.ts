@@ -16,6 +16,32 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      favorite_recipes: {
+        Row: {
+          user_id: string;
+          recipe_id: number;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          recipe_id: number;
+          created_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          recipe_id?: number;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "favorite_recipes_recipe_id_fkey";
+            columns: ["recipe_id"];
+            isOneToOne: false;
+            referencedRelation: "recipes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       ingredient_aliases: {
         Row: {
           id: number;
