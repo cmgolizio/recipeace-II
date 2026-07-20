@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      # Type-checks the app and generates next-env.d.ts + .next/types,
+      # which the explicit tsc pass below needs.
+      - run: npm run build
+
+      # Strict-mode gate over everything tsconfig includes (app, tests,
+      # scripts), independent of Next's build-time checking.
+      - run: npx tsc --noEmit
+
+      # Matcher tests run against an in-process Postgres (PGlite) built from
+      # the real migrations and seeds — no external services needed.
+      - run: npm test
