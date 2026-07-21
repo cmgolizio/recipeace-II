@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { RecipeCard } from "../../components/recipe-card";
 import { useFavorites, useFavoritesReady } from "../../lib/favorites/store";
 import { usePantryReady, useUser } from "../../lib/pantry/store";
 import { createClient } from "../../lib/supabase/client";
@@ -114,41 +114,7 @@ export default function FavoritesPage() {
       <ul className="grid gap-3 sm:grid-cols-2">
         {recipes.map((r) => (
           <li key={r.id}>
-            <Link
-              href={`/recipes/${r.slug}`}
-              className="block h-full overflow-hidden rounded-xl border border-black/10 transition-colors hover:border-black/30 dark:border-white/15 dark:hover:border-white/40"
-            >
-              {r.image_url && (
-                <div className="relative aspect-[3/2] w-full">
-                  <Image
-                    src={r.image_url}
-                    alt=""
-                    fill
-                    sizes="(min-width: 640px) 360px, 100vw"
-                    className="object-cover"
-                  />
-                </div>
-              )}
-              <div className="p-4">
-                <h2 className="font-semibold">
-                  {r.name}{" "}
-                  <span
-                    aria-hidden
-                    className="text-sm text-red-600 dark:text-red-400"
-                  >
-                    ♥
-                  </span>
-                </h2>
-                {(r.method || r.glass) && (
-                  <p className="mt-0.5 text-xs uppercase tracking-wide opacity-50">
-                    {[r.method, r.glass].filter(Boolean).join(" · ")}
-                  </p>
-                )}
-                {r.description && (
-                  <p className="mt-2 text-sm opacity-70">{r.description}</p>
-                )}
-              </div>
-            </Link>
+            <RecipeCard recipe={r} />
           </li>
         ))}
       </ul>

@@ -34,7 +34,7 @@ export function ShareButton({ title, url }: { title: string; url: string }) {
     <button
       type="button"
       onClick={share}
-      className="inline-flex items-center gap-1.5 rounded-lg border border-black/15 px-3 py-1.5 text-sm font-medium hover:bg-black/[0.04] dark:border-white/20 dark:hover:bg-white/[0.06]"
+      className="inline-flex items-center gap-1.5 rounded-lg border border-black/15 px-3 py-1.5 text-sm font-medium hover:bg-black/4 dark:border-white/20 dark:hover:bg-white/6"
     >
       {copied ? "✓ Copied" : "Share"}
     </button>

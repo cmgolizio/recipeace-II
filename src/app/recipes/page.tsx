@@ -1,8 +1,10 @@
-import Image from "next/image";
 import Link from "next/link";
 
-import { FavoriteHeart } from "../../components/favorite-heart";
-import { RecipesFilter } from "../../components/recipes-filter";
+import { RecipeCard } from "../../components/recipe-card";
+import {
+  RecipesFilter,
+  type RecipeFilters,
+} from "../../components/recipes-filter";
 import { createClient } from "../../lib/supabase/server";
 import type { Tables } from "../../types/database";
 
@@ -13,11 +15,18 @@ type Recipe = Pick<
   "id" | "slug" | "name" | "description" | "method" | "glass" | "image_url"
 >;
 
-function pageHref(q: string, page: number) {
+function pageHref(filters: RecipeFilters, page: number) {
   const query: Record<string, string> = {};
-  if (q) query.q = q;
+  if (filters.q) query.q = filters.q;
+  if (filters.method) query.method = filters.method;
+  if (filters.glass) query.glass = filters.glass;
+  if (filters.sort !== "name") query.sort = filters.sort;
   if (page > 1) query.page = String(page);
   return { pathname: "/recipes", query };
+}
+
+function single(value: string | string[] | undefined): string {
+  return (Array.isArray(value) ? value[0] : value)?.trim() ?? "";
 }
 
 export default async function RecipesPage({
@@ -26,10 +35,13 @@ export default async function RecipesPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const params = await searchParams;
-  const qParam = Array.isArray(params.q) ? params.q[0] : params.q;
-  const q = qParam?.trim() ?? "";
-  const pageParam = Array.isArray(params.page) ? params.page[0] : params.page;
-  const page = Math.max(1, Number.parseInt(pageParam ?? "1", 10) || 1);
+  const filters: RecipeFilters = {
+    q: single(params.q),
+    method: single(params.method),
+    glass: single(params.glass),
+    sort: single(params.sort) === "newest" ? "newest" : "name",
+  };
+  const page = Math.max(1, Number.parseInt(single(params.page) || "1", 10) || 1);
   const from = (page - 1) * PAGE_SIZE;
 
   const supabase = await createClient();
@@ -38,19 +50,41 @@ export default async function RecipesPage({
     .select("id,slug,name,description,method,glass,image_url", {
       count: "exact",
     })
-    .order("name")
+    .eq("is_published", true)
     .range(from, from + PAGE_SIZE - 1);
-  if (q) {
+  query =
+    filters.sort === "newest"
+      ? query.order("created_at", { ascending: false }).order("name")
+      : query.order("name");
+  if (filters.method) query = query.eq("method", filters.method);
+  if (filters.glass) query = query.eq("glass", filters.glass);
+  if (filters.q) {
     // The pattern is double-quoted because PostgREST's or= list treats , ( )
     // specially; backslash-escape the quote/backslash chars inside it.
-    const pattern = `%${q.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}%`;
+    const pattern = `%${filters.q.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}%`;
     query = query.or(`name.ilike."${pattern}",description.ilike."${pattern}"`);
   }
-  const { data, count, error } = await query;
+
+  // Facet options come from the whole published catalog (not the filtered
+  // page), so switching between values never dead-ends the controls.
+  const [{ data, count, error }, { data: facetRows }] = await Promise.all([
+    query,
+    supabase.from("recipes").select("method,glass").eq("is_published", true),
+  ]);
+
+  const facetValues = (key: "method" | "glass") =>
+    [
+      ...new Set(
+        (facetRows ?? []).map((r) => r[key]).filter((v): v is string => !!v),
+      ),
+    ].sort();
+  const methods = facetValues("method");
+  const glasses = facetValues("glass");
 
   const recipes: Recipe[] = data ?? [];
   const total = count ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const filtered = !!(filters.q || filters.method || filters.glass);
 
   return (
     <div className="space-y-6">
@@ -62,21 +96,21 @@ export default async function RecipesPage({
         </p>
       </div>
 
-      <RecipesFilter initialQuery={q} />
+      <RecipesFilter filters={filters} methods={methods} glasses={glasses} />
 
       {error && (
         <p className="text-red-600 dark:text-red-400">
           Couldn’t load recipes: {error.message}
         </p>
       )}
-      {!error && total === 0 && q === "" && (
+      {!error && total === 0 && !filtered && (
         <p className="opacity-60">
           No recipes yet — check back soon.
           {process.env.NODE_ENV === "development" && (
             <>
               {" "}
               Run{" "}
-              <code className="rounded bg-black/[0.06] px-1 dark:bg-white/10">
+              <code className="rounded bg-black/6 px-1 dark:bg-white/10">
                 supabase/seed_test_recipes.sql
               </code>{" "}
               to add some.
@@ -84,42 +118,18 @@ export default async function RecipesPage({
           )}
         </p>
       )}
-      {!error && q !== "" && recipes.length === 0 && (
-        <p className="opacity-60">No recipes match “{q}”.</p>
+      {!error && filtered && recipes.length === 0 && (
+        <p className="opacity-60">
+          {filters.q
+            ? `No recipes match “${filters.q}”.`
+            : "No recipes match these filters."}
+        </p>
       )}
 
       <ul className="grid gap-3 sm:grid-cols-2">
         {recipes.map((r) => (
           <li key={r.id}>
-            <Link
-              href={`/recipes/${r.slug}`}
-              className="block h-full overflow-hidden rounded-xl border border-black/10 transition-colors hover:border-black/30 dark:border-white/15 dark:hover:border-white/40"
-            >
-              {r.image_url && (
-                <div className="relative aspect-[3/2] w-full">
-                  <Image
-                    src={r.image_url}
-                    alt=""
-                    fill
-                    sizes="(min-width: 640px) 360px, 100vw"
-                    className="object-cover"
-                  />
-                </div>
-              )}
-              <div className="p-4">
-                <h2 className="font-semibold">
-                  {r.name} <FavoriteHeart recipeId={r.id} />
-                </h2>
-                {(r.method || r.glass) && (
-                  <p className="mt-0.5 text-xs uppercase tracking-wide opacity-50">
-                    {[r.method, r.glass].filter(Boolean).join(" · ")}
-                  </p>
-                )}
-                {r.description && (
-                  <p className="mt-2 text-sm opacity-70">{r.description}</p>
-                )}
-              </div>
-            </Link>
+            <RecipeCard recipe={r} />
           </li>
         ))}
       </ul>
@@ -131,7 +141,7 @@ export default async function RecipesPage({
         >
           {page > 1 ? (
             <Link
-              href={pageHref(q, page - 1)}
+              href={pageHref(filters, page - 1)}
               className="opacity-70 hover:opacity-100"
             >
               ← Previous
@@ -146,7 +156,7 @@ export default async function RecipesPage({
           </span>
           {page < totalPages ? (
             <Link
-              href={pageHref(q, page + 1)}
+              href={pageHref(filters, page + 1)}
               className="opacity-70 hover:opacity-100"
             >
               Next →

@@ -114,7 +114,7 @@ export function RecipePantryStatus({
           className={
             missingRequired === 0
               ? "rounded-lg bg-green-100 px-3 py-2 text-sm font-medium text-green-800 dark:bg-green-950 dark:text-green-300"
-              : "rounded-lg bg-black/[0.06] px-3 py-2 text-sm font-medium dark:bg-white/10"
+              : "rounded-lg bg-black/6 px-3 py-2 text-sm font-medium dark:bg-white/10"
           }
         >
           {missingRequired === 0

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
-import { FavoriteHeart } from "../../components/favorite-heart";
+import { RecipeCard } from "../../components/recipe-card";
 import { usePantry, usePantryReady } from "../../lib/pantry/store";
 import { createClient } from "../../lib/supabase/client";
 import type { Database } from "../../types/database";
@@ -90,48 +90,44 @@ function buyNext(matches: Match[]): { name: string; unlocks: number } | null {
 function MatchCard({ match: m }: { match: Match }) {
   const missing = new Set(m.missing_ingredients);
   return (
-    <li className="rounded-xl border border-black/10 p-4 dark:border-white/15">
-      <div className="flex items-baseline justify-between gap-3">
-        <h3 className="text-lg font-semibold">
-          <Link href={`/recipes/${m.recipe.slug}`} className="hover:underline">
-            {m.recipe.name}
-          </Link>{" "}
-          <FavoriteHeart recipeId={m.recipe.id} />
-        </h3>
-        <span
-          className={
-            m.missing_count === 0
-              ? "shrink-0 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-950 dark:text-green-300"
-              : "shrink-0 rounded-full bg-black/[0.06] px-2.5 py-0.5 text-xs font-medium opacity-80 dark:bg-white/10"
-          }
-        >
-          {statusLabel(m)}
-        </span>
-      </div>
-      {(m.recipe.method || m.recipe.glass) && (
-        <p className="mt-0.5 text-xs uppercase tracking-wide opacity-50">
-          {[m.recipe.method, m.recipe.glass].filter(Boolean).join(" · ")}
-        </p>
-      )}
-      <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-        {[...m.recipe.recipe_ingredients]
-          .sort((a, b) => a.display_order - b.display_order)
-          .map((ri, idx) => (
-            <li
-              key={idx}
-              className={
-                ri.ingredients && missing.has(ri.ingredients.name)
-                  ? "text-red-600 dark:text-red-400"
-                  : "opacity-80"
-              }
-            >
-              {ri.amount != null && <span>{ri.amount} </span>}
-              {ri.unit && <span>{ri.unit} </span>}
-              {ri.ingredients?.name ?? "—"}
-              {ri.is_optional && <span className="opacity-50"> (optional)</span>}
-            </li>
-          ))}
-      </ul>
+    <li>
+      <RecipeCard
+        recipe={m.recipe}
+        titleAs="h3"
+        badge={
+          <span
+            className={
+              m.missing_count === 0
+                ? "shrink-0 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-950 dark:text-green-300"
+                : "shrink-0 rounded-full bg-black/6 px-2.5 py-0.5 text-xs font-medium opacity-80 dark:bg-white/10"
+            }
+          >
+            {statusLabel(m)}
+          </span>
+        }
+      >
+        <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+          {[...m.recipe.recipe_ingredients]
+            .sort((a, b) => a.display_order - b.display_order)
+            .map((ri, idx) => (
+              <li
+                key={idx}
+                className={
+                  ri.ingredients && missing.has(ri.ingredients.name)
+                    ? "text-red-600 dark:text-red-400"
+                    : "opacity-80"
+                }
+              >
+                {ri.amount != null && <span>{ri.amount} </span>}
+                {ri.unit && <span>{ri.unit} </span>}
+                {ri.ingredients?.name ?? "—"}
+                {ri.is_optional && (
+                  <span className="opacity-50"> (optional)</span>
+                )}
+              </li>
+            ))}
+        </ul>
+      </RecipeCard>
     </li>
   );
 }
@@ -261,7 +257,7 @@ function MatchesContent() {
             onClick={() => selectFilter(f.value)}
             className={
               maxMissing === f.value
-                ? "rounded-md bg-black/[0.06] px-3 py-1 font-medium dark:bg-white/10"
+                ? "rounded-md bg-black/6 px-3 py-1 font-medium dark:bg-white/10"
                 : "rounded-md px-3 py-1 opacity-60 hover:opacity-100"
             }
           >
@@ -291,7 +287,7 @@ function MatchesContent() {
               <>
                 {" "}
                 Run{" "}
-                <code className="rounded bg-black/[0.06] px-1 dark:bg-white/10">
+                <code className="rounded bg-black/6 px-1 dark:bg-white/10">
                   supabase/seed_test_recipes.sql
                 </code>{" "}
                 to add some.
