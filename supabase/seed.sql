@@ -1,4 +1,4 @@
--- Recipeace — reference data seed (GENERATED — do not edit by hand).
+-- In House Mixers — reference data seed (GENERATED — do not edit by hand).
 -- Source of truth: src/data/cocktail-seed.ts   ·   Regenerate: npm run generate:seed
 --
 -- Idempotent: upserts keyed on natural keys (ingredient name, alias, and

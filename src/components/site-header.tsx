@@ -25,7 +25,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-10 border-b border-black/10 bg-background/80 backdrop-blur dark:border-white/15">
       <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3">
         <Link href="/" className="font-semibold tracking-tight">
-          🍸 Recipeace
+          🍸 InHouseMixers
         </Link>
         <nav className="flex items-center gap-4 text-sm">
           <Link href="/" className="opacity-70 hover:opacity-100">

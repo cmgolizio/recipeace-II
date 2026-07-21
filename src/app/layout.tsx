@@ -1,6 +1,8 @@
+import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "../components/site-header";
+import { siteUrl } from "../lib/site-url";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -12,10 +14,11 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata = {
-  title: "Recipeace — what can I make?",
+export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
+  title: "In House Mixers — what can I make?",
   description:
-    "Build your bar and instantly see which cocktails you can make from what you have on hand.",
+    "Build your bar and instantly see which cocktails you can Mix from what you have In House.",
 };
 
 export default function RootLayout({ children }) {

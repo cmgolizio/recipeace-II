@@ -4,8 +4,8 @@ import type { MetadataRoute } from "next";
 // --foreground #171717); a manifest can't express the dark variant (#0a0a0a).
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Recipeace",
-    short_name: "Recipeace",
+    name: "In House Mixers",
+    short_name: "In House Mixers",
     description:
       "Build your bar and instantly see which cocktails you can make from what you have on hand.",
     start_url: "/",

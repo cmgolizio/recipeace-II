@@ -1,4 +1,4 @@
-# Recipeace
+# In House Mixers
 
 A cocktail pantry-matching app. Build your bar (the ingredients you own) and
 instantly see which cocktails you can make, what you're closest to making, and
@@ -66,14 +66,15 @@ test recipes without running the pipeline, execute
 
 Environment variables (`.env.local`):
 
-| Variable                               | Used by         | Purpose                                        |
-| -------------------------------------- | --------------- | ---------------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`             | app + pipeline  | Supabase project URL                           |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | app             | public API key (RLS applies)                   |
-| `SUPABASE_SECRET_KEY`                  | pipeline only   | bypasses RLS to write content                  |
-| `ANTHROPIC_API_KEY`                    | pipeline        | recipe generation (default provider)           |
-| `OPENAI_TEXT_API_KEY`                  | pipeline        | recipe generation with `--provider openai`     |
-| `OPENAI_IMAGE_API_KEY`                 | pipeline:images | optional; without it a placeholder SVG is used |
+| Variable                               | Used by         | Purpose                                                                                                                                                      |
+| -------------------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `NEXT_PUBLIC_SUPABASE_URL`             | app + pipeline  | Supabase project URL                                                                                                                                         |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | app             | public API key (RLS applies)                                                                                                                                 |
+| `NEXT_PUBLIC_SITE_URL`                 | app             | absolute origin for canonical URLs, OG images, sitemap and robots (set to the production URL in the deploy environment; defaults to `http://localhost:3000`) |
+| `SUPABASE_SECRET_KEY`                  | pipeline only   | bypasses RLS to write content                                                                                                                                |
+| `ANTHROPIC_API_KEY`                    | pipeline        | recipe generation (default provider)                                                                                                                         |
+| `OPENAI_TEXT_API_KEY`                  | pipeline        | recipe generation with `--provider openai`                                                                                                                   |
+| `OPENAI_IMAGE_API_KEY`                 | pipeline:images | optional; without it a placeholder SVG is used                                                                                                               |
 
 ## Content pipeline
 

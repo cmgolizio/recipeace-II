@@ -8,7 +8,9 @@ import {
   RecipePantryStatus,
   type IngredientRow,
 } from "../../../components/recipe-pantry-status";
-import { createClient } from "../../../lib/supabase/server";
+import { ShareButton } from "../../../components/share-button";
+import { siteUrl } from "../../../lib/site-url";
+import { createStaticClient } from "../../../lib/supabase/static";
 import type { Tables } from "../../../types/database";
 
 type RecipeHeader = Pick<
@@ -26,9 +28,29 @@ type RecipeHeader = Pick<
 
 type Props = { params: Promise<{ slug: string }> };
 
-// Deduped across generateMetadata and the page render.
+// Rendered statically at build time and revalidated hourly, so recipes
+// updated by the offline pipeline surface without a redeploy. Live pantry
+// status stays in the RecipePantryStatus client island.
+export const revalidate = 3600;
+
+export async function generateStaticParams() {
+  const supabase = createStaticClient();
+  // Env-less build (e.g. CI): skip prerendering; slugs render on demand.
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("recipes")
+    .select("slug")
+    .eq("is_published", true);
+  if (error) throw new Error(`Couldn’t list recipe slugs: ${error.message}`);
+  return (data ?? []).map(({ slug }) => ({ slug }));
+}
+
+// Deduped across generateMetadata and the page render. Uses the cookie-free
+// client — recipe data is world-readable, and touching cookies() here would
+// make the route dynamic.
 const getRecipe = cache(async (slug: string): Promise<RecipeHeader | null> => {
-  const supabase = await createClient();
+  const supabase = createStaticClient();
+  if (!supabase) throw new Error("Supabase environment is not configured");
   const { data, error } = await supabase
     .from("recipes")
     .select(
@@ -44,12 +66,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const recipe = await getRecipe(slug);
   if (!recipe) return {};
-  const title = `${recipe.name} — Recipeace`;
+  const title = `${recipe.name} — In House Mixers`;
   const description = recipe.description ?? undefined;
   const images = recipe.image_url ? [recipe.image_url] : undefined;
   return {
     title,
     description,
+    alternates: { canonical: `/recipes/${slug}` },
     openGraph: { title, description, images },
     twitter: {
       card: recipe.image_url ? "summary_large_image" : "summary",
@@ -65,7 +88,8 @@ export default async function RecipeDetailPage({ params }: Props) {
   const recipe = await getRecipe(slug);
   if (!recipe) notFound();
 
-  const supabase = await createClient();
+  const supabase = createStaticClient();
+  if (!supabase) throw new Error("Supabase environment is not configured");
   const { data: rows, error } = await supabase
     .from("recipe_ingredients")
     .select("ingredient_id,amount,unit,preparation,is_optional,display_order,ingredients(name)")
@@ -92,12 +116,18 @@ export default async function RecipeDetailPage({ params }: Props) {
 
   return (
     <article className="space-y-6">
-      <Link
-        href="/recipes"
-        className="text-sm underline opacity-60 hover:opacity-100"
-      >
-        ← All recipes
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link
+          href="/recipes"
+          className="text-sm underline opacity-60 hover:opacity-100"
+        >
+          ← All recipes
+        </Link>
+        <ShareButton
+          title={recipe.name}
+          url={new URL(`/recipes/${recipe.slug}`, siteUrl).toString()}
+        />
+      </div>
 
       {recipe.image_url && (
         <div className="relative aspect-square w-full max-w-xs overflow-hidden rounded-xl border border-black/10 dark:border-white/15">

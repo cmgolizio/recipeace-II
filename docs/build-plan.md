@@ -1,4 +1,4 @@
-# Recipeace II — Claude Code Session Prompts
+# In House Mixers II — Claude Code Session Prompts
 
 Run these in order. **Session 1 must complete before Session 3** (Session 3 consumes new RPC columns). **Session 5 should run after Session 2** (it edits pages Session 2 rewrites). Sessions 2 and 4 are independent.
 
@@ -8,7 +8,7 @@ Start each session fresh in the repo root. Paste one prompt per session.
 
 ## SESSION 1 — Database: derived ingredients, matcher fixes, missing-ingredient output
 
-This is Recipeace II, a cocktail pantry-matching app (Next.js 16 + Supabase). The matcher lives in SQL: supabase/migrations/20260622120100_match_recipes.sql and 20260622120300_recipe_pantry_status.sql. Seed taxonomy is src/data/cocktail-seed.ts (~161 ingredients), compiled to SQL by scripts/generate-seed-sql.ts. Generated DB types are in src/types/database.ts.
+This is In House Mixers II, a cocktail pantry-matching app (Next.js 16 + Supabase). The matcher lives in SQL: supabase/migrations/20260622120100_match_recipes.sql and 20260622120300_recipe_pantry_status.sql. Seed taxonomy is src/data/cocktail-seed.ts (~161 ingredients), compiled to SQL by scripts/generate-seed-sql.ts. Generated DB types are in src/types/database.ts.
 
 Make the following database-layer changes. All schema changes go in NEW migration files (do not edit existing migrations). Since match_recipes changes its return signature, the new migration must `drop function` before recreating it.
 
@@ -55,7 +55,7 @@ Verify: run the migrations against local Supabase if available, npm run lint, an
 
 ```
 
-This is Recipeace II (Next.js 16 App Router + Supabase). Currently src/app/recipes/page.tsx and src/app/recipes/[slug]/page.tsx are fully client-rendered ("use client" + useEffect fetches), so there's no SEO, no per-page metadata, and first paint waits on a client round-trip. An unused server Supabase client already exists at src/lib/supabase/server.ts. Recipe data is public and world-readable via RLS.
+This is In House Mixers II (Next.js 16 App Router + Supabase). Currently src/app/recipes/page.tsx and src/app/recipes/[slug]/page.tsx are fully client-rendered ("use client" + useEffect fetches), so there's no SEO, no per-page metadata, and first paint waits on a client round-trip. An unused server Supabase client already exists at src/lib/supabase/server.ts. Recipe data is public and world-readable via RLS.
 
 ### 1. Convert /recipes to a Server Component with pagination + server-side filtering
 
@@ -66,7 +66,7 @@ This is Recipeace II (Next.js 16 App Router + Supabase). Currently src/app/recip
 ### 2. Convert /recipes/[slug] to server-rendered with a client pantry island
 
 - Server Component fetches the recipe header by slug with the server client; call notFound() when absent.
-- Add generateMetadata: title `${recipe.name} — Recipeace`, description from recipe.description, and openGraph/twitter image from image_url when present.
+- Add generateMetadata: title `${recipe.name} — In House Mixers`, description from recipe.description, and openGraph/twitter image from image_url when present.
 - Extract the pantry-dependent parts (the recipe_pantry_status RPC call, the "You can make this" banner, ingredient status badges) into a client component, e.g. src/components/recipe-pantry-status.tsx, receiving recipeId as a prop. It keeps the existing outcome-keying pattern (see src/lib/pantry/store.ts usage). The static parts (image, header, instructions, garnish) render on the server. Note: the ingredient LIST itself depends on the RPC output today — restructure so the server renders the plain ingredient list from a direct recipe_ingredients select, and the client island only overlays status badges + the banner once pantry status loads (no layout shift when it resolves; reserve badge space or append inline).
 
 ### 3. next/image
@@ -91,7 +91,7 @@ Verify with npm run lint and npm run build. Confirm /recipes and a recipe detail
 
 ```
 
-This is Recipeace II. The database now has: match_recipes returning missing_ingredients text[] and defaulting max_missing to 2, filtering out zero-overlap recipes; recipe_pantry_status returning derived_from. The matches page is src/app/matches/page.tsx (client-rendered, keyed-outcome pattern); the pantry store is src/lib/pantry/store.ts which already exports an unused usePantryReady() hook. Rebuild the matches experience:
+This is In House Mixers II. The database now has: match_recipes returning missing_ingredients text[] and defaulting max_missing to 2, filtering out zero-overlap recipes; recipe_pantry_status returning derived_from. The matches page is src/app/matches/page.tsx (client-rendered, keyed-outcome pattern); the pantry store is src/lib/pantry/store.ts which already exports an unused usePantryReady() hook. Rebuild the matches experience:
 
 ### 1. Fix the pantry hydration flash
 
@@ -130,7 +130,7 @@ Keep everything consistent with the existing minimal design (opacity-based grays
 
 ```
 
-This is Recipeace II. The home page (src/app/page.tsx) composes src/components/ingredient-search.tsx (debounced search over a search_ingredients RPC, keyed-state pattern) and src/components/pantry-panel.tsx. Improve how users build their bar:
+This is In House Mixers II. The home page (src/app/page.tsx) composes src/components/ingredient-search.tsx (debounced search over a search_ingredients RPC, keyed-state pattern) and src/components/pantry-panel.tsx. Improve how users build their bar:
 
 ### 1. Clear the search input after adding
 
@@ -165,7 +165,7 @@ No new dependencies; keep the existing minimal styling. Verify with npm run lint
 
 ```
 
-This is Recipeace II (Next.js 16 + Supabase; auth via @supabase/ssr with a proxy in src/proxy.ts refreshing sessions; pantry store in src/lib/pantry/store.ts reacts to onAuthStateChange). Final polish pass:
+This is In House Mixers II (Next.js 16 + Supabase; auth via @supabase/ssr with a proxy in src/proxy.ts refreshing sessions; pantry store in src/lib/pantry/store.ts reacts to onAuthStateChange). Final polish pass:
 
 ### 1. Favorites
 
@@ -189,7 +189,7 @@ Replace the default create-next-app README with real documentation: what the app
 
 ### 5. Web manifest + icons
 
-Add src/app/manifest.ts (name Recipeace, standalone display, theme/background colors matching globals.css light/dark palette) and proper icon files (a simple cocktail-glass mark is fine — generate a clean SVG-derived PNG set: 192, 512, apple-touch). Wire icons via the app router metadata conventions.
+Add src/app/manifest.ts (name In House Mixers, standalone display, theme/background colors matching globals.css light/dark palette) and proper icon files (a simple cocktail-glass mark is fine — generate a clean SVG-derived PNG set: 192, 512, apple-touch). Wire icons via the app router metadata conventions.
 
 Verify with npm run lint and npm run build. List any manual dashboard steps I need to do (Google provider config, redirect URLs) at the end of your summary.
 

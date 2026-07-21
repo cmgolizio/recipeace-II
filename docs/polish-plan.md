@@ -1,4 +1,4 @@
-# Recipeace II — Polish Plan
+# In House Mixers II — Polish Plan
 
 ## Context
 
