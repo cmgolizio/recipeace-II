@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import type { ReactNode } from "react";
+
 import "./globals.css";
 import { SiteHeader } from "../components/site-header";
 import { siteUrl } from "../lib/site-url";
@@ -21,7 +23,11 @@ export const metadata: Metadata = {
     "Build your bar and instantly see which cocktails you can Mix from what you have In House.",
 };
 
-export default function RootLayout({ children }) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: ReactNode;
+}>) {
   return (
     <html
       lang="en"
