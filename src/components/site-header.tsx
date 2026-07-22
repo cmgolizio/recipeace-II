@@ -31,22 +31,22 @@ export function SiteHeader() {
         </Link>
         <nav className="flex items-center gap-4 text-sm">
           <Link href="/" className="opacity-70 hover:opacity-100">
-            My bar
+            my bar
           </Link>
           <Link href="/recipes" className="opacity-70 hover:opacity-100">
-            Recipes
+            recipes
           </Link>
           <Link href="/matches" className="opacity-70 hover:opacity-100">
-            Matches
+            matches
           </Link>
           {user && (
             <Link href="/favorites" className="opacity-70 hover:opacity-100">
-              Favorites
+              favorites
             </Link>
           )}
           {shopping.length > 0 && (
             <Link href="/shopping" className="opacity-70 hover:opacity-100">
-              Shopping
+              shopping
             </Link>
           )}
           <span
@@ -65,12 +65,12 @@ export function SiteHeader() {
                 onClick={handleSignOut}
                 className="opacity-70 hover:opacity-100"
               >
-                Log out
+                logout
               </button>
             </>
           ) : (
             <Link href="/login" className="opacity-70 hover:opacity-100">
-              Log in
+              login
             </Link>
           )}
         </nav>

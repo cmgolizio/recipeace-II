@@ -366,6 +366,35 @@ export type Database = {
           score: number;
         }[];
       };
+      match_recipes_detail: {
+        Args: {
+          pantry: number[];
+          max_missing?: number;
+        };
+        Returns: {
+          recipe_id: number;
+          required_count: number;
+          exact_count: number;
+          substitute_count: number;
+          missing_count: number;
+          missing_ingredients: string[];
+          slug: string;
+          name: string;
+          method: string | null;
+          glass: string | null;
+          ingredients: Json;
+        }[];
+      };
+      popular_ingredients: {
+        Args: {
+          max_results?: number;
+        };
+        Returns: {
+          id: number;
+          name: string;
+          recipe_count: number;
+        }[];
+      };
       recipe_pantry_status: {
         Args: {
           p_recipe_id: number;

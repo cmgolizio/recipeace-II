@@ -8,8 +8,8 @@ export default function LoginPage() {
           Log in or sign up
         </h1>
         <p className="text-sm opacity-70">
-          Save your bar to your account (any ingredient
-          you’ve already added is carried over when you sign in).
+          Save your bar to your account. Ingredients
+          you’ve already added will be stocked in your bar automatically! Yay!
         </p>
       </div>
       <AuthForm />

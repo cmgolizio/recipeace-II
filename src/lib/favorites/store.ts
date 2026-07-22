@@ -3,13 +3,14 @@
 // Favorited recipe ids, backed by the favorite_recipes table (owner-only
 // RLS). Signed-in only: anonymous users have no favorites — the UI shows a
 // log-in prompt instead of a heart. Mirrors the pantry store: loaded on auth
-// changes, optimistic add/remove with rollback-via-refetch on error, exposed
-// via useSyncExternalStore.
+// changes (via the shared auth store), optimistic add/remove with
+// rollback-via-refetch on error, exposed via useSyncExternalStore.
 
 import type { User } from "@supabase/supabase-js";
 import { useSyncExternalStore } from "react";
 
-import { createClient } from "../supabase/client";
+import { getSupabase, onAuthUser } from "../auth/store";
+import type { createClient } from "../supabase/client";
 
 type Snapshot = {
   ids: number[];
@@ -61,15 +62,9 @@ async function onUser(next: User | null): Promise<void> {
 function start(): void {
   if (started || typeof window === "undefined") return;
   started = true;
-  supabase = createClient();
-  // onAuthStateChange emits INITIAL_SESSION on registration (covering page
-  // load) and SIGNED_IN / SIGNED_OUT later. Defer so we never call supabase
-  // from within its own callback (avoids a known deadlock).
-  supabase.auth.onAuthStateChange((_event, session) => {
-    const next = session?.user ?? null;
-    setTimeout(() => {
-      void onUser(next);
-    }, 0);
+  supabase = getSupabase();
+  onAuthUser((next) => {
+    void onUser(next);
   });
 }
 

@@ -6,11 +6,12 @@
 // On the first sign-in transition the anonymous (localStorage) pantry is
 // migrated into pantry_items, then read back. Exposed via useSyncExternalStore
 // so the public API (usePantry / addToPantry / ...) is unchanged for callers.
+// Auth events arrive via the shared auth store (see ../auth/store.ts).
 
 import type { User } from "@supabase/supabase-js";
 import { useSyncExternalStore } from "react";
-
-import { createClient } from "../supabase/client";
+import { getSupabase, onAuthUser } from "../auth/store";
+import type { createClient } from "../supabase/client";
 
 const LS_KEY = "recipeace.pantry.v1";
 
@@ -109,17 +110,11 @@ async function onUser(user: User | null): Promise<void> {
 function start(): void {
   if (started || typeof window === "undefined") return;
   started = true;
-  supabase = createClient();
+  supabase = getSupabase();
   // Show the anonymous pantry immediately while auth resolves.
   snapshot = { ids: readLocal(), user: null, ready: false };
-  // onAuthStateChange emits INITIAL_SESSION on registration (covering page
-  // load) and SIGNED_IN / SIGNED_OUT later. Defer so we never call supabase
-  // from within its own callback (avoids a known deadlock).
-  supabase.auth.onAuthStateChange((_event, session) => {
-    const user = session?.user ?? null;
-    setTimeout(() => {
-      void onUser(user);
-    }, 0);
+  onAuthUser((user) => {
+    void onUser(user);
   });
   window.addEventListener("storage", (e) => {
     if (e.key === LS_KEY && snapshot.user === null) {
