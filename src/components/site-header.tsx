@@ -9,12 +9,14 @@ import {
   usePantryReady,
   useUser,
 } from "../lib/pantry/store";
+import { useShopping } from "../lib/shopping/store";
 
 export function SiteHeader() {
   const router = useRouter();
   const pantry = usePantry();
   const ready = usePantryReady();
   const user = useUser();
+  const shopping = useShopping();
 
   async function handleSignOut() {
     await signOut();
@@ -40,6 +42,11 @@ export function SiteHeader() {
           {user && (
             <Link href="/favorites" className="opacity-70 hover:opacity-100">
               Favorites
+            </Link>
+          )}
+          {shopping.length > 0 && (
+            <Link href="/shopping" className="opacity-70 hover:opacity-100">
+              Shopping
             </Link>
           )}
           <span

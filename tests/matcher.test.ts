@@ -155,3 +155,66 @@ test("max_missing defaults to 2", async () => {
     expect(m.missing_count).toBeLessThanOrEqual(2);
   }
 });
+
+type DetailRow = {
+  recipe_id: number;
+  slug: string;
+  name: string;
+  method: string | null;
+  glass: string | null;
+  missing_count: number;
+  missing_ingredients: string[];
+  ingredients: {
+    name: string;
+    amount: number | null;
+    unit: string | null;
+    is_optional: boolean;
+  }[];
+};
+
+test("match_recipes_detail returns match_recipes rows in the same order, with card fields", async () => {
+  const pantry = await ingredientIds(db, ["campari"]);
+
+  const { rows: base } = await db.query<{ recipe_id: number }>(
+    "select recipe_id::int as recipe_id from public.match_recipes($1::bigint[], null)",
+    [pantry],
+  );
+  const { rows: detail } = await db.query<DetailRow>(
+    `select recipe_id::int as recipe_id, slug, name, method, glass,
+            missing_count, missing_ingredients, ingredients
+     from public.match_recipes_detail($1::bigint[], null)`,
+    [pantry],
+  );
+
+  expect(detail.map((r) => r.recipe_id)).toEqual(base.map((r) => r.recipe_id));
+
+  const negroni = detail.find((r) => r.slug === "negroni");
+  expect(negroni).toBeDefined();
+  expect(negroni!.name).toBe("Negroni");
+  expect(negroni!.method).toBe("stirred");
+  expect(negroni!.glass).toBe("rocks");
+  expect(negroni!.missing_ingredients).toEqual(["gin", "sweet vermouth"]);
+});
+
+test("match_recipes_detail ingredients carry what the card renders, in display order", async () => {
+  const pantry = await ingredientIds(db, ["cachaça", "lime", "simple syrup"]);
+  const { rows } = await db.query<DetailRow>(
+    "select slug, ingredients from public.match_recipes_detail($1::bigint[])",
+    [pantry],
+  );
+
+  const daiquiri = rows.find((r) => r.slug === "daiquiri");
+  expect(daiquiri).toBeDefined();
+  // Full list (optional garnish included), ordered by display_order.
+  expect(daiquiri!.ingredients.map((i) => i.name)).toEqual([
+    "white rum",
+    "lime juice",
+    "simple syrup",
+    "lime wheel",
+  ]);
+  const rum = daiquiri!.ingredients[0];
+  expect(rum.amount).toBe(2);
+  expect(rum.unit).toBe("oz");
+  expect(rum.is_optional).toBe(false);
+  expect(daiquiri!.ingredients[3].is_optional).toBe(true);
+});

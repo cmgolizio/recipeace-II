@@ -6,31 +6,20 @@ import { Suspense, useEffect, useState } from "react";
 
 import { RecipeCard } from "../../components/recipe-card";
 import { usePantry, usePantryReady } from "../../lib/pantry/store";
+import { addToShopping, useShopping } from "../../lib/shopping/store";
 import { createClient } from "../../lib/supabase/client";
 import type { Database } from "../../types/database";
 
-type MatchRow =
-  Database["public"]["Functions"]["match_recipes"]["Returns"][number];
+type Match =
+  Database["public"]["Functions"]["match_recipes_detail"]["Returns"][number];
 
-type RecipeIngredient = {
+/** Shape of each element in the RPC's `ingredients` jsonb array. */
+type MatchIngredient = {
+  name: string;
   amount: number | null;
   unit: string | null;
   is_optional: boolean;
-  is_garnish: boolean;
-  display_order: number;
-  ingredients: { name: string } | null;
 };
-
-type RecipeDetail = {
-  id: number;
-  slug: string;
-  name: string;
-  method: string | null;
-  glass: string | null;
-  recipe_ingredients: RecipeIngredient[];
-};
-
-type Match = MatchRow & { recipe: RecipeDetail };
 
 // Keyed to the pantry + filter it was computed for, so loading/error/results
 // are derived during render rather than set synchronously in the effect.
@@ -56,7 +45,7 @@ function parseMaxMissing(raw: string | null): MaxMissing {
   return raw === "0" ? 0 : raw === "1" ? 1 : 2;
 }
 
-function statusLabel(m: MatchRow): string {
+function statusLabel(m: Match): string {
   if (m.missing_count === 0) {
     return m.substitute_count > 0
       ? `Ready · ${m.substitute_count} substitution${m.substitute_count > 1 ? "s" : ""}`
@@ -87,12 +76,45 @@ function buyNext(matches: Match[]): { name: string; unlocks: number } | null {
   return best !== null && best.unlocks >= 2 ? best : null;
 }
 
+function AddMissingButton({ names }: { names: string[] }) {
+  const shopping = useShopping();
+  const remaining = names.filter((n) => !shopping.includes(n));
+  if (remaining.length === 0) {
+    return (
+      <p className="mt-3 text-xs font-medium text-green-700 dark:text-green-400">
+        ✓ On your shopping list
+      </p>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        // The card is a Link — add without navigating.
+        e.preventDefault();
+        e.stopPropagation();
+        for (const n of remaining) addToShopping(n);
+      }}
+      className="mt-3 rounded-lg border border-black/15 px-2.5 py-1 text-xs font-medium hover:bg-black/4 dark:border-white/20 dark:hover:bg-white/6"
+    >
+      + Add missing to shopping list
+    </button>
+  );
+}
+
 function MatchCard({ match: m }: { match: Match }) {
   const missing = new Set(m.missing_ingredients);
+  const ingredients = m.ingredients as unknown as MatchIngredient[];
   return (
     <li>
       <RecipeCard
-        recipe={m.recipe}
+        recipe={{
+          id: m.recipe_id,
+          slug: m.slug,
+          name: m.name,
+          method: m.method,
+          glass: m.glass,
+        }}
         titleAs="h3"
         badge={
           <span
@@ -107,26 +129,25 @@ function MatchCard({ match: m }: { match: Match }) {
         }
       >
         <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-          {[...m.recipe.recipe_ingredients]
-            .sort((a, b) => a.display_order - b.display_order)
-            .map((ri, idx) => (
-              <li
-                key={idx}
-                className={
-                  ri.ingredients && missing.has(ri.ingredients.name)
-                    ? "text-red-600 dark:text-red-400"
-                    : "opacity-80"
-                }
-              >
-                {ri.amount != null && <span>{ri.amount} </span>}
-                {ri.unit && <span>{ri.unit} </span>}
-                {ri.ingredients?.name ?? "—"}
-                {ri.is_optional && (
-                  <span className="opacity-50"> (optional)</span>
-                )}
-              </li>
-            ))}
+          {ingredients.map((ing, idx) => (
+            <li
+              key={idx}
+              className={
+                missing.has(ing.name)
+                  ? "text-red-600 dark:text-red-400"
+                  : "opacity-80"
+              }
+            >
+              {ing.amount != null && <span>{ing.amount} </span>}
+              {ing.unit && <span>{ing.unit} </span>}
+              {ing.name}
+              {ing.is_optional && <span className="opacity-50"> (optional)</span>}
+            </li>
+          ))}
         </ul>
+        {m.missing_count > 0 && (
+          <AddMissingButton names={m.missing_ingredients} />
+        )}
       </RecipeCard>
     </li>
   );
@@ -156,43 +177,14 @@ function MatchesContent() {
     let ignore = false;
     (async () => {
       const supabase = createClient();
-      const ids = [...pantry];
-      const { data: ranked, error: matchErr } = await supabase.rpc(
-        "match_recipes",
-        { pantry: ids, max_missing: maxMissing },
-      );
+      // One round trip: ranked matches with card fields and ingredients.
+      const { data, error } = await supabase.rpc("match_recipes_detail", {
+        pantry: [...pantry],
+        max_missing: maxMissing,
+      });
       if (ignore) return;
-      if (matchErr) {
-        setOutcome({ key, error: matchErr.message });
-        return;
-      }
-      const recipeIds = (ranked ?? []).map((r) => r.recipe_id);
-      if (recipeIds.length === 0) {
-        setOutcome({ key, matches: [] });
-        return;
-      }
-      const { data: recipes, error: recipeErr } = await supabase
-        .from("recipes")
-        .select(
-          "id,slug,name,method,glass,recipe_ingredients(amount,unit,is_optional,is_garnish,display_order,ingredients(name))",
-        )
-        .in("id", recipeIds);
-      if (ignore) return;
-      if (recipeErr) {
-        setOutcome({ key, error: recipeErr.message });
-        return;
-      }
-      const byId = new Map(
-        ((recipes ?? []) as unknown as RecipeDetail[]).map((r) => [r.id, r]),
-      );
-      // Preserve the RPC ranking (fewest missing, then fewest substitutions).
-      const matches = (ranked ?? [])
-        .map((m): Match | null => {
-          const recipe = byId.get(m.recipe_id);
-          return recipe ? { ...m, recipe } : null;
-        })
-        .filter((m): m is Match => m !== null);
-      setOutcome({ key, matches });
+      if (error) setOutcome({ key, error: error.message });
+      else setOutcome({ key, matches: data ?? [] });
     })();
     return () => {
       ignore = true;
@@ -222,6 +214,7 @@ function MatchesContent() {
   const error = current && "error" in current ? current.error : null;
   const matches = current && "matches" in current ? current.matches : [];
   const suggestion = buyNext(matches);
+  const readyToMake = matches.filter((m) => m.missing_count === 0);
   const sections = SECTIONS.map((s) => ({
     ...s,
     items: matches.filter((m) => m.missing_count === s.missing),
@@ -234,6 +227,11 @@ function MatchesContent() {
     });
   }
 
+  function surpriseMe() {
+    const pick = readyToMake[Math.floor(Math.random() * readyToMake.length)];
+    if (pick) router.push(`/recipes/${pick.slug}`);
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -244,26 +242,41 @@ function MatchesContent() {
         </p>
       </div>
 
-      <div
-        role="group"
-        aria-label="Filter by how many ingredients are missing"
-        className="inline-flex rounded-lg border border-black/10 p-0.5 text-sm dark:border-white/15"
-      >
-        {FILTERS.map((f) => (
-          <button
-            key={f.value}
-            type="button"
-            aria-pressed={maxMissing === f.value}
-            onClick={() => selectFilter(f.value)}
-            className={
-              maxMissing === f.value
-                ? "rounded-md bg-black/6 px-3 py-1 font-medium dark:bg-white/10"
-                : "rounded-md px-3 py-1 opacity-60 hover:opacity-100"
-            }
-          >
-            {f.label}
-          </button>
-        ))}
+      <div className="flex flex-wrap items-center gap-3">
+        <div
+          role="group"
+          aria-label="Filter by how many ingredients are missing"
+          className="inline-flex rounded-lg border border-black/10 p-0.5 text-sm dark:border-white/15"
+        >
+          {FILTERS.map((f) => (
+            <button
+              key={f.value}
+              type="button"
+              aria-pressed={maxMissing === f.value}
+              onClick={() => selectFilter(f.value)}
+              className={
+                maxMissing === f.value
+                  ? "rounded-md bg-black/6 px-3 py-1 font-medium dark:bg-white/10"
+                  : "rounded-md px-3 py-1 opacity-60 hover:opacity-100"
+              }
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={surpriseMe}
+          disabled={readyToMake.length === 0}
+          title={
+            readyToMake.length === 0
+              ? "Nothing is ready to make yet"
+              : "Open a random recipe you can make right now"
+          }
+          className="rounded-lg border border-black/15 px-3 py-1 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-40 enabled:hover:bg-black/4 dark:border-white/20 dark:enabled:hover:bg-white/6"
+        >
+          Surprise me
+        </button>
       </div>
 
       {loading && <p className="opacity-60">Mixing…</p>}

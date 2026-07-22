@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { usePantry } from "../lib/pantry/store";
+import { addToShopping, useShopping } from "../lib/shopping/store";
 import { createClient } from "../lib/supabase/client";
 import type { Database } from "../types/database";
 
@@ -48,6 +49,28 @@ function StatusBadge({ row }: { row: StatusRow }) {
     <span className="shrink-0 text-xs font-medium text-red-600/80 dark:text-red-400/80">
       ✗ missing
     </span>
+  );
+}
+
+function AddToListButton({ name }: { name: string }) {
+  const shopping = useShopping();
+  if (shopping.includes(name)) {
+    return (
+      <span title="On your shopping list" className="text-xs opacity-50">
+        ✓ listed
+      </span>
+    );
+  }
+  return (
+    <button
+      type="button"
+      aria-label={`Add ${name} to shopping list`}
+      title="Add to shopping list"
+      onClick={() => addToShopping(name)}
+      className="rounded-md border border-black/15 px-1.5 py-0.5 text-xs font-medium hover:bg-black/4 dark:border-white/20 dark:hover:bg-white/6"
+    >
+      + list
+    </button>
   );
 }
 
@@ -153,7 +176,14 @@ export function RecipePantryStatus({
                     <span className="opacity-50"> (optional)</span>
                   )}
                 </span>
-                {status && <StatusBadge row={status} />}
+                {status && (
+                  <span className="flex shrink-0 items-center gap-2">
+                    <StatusBadge row={status} />
+                    {status.status === "missing" && (
+                      <AddToListButton name={ri.name} />
+                    )}
+                  </span>
+                )}
               </li>
             );
           })}
