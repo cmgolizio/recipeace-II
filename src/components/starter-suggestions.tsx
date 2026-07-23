@@ -49,7 +49,7 @@ export function StarterSuggestions() {
 
   return (
     <section>
-      <h2 className="text-sm font-semibold uppercase tracking-wide opacity-60">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
         Popular starting points
       </h2>
       <ul className="mt-3 flex flex-wrap gap-2">
@@ -58,7 +58,7 @@ export function StarterSuggestions() {
             <button
               type="button"
               onClick={() => addToPantry(s.id)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-black/15 px-3 py-1 text-sm hover:bg-black/4 dark:border-white/20 dark:hover:bg-white/6"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-sm hover:bg-black/4 dark:hover:bg-white/6"
             >
               <span aria-hidden="true" className="opacity-50">
                 +

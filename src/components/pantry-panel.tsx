@@ -47,14 +47,14 @@ export function PantryPanel() {
   return (
     <section>
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-wide opacity-60">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
           My bar ({pantry.length})
         </h2>
         {pantry.length > 0 && (
           <button
             type="button"
             onClick={clearPantry}
-            className="text-sm underline opacity-60 hover:opacity-100"
+            className="text-sm text-muted underline hover:text-foreground"
           >
             Clear all
           </button>
@@ -62,7 +62,7 @@ export function PantryPanel() {
       </div>
 
       {pantry.length === 0 ? (
-        <p className="mt-3 text-sm opacity-60">
+        <p className="mt-3 text-sm text-muted">
           Your bar is empty. Search above and add what you have on hand.
         </p>
       ) : (
@@ -74,7 +74,7 @@ export function PantryPanel() {
                   type="button"
                   onClick={() => removeFromPantry(it.id)}
                   title="Remove from bar"
-                  className="group inline-flex items-center gap-1.5 rounded-full border border-black/15 px-3 py-1 text-sm hover:border-red-400 hover:bg-red-50 dark:border-white/20 dark:hover:bg-red-950/30"
+                  className="group inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-sm hover:border-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
                 >
                   <span>{it.name}</span>
                   <span className="opacity-40 group-hover:text-red-500 group-hover:opacity-100">
@@ -89,7 +89,7 @@ export function PantryPanel() {
           </ul>
           <Link
             href="/matches"
-            className="mt-4 inline-block rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90"
+            className="mt-4 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90"
           >
             See what I can make →
           </Link>

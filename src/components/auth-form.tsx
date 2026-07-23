@@ -102,7 +102,7 @@ export function AuthForm() {
           onChange={(e) => setEmail(e.target.value)}
           required
           autoComplete="email"
-          className="w-full rounded-lg border border-black/15 bg-transparent px-3 py-2 outline-none focus:border-black/40 dark:border-white/20 dark:focus:border-white/50"
+          className="w-full rounded-lg border border-border bg-transparent px-3 py-2 outline-none focus:border-black/40 dark:focus:border-white/50"
         />
       </div>
       <div className="space-y-1">
@@ -120,13 +120,13 @@ export function AuthForm() {
           required
           autoComplete="current-password"
           minLength={6}
-          className="w-full rounded-lg border border-black/15 bg-transparent px-3 py-2 outline-none focus:border-black/40 dark:border-white/20 dark:focus:border-white/50"
+          className="w-full rounded-lg border border-border bg-transparent px-3 py-2 outline-none focus:border-black/40 dark:focus:border-white/50"
         />
         <button
           type="button"
           disabled={pending}
           onClick={() => void forgotPassword()}
-          className="text-sm underline opacity-60 hover:opacity-100 disabled:opacity-40"
+          className="text-sm text-muted underline hover:text-foreground disabled:opacity-40"
         >
           Forgot password?
         </button>
@@ -141,7 +141,7 @@ export function AuthForm() {
         <button
           type="submit"
           disabled={pending}
-          className="flex-1 rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50"
+          className="flex-1 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
         >
           login
         </button>
@@ -149,23 +149,23 @@ export function AuthForm() {
           type="button"
           disabled={pending}
           onClick={() => void run("signup")}
-          className="flex-1 rounded-lg border border-black/15 px-4 py-2 text-sm font-medium hover:bg-black/4 disabled:opacity-50 dark:border-white/20 dark:hover:bg-white/6"
+          className="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-black/4 disabled:opacity-50 dark:hover:bg-white/6"
         >
           sign up
         </button>
       </div>
 
       <div className="flex items-center gap-3" aria-hidden>
-        <span className="h-px flex-1 bg-black/10 dark:bg-white/15" />
+        <span className="h-px flex-1 bg-border" />
         <span className="text-xs uppercase tracking-wide opacity-50">or</span>
-        <span className="h-px flex-1 bg-black/10 dark:bg-white/15" />
+        <span className="h-px flex-1 bg-border" />
       </div>
 
       <button
         type="button"
         disabled={pending}
         onClick={() => void signInWithGoogle()}
-        className="w-full rounded-lg border border-black/15 px-4 py-2 text-sm font-medium hover:bg-black/4 disabled:opacity-50 dark:border-white/20 dark:hover:bg-white/6"
+        className="w-full rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-black/4 disabled:opacity-50 dark:hover:bg-white/6"
       >
         Continue with Google
       </button>

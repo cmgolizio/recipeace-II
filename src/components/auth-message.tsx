@@ -13,11 +13,11 @@ export function AuthMessage() {
   if (!ready) return null;
 
   return user ? (
-    <p className="opacity-70">
+    <p className="text-muted">
           Add the cocktail ingredients you have InHome!
         </p>
   ) : (
-    <p className="opacity-70">
+    <p className="text-muted">
           Add the cocktail ingredients you have InHome. Your bar stock will be saved temporarily. Sign in to save it permanently across all your devices!
         </p>
   );

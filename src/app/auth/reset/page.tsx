@@ -45,7 +45,7 @@ export default function ResetPasswordPage() {
         <h1 className="text-2xl font-semibold tracking-tight">
           Set a new password
         </h1>
-        <p className="text-sm opacity-70">
+        <p className="text-sm text-muted">
           {canReset
             ? "Choose a new password for your account."
             : "Follow the reset link from your email to set a new password. If you landed here without one, request a reset from the login page."}
@@ -75,7 +75,7 @@ export default function ResetPasswordPage() {
               required
               autoComplete="new-password"
               minLength={6}
-              className="w-full rounded-lg border border-black/15 bg-transparent px-3 py-2 outline-none focus:border-black/40 dark:border-white/20 dark:focus:border-white/50"
+              className="w-full rounded-lg border border-border bg-transparent px-3 py-2 outline-none focus:border-black/40 dark:focus:border-white/50"
             />
           </div>
 
@@ -86,7 +86,7 @@ export default function ResetPasswordPage() {
           <button
             type="submit"
             disabled={pending}
-            className="w-full rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50"
+            className="w-full rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
           >
             Update password
           </button>

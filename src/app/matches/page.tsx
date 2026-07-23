@@ -95,7 +95,7 @@ function AddMissingButton({ names }: { names: string[] }) {
         e.stopPropagation();
         for (const n of remaining) addToShopping(n);
       }}
-      className="mt-3 rounded-lg border border-black/15 px-2.5 py-1 text-xs font-medium hover:bg-black/4 dark:border-white/20 dark:hover:bg-white/6"
+      className="mt-3 rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-black/4 dark:hover:bg-white/6"
     >
       + Add missing to shopping list
     </button>
@@ -157,7 +157,7 @@ function MatchesLoading() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold tracking-tight">Matches</h1>
-      <p className="opacity-60">Mixing…</p>
+      <p className="text-muted">Mixing…</p>
     </div>
   );
 }
@@ -198,7 +198,7 @@ function MatchesContent() {
     return (
       <div className="space-y-4">
         <h1 className="text-2xl font-semibold tracking-tight">Matches</h1>
-        <p className="opacity-70">
+        <p className="text-muted">
           Your bar is empty.{" "}
           <Link href="/" className="underline">
             Add some ingredients
@@ -236,7 +236,7 @@ function MatchesContent() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Matches</h1>
-        <p className="opacity-70">
+        <p className="text-muted">
           Ranked by how few ingredients you’re missing, from your bar of{" "}
           {pantry.length}.
         </p>
@@ -246,7 +246,7 @@ function MatchesContent() {
         <div
           role="group"
           aria-label="Filter by how many ingredients are missing"
-          className="inline-flex rounded-lg border border-black/10 p-0.5 text-sm dark:border-white/15"
+          className="inline-flex rounded-lg border border-border p-0.5 text-sm"
         >
           {FILTERS.map((f) => (
             <button
@@ -257,7 +257,7 @@ function MatchesContent() {
               className={
                 maxMissing === f.value
                   ? "rounded-md bg-black/6 px-3 py-1 font-medium dark:bg-white/10"
-                  : "rounded-md px-3 py-1 opacity-60 hover:opacity-100"
+                  : "rounded-md px-3 py-1 text-muted hover:text-foreground"
               }
             >
               {f.label}
@@ -273,13 +273,13 @@ function MatchesContent() {
               ? "Nothing is ready to make yet"
               : "Open a random recipe you can make right now"
           }
-          className="rounded-lg border border-black/15 px-3 py-1 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-40 enabled:hover:bg-black/4 dark:border-white/20 dark:enabled:hover:bg-white/6"
+          className="rounded-lg border border-border px-3 py-1 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-40 enabled:hover:bg-black/4 dark:enabled:hover:bg-white/6"
         >
           Surprise me
         </button>
       </div>
 
-      {loading && <p className="opacity-60">Mixing…</p>}
+      {loading && <p className="text-muted">Mixing…</p>}
       {error && (
         <p className="text-red-600 dark:text-red-400">
           Couldn’t load matches: {error}
@@ -289,12 +289,12 @@ function MatchesContent() {
         !error &&
         matches.length === 0 &&
         (maxMissing < 2 ? (
-          <p className="opacity-60">
+          <p className="text-muted">
             Nothing matches this filter — try allowing more missing
             ingredients.
           </p>
         ) : (
-          <p className="opacity-60">
+          <p className="text-muted">
             No recipes yet — check back soon.
             {process.env.NODE_ENV === "development" && (
               <>
@@ -318,7 +318,7 @@ function MatchesContent() {
                 unlock {suggestion.unlocks} more recipes.
               </div>
             )}
-            <h2 className="text-sm font-semibold uppercase tracking-wide opacity-60">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
               {s.title} · {s.items.length}
             </h2>
             <ul className="space-y-3">

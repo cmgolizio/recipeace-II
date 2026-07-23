@@ -52,7 +52,7 @@ export default function FavoritesPage() {
   const heading = (
     <div className="space-y-2">
       <h1 className="text-2xl font-semibold tracking-tight">Favorites</h1>
-      <p className="opacity-70">Recipes you’ve saved to come back to.</p>
+      <p className="text-muted">Recipes you’ve saved to come back to.</p>
     </div>
   );
 
@@ -61,7 +61,7 @@ export default function FavoritesPage() {
     return (
       <div className="space-y-6">
         {heading}
-        <p className="opacity-60">Loading…</p>
+        <p className="text-muted">Loading…</p>
       </div>
     );
   }
@@ -70,7 +70,7 @@ export default function FavoritesPage() {
     return (
       <div className="space-y-6">
         {heading}
-        <p className="opacity-70">
+        <p className="text-muted">
           <Link href="/login" className="underline">
             Log in
           </Link>{" "}
@@ -84,7 +84,7 @@ export default function FavoritesPage() {
     return (
       <div className="space-y-6">
         {heading}
-        <p className="opacity-70">
+        <p className="text-muted">
           No favorites yet — tap “Save to favorites” on any{" "}
           <Link href="/recipes" className="underline">
             recipe
@@ -104,7 +104,7 @@ export default function FavoritesPage() {
     <div className="space-y-6">
       {heading}
 
-      {loading && <p className="opacity-60">Loading…</p>}
+      {loading && <p className="text-muted">Loading…</p>}
       {error && (
         <p className="text-red-600 dark:text-red-400">
           Couldn’t load your favorites: {error}

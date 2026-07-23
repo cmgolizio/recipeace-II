@@ -24,7 +24,7 @@ export function FavoriteButton({ recipeId }: { recipeId: number }) {
 
   if (!user) {
     return (
-      <p className="text-sm opacity-60">
+      <p className="text-sm text-muted">
         <Link href="/login" className="underline">
           Log in
         </Link>{" "}
@@ -39,7 +39,7 @@ export function FavoriteButton({ recipeId }: { recipeId: number }) {
       type="button"
       aria-pressed={favorited}
       onClick={() => toggleFavorite(recipeId)}
-      className="inline-flex items-center gap-1.5 rounded-lg border border-black/15 px-3 py-1.5 text-sm font-medium hover:bg-black/4 dark:border-white/20 dark:hover:bg-white/6"
+      className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-black/4 dark:hover:bg-white/6"
     >
       <span
         aria-hidden

@@ -17,15 +17,15 @@ export default function ShoppingPage() {
     <div className="space-y-6">
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight">Shopping list</h1>
-        <p className="opacity-70">
+        <p className="text-muted">
           {"Get these last ingredients, and you\'ll be good to go!"}
         </p>
       </div>
 
       {!ready ? (
-        <p className="opacity-60">Loading…</p>
+        <p className="text-muted">Loading…</p>
       ) : names.length === 0 ? (
-        <p className="opacity-70">
+        <p className="text-muted">
           Your list is empty — add missing ingredients from{" "}
           <Link href="/matches" className="underline">
             your matches
@@ -44,7 +44,7 @@ export default function ShoppingPage() {
                 <button
                   type="button"
                   onClick={() => removeFromShopping(name)}
-                  className="text-sm opacity-60 hover:opacity-100"
+                  className="text-sm text-muted hover:text-foreground"
                 >
                   Remove
                 </button>
@@ -54,7 +54,7 @@ export default function ShoppingPage() {
           <button
             type="button"
             onClick={clearShopping}
-            className="rounded-lg border border-black/15 px-3 py-1.5 text-sm font-medium hover:bg-black/4 dark:border-white/20 dark:hover:bg-white/6"
+            className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-black/4 dark:hover:bg-white/6"
           >
             Clear list
           </button>

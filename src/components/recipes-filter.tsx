@@ -11,7 +11,7 @@ export type RecipeFilters = {
 };
 
 const selectClass =
-  "rounded-lg border border-black/15 bg-transparent px-3 py-1.5 outline-none focus:border-black/40 dark:border-white/20 dark:focus:border-white/50";
+  "rounded-lg border border-border bg-transparent px-3 py-1.5 outline-none focus:border-black/40 dark:focus:border-white/50";
 
 /**
  * Search, facet, and sort controls for /recipes. Every change updates the
@@ -81,7 +81,7 @@ export function RecipesFilter({
         placeholder="Filter recipes by name…"
         aria-label="Filter recipes"
         autoComplete="off"
-        className="w-full rounded-lg border border-black/15 bg-transparent px-4 py-2.5 text-base outline-none focus:border-black/40 dark:border-white/20 dark:focus:border-white/50"
+        className="w-full rounded-lg border border-border bg-transparent px-4 py-2.5 text-base outline-none focus:border-black/40 dark:focus:border-white/50"
       />
       <div className="flex flex-wrap gap-2 text-sm">
         {methods.length > 0 && (

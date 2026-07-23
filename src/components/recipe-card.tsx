@@ -40,7 +40,7 @@ export function RecipeCard({
   return (
     <Link
       href={`/recipes/${recipe.slug}`}
-      className="block h-full overflow-hidden rounded-xl border border-black/10 transition-colors hover:border-black/30 dark:border-white/15 dark:hover:border-white/40"
+      className="block h-full overflow-hidden rounded-xl border border-border bg-surface transition-colors hover:border-black/30 dark:hover:border-white/40"
     >
       {recipe.image_url && (
         <div className="relative aspect-3/2 w-full">
@@ -66,7 +66,7 @@ export function RecipeCard({
           </p>
         )}
         {recipe.description && (
-          <p className="mt-2 text-sm opacity-70">{recipe.description}</p>
+          <p className="mt-2 text-sm text-muted">{recipe.description}</p>
         )}
         {children}
       </div>

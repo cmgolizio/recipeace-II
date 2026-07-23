@@ -7,7 +7,7 @@ export default function LoginPage() {
         <h1 className="text-2xl font-semibold tracking-tight">
           Log in or sign up
         </h1>
-        <p className="text-sm opacity-70">
+        <p className="text-sm text-muted">
           Save your bar to your account. Ingredients
           you’ve already added will be stocked in your bar automatically! Yay!
         </p>

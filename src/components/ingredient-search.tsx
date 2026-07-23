@@ -138,7 +138,7 @@ export function IngredientSearch() {
           active >= 0 ? `${listboxId}-${results[active].id}` : undefined
         }
         autoComplete="off"
-        className="w-full rounded-lg border border-black/15 bg-transparent px-4 py-3 text-base outline-none focus:border-black/40 dark:border-white/20 dark:focus:border-white/50"
+        className="w-full rounded-lg border border-border bg-transparent px-4 py-3 text-base outline-none focus:border-black/40 dark:focus:border-white/50"
       />
 
       {panelOpen && (
@@ -146,16 +146,16 @@ export function IngredientSearch() {
           id={listboxId}
           role="listbox"
           aria-label="Ingredient results"
-          className="mt-2 divide-y divide-black/5 overflow-hidden rounded-lg border border-black/10 dark:divide-white/10 dark:border-white/15"
+          className="mt-2 divide-y divide-black/5 overflow-hidden rounded-lg border border-border bg-surface dark:divide-white/10"
         >
-          {loading && <p className="px-4 py-3 text-sm opacity-60">Searching…</p>}
+          {loading && <p className="px-4 py-3 text-sm text-muted">Searching…</p>}
           {error && (
             <p className="px-4 py-3 text-sm text-red-600 dark:text-red-400">
               Couldn’t search: {error}
             </p>
           )}
           {!loading && !error && results.length === 0 && (
-            <p className="px-4 py-3 text-sm opacity-60">No ingredients found.</p>
+            <p className="px-4 py-3 text-sm text-muted">No ingredients found.</p>
           )}
           {results.map((r, i) => {
             const inPantry = pantry.includes(r.id);
@@ -173,8 +173,8 @@ export function IngredientSearch() {
                 onClick={() => select(r)}
                 className={`flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-2.5 text-left ${
                   highlighted
-                    ? "bg-black/[0.04] dark:bg-white/[0.06]"
-                    : "hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
+                    ? "bg-black/4 dark:bg-white/6"
+                    : "hover:bg-black/4 dark:hover:bg-white/6"
                 }`}
               >
                 <span className="min-w-0 truncate">
@@ -190,7 +190,7 @@ export function IngredientSearch() {
                   className={
                     inPantry
                       ? "shrink-0 text-sm font-medium text-green-700 dark:text-green-400"
-                      : "shrink-0 text-sm font-medium opacity-70"
+                      : "shrink-0 text-sm font-medium text-muted"
                   }
                 >
                   {inPantry ? "✓ In bar" : "+ Add"}

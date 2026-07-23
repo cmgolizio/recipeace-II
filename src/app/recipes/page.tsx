@@ -90,7 +90,7 @@ export default async function RecipesPage({
     <div className="space-y-6">
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight">Recipes</h1>
-        <p className="opacity-70">
+        <p className="text-muted">
           Browse the catalog. Open any cocktail to see the full build and what
           you’re missing from your bar.
         </p>
@@ -104,7 +104,7 @@ export default async function RecipesPage({
         </p>
       )}
       {!error && total === 0 && !filtered && (
-        <p className="opacity-60">
+        <p className="text-muted">
           No recipes yet — check back soon.
           {process.env.NODE_ENV === "development" && (
             <>
@@ -119,7 +119,7 @@ export default async function RecipesPage({
         </p>
       )}
       {!error && filtered && recipes.length === 0 && (
-        <p className="opacity-60">
+        <p className="text-muted">
           {filters.q
             ? `No recipes match “${filters.q}”.`
             : "No recipes match these filters."}
@@ -142,7 +142,7 @@ export default async function RecipesPage({
           {page > 1 ? (
             <Link
               href={pageHref(filters, page - 1)}
-              className="opacity-70 hover:opacity-100"
+              className="text-muted hover:text-foreground"
             >
               ← Previous
             </Link>
@@ -151,13 +151,13 @@ export default async function RecipesPage({
               ← Previous
             </span>
           )}
-          <span className="opacity-60">
+          <span className="text-muted">
             Page {page} of {totalPages}
           </span>
           {page < totalPages ? (
             <Link
               href={pageHref(filters, page + 1)}
-              className="opacity-70 hover:opacity-100"
+              className="text-muted hover:text-foreground"
             >
               Next →
             </Link>

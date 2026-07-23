@@ -19,7 +19,7 @@ export default function RecipesLoading() {
         {Array.from({ length: 6 }, (_, i) => (
           <li
             key={i}
-            className="overflow-hidden rounded-xl border border-black/10 dark:border-white/15"
+            className="overflow-hidden rounded-xl border border-border bg-surface"
           >
             <div className="aspect-3/2 w-full bg-black/6 dark:bg-white/10" />
             <div className="space-y-2 p-4">

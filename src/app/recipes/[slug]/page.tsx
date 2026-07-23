@@ -119,7 +119,7 @@ export default async function RecipeDetailPage({ params }: Props) {
       <div className="flex items-center justify-between">
         <Link
           href="/recipes"
-          className="text-sm underline opacity-60 hover:opacity-100"
+          className="text-sm text-muted underline hover:text-foreground"
         >
           ← All recipes
         </Link>
@@ -130,7 +130,7 @@ export default async function RecipeDetailPage({ params }: Props) {
       </div>
 
       {recipe.image_url && (
-        <div className="relative aspect-square w-full max-w-xs overflow-hidden rounded-xl border border-black/10 dark:border-white/15">
+        <div className="relative aspect-square w-full max-w-xs overflow-hidden rounded-xl border border-border">
           <Image
             src={recipe.image_url}
             alt={recipe.name}
@@ -150,7 +150,7 @@ export default async function RecipeDetailPage({ params }: Props) {
           </p>
         )}
         {recipe.description && (
-          <p className="pt-1 opacity-70">{recipe.description}</p>
+          <p className="pt-1 text-muted">{recipe.description}</p>
         )}
       </header>
 
@@ -158,7 +158,7 @@ export default async function RecipeDetailPage({ params }: Props) {
 
       {recipe.instructions.length > 0 && (
         <section>
-          <h2 className="text-sm font-semibold uppercase tracking-wide opacity-60">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
             Method
           </h2>
           <ol className="mt-2 list-decimal space-y-1 pl-5">
@@ -173,7 +173,7 @@ export default async function RecipeDetailPage({ params }: Props) {
 
       {recipe.garnish && (
         <section>
-          <h2 className="text-sm font-semibold uppercase tracking-wide opacity-60">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
             Garnish
           </h2>
           <p className="mt-1 opacity-90">{recipe.garnish}</p>

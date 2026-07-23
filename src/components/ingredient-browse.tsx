@@ -79,7 +79,7 @@ export function IngredientBrowse() {
         type="button"
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
-        className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide opacity-60 hover:opacity-100"
+        className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted hover:text-foreground"
       >
         <span aria-hidden="true">{expanded ? "▾" : "▸"}</span>
         Browse ingredients
@@ -87,7 +87,7 @@ export function IngredientBrowse() {
 
       {expanded && (
         <div className="mt-3 space-y-2">
-          {state === null && <p className="text-sm opacity-60">Loading…</p>}
+          {state === null && <p className="text-sm text-muted">Loading…</p>}
           {state && "error" in state && (
             <p className="text-sm text-red-600 dark:text-red-400">
               Couldn’t load ingredients: {state.error}
@@ -96,7 +96,7 @@ export function IngredientBrowse() {
           {groups.map(({ category, items }) => (
             <details
               key={category}
-              className="rounded-lg border border-black/10 dark:border-white/15"
+              className="rounded-lg border border-border bg-surface"
             >
               <summary className="cursor-pointer select-none px-4 py-2.5 text-sm font-medium capitalize">
                 {category.replace("_", " ")}{" "}
@@ -116,7 +116,7 @@ export function IngredientBrowse() {
                         className={
                           inBar
                             ? "inline-flex items-center gap-1.5 rounded-full border border-green-600/40 bg-green-50 px-3 py-1 text-sm text-green-700 dark:border-green-400/40 dark:bg-green-950/30 dark:text-green-400"
-                            : "inline-flex items-center gap-1.5 rounded-full border border-black/15 px-3 py-1 text-sm hover:bg-black/[0.04] dark:border-white/20 dark:hover:bg-white/[0.06]"
+                            : "inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-sm hover:bg-black/4 dark:hover:bg-white/6"
                         }
                       >
                         {inBar && <span aria-hidden="true">✓</span>}

@@ -6,13 +6,13 @@ export default function RecipeNotFound() {
       <h1 className="text-2xl font-semibold tracking-tight">
         Recipe not found
       </h1>
-      <p className="opacity-70">
+      <p className="text-muted">
         There’s no cocktail here — it may have been renamed or removed.
       </p>
       <p>
         <Link
           href="/recipes"
-          className="text-sm underline opacity-60 hover:opacity-100"
+          className="text-sm text-muted underline hover:text-foreground"
         >
           ← Browse all recipes
         </Link>

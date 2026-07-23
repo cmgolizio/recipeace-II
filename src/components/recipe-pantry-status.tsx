@@ -67,7 +67,7 @@ function AddToListButton({ name }: { name: string }) {
       aria-label={`Add ${name} to shopping list`}
       title="Add to shopping list"
       onClick={() => addToShopping(name)}
-      className="rounded-md border border-black/15 px-1.5 py-0.5 text-xs font-medium hover:bg-black/4 dark:border-white/20 dark:hover:bg-white/6"
+      className="rounded-md border border-border px-1.5 py-0.5 text-xs font-medium hover:bg-black/4 dark:hover:bg-white/6"
     >
       + list
     </button>
@@ -154,7 +154,7 @@ export function RecipePantryStatus({
       )}
 
       <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wide opacity-60">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
           Ingredients
         </h2>
         <ul className="mt-2 divide-y divide-black/5 dark:divide-white/10">
@@ -170,7 +170,7 @@ export function RecipePantryStatus({
                   {ri.unit && <span>{ri.unit} </span>}
                   <span className="font-medium">{ri.name}</span>
                   {ri.preparation && (
-                    <span className="opacity-60">, {ri.preparation}</span>
+                    <span className="text-muted">, {ri.preparation}</span>
                   )}
                   {ri.is_optional && (
                     <span className="opacity-50"> (optional)</span>
@@ -189,7 +189,7 @@ export function RecipePantryStatus({
           })}
         </ul>
         {!hasPantry && (
-          <p className="mt-3 text-sm opacity-60">
+          <p className="mt-3 text-sm text-muted">
             <Link href="/" className="underline">
               Add ingredients to your bar
             </Link>{" "}

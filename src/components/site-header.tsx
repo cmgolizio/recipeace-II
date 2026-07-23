@@ -24,33 +24,33 @@ export function SiteHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-10 border-b border-black/10 bg-background/80 backdrop-blur dark:border-white/15">
+    <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur">
       <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3">
-        <Link href="/" className="font-semibold tracking-tight">
+        <Link href="/" className="font-semibold tracking-tight text-accent">
           🍸 InHouseMixers
         </Link>
         <nav className="flex items-center gap-4 text-sm">
-          <Link href="/" className="opacity-70 hover:opacity-100">
+          <Link href="/" className="text-muted hover:text-foreground">
             my bar
           </Link>
-          <Link href="/recipes" className="opacity-70 hover:opacity-100">
+          <Link href="/recipes" className="text-muted hover:text-foreground">
             recipes
           </Link>
-          <Link href="/matches" className="opacity-70 hover:opacity-100">
+          <Link href="/matches" className="text-muted hover:text-foreground">
             matches
           </Link>
           {user && (
-            <Link href="/favorites" className="opacity-70 hover:opacity-100">
+            <Link href="/favorites" className="text-muted hover:text-foreground">
               favorites
             </Link>
           )}
           {shopping.length > 0 && (
-            <Link href="/shopping" className="opacity-70 hover:opacity-100">
+            <Link href="/shopping" className="text-muted hover:text-foreground">
               shopping
             </Link>
           )}
           <span
-            className="rounded-full bg-black/6 px-2.5 py-0.5 text-xs tabular-nums dark:bg-white/10"
+            className="rounded-full bg-accent px-2.5 py-0.5 text-xs tabular-nums text-accent-foreground"
             title={ready ? `${pantry.length} in your bar` : "Loading your bar"}
           >
             {ready ? pantry.length : "–"}
@@ -63,13 +63,13 @@ export function SiteHeader() {
               <button
                 type="button"
                 onClick={handleSignOut}
-                className="opacity-70 hover:opacity-100"
+                className="text-muted hover:text-foreground"
               >
                 logout
               </button>
             </>
           ) : (
-            <Link href="/login" className="opacity-70 hover:opacity-100">
+            <Link href="/login" className="text-muted hover:text-foreground">
               login
             </Link>
           )}
