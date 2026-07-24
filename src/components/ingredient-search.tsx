@@ -128,7 +128,7 @@ export function IngredientSearch() {
           setActiveIndex(-1);
         }}
         onKeyDown={onKeyDown}
-        placeholder="Search ingredients — try “bourbon”, “midori”, or “lim”"
+        placeholder="Search ingredients. Try typing “bourbon”, “midori”, or “lim”"
         aria-label="Search ingredients"
         role="combobox"
         aria-expanded={panelOpen}
