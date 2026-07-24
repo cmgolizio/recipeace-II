@@ -10,7 +10,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 
-import type { GeneratedRecipe } from "./validate.ts";
+import { FLAVOR_TAGS, type GeneratedRecipe } from "./validate.ts";
 
 export type Provider = "anthropic" | "openai";
 export type VocabularyEntry = { name: string; category: string };
@@ -27,6 +27,32 @@ const SYSTEM = `You are an expert bartender compiling a reference of classic and
 modern-classic cocktails. Produce accurate, well-balanced, genuinely recognized \
 recipes — the kind found in respected cocktail books — not invented novelties. \
 Every recipe must be correctly proportioned and actually makeable.`;
+
+// The four metadata fields, shared between the generation schema below and
+// the enrich backfill (enrich.ts) so the two paths can never drift. Nullable
+// enums list null among the values (required for OpenAI strict mode).
+export const METADATA_PROPERTIES = {
+  strength: {
+    type: ["number", "null"],
+    description:
+      "Estimated ABV of the finished drink as a whole-number percentage (e.g. 24), or null if unsure",
+  },
+  difficulty: {
+    type: ["string", "null"],
+    enum: ["easy", "medium", "advanced", null],
+    description: "How hard the drink is to make well",
+  },
+  flavor_tags: {
+    type: "array",
+    items: { type: "string", enum: [...FLAVOR_TAGS] },
+    description: "1-3 tags that best describe the drink's flavor profile",
+  },
+  base_spirit: {
+    type: ["string", "null"],
+    description:
+      "The primary base spirit's ingredient name (e.g. gin), or null for spirit-free drinks",
+  },
+};
 
 // Strict-compatible JSON schema: additionalProperties:false on every object and
 // every property listed in `required` (nullable via type unions). Valid both as
@@ -69,8 +95,21 @@ const RECIPE_SCHEMA = {
               required: ["name", "amount", "unit", "optional", "garnish"],
             },
           },
+          ...METADATA_PROPERTIES,
         },
-        required: ["name", "description", "glass", "method", "garnish", "instructions", "ingredients"],
+        required: [
+          "name",
+          "description",
+          "glass",
+          "method",
+          "garnish",
+          "instructions",
+          "ingredients",
+          "strength",
+          "difficulty",
+          "flavor_tags",
+          "base_spirit",
+        ],
       },
     },
   },
@@ -107,6 +146,11 @@ function buildUserPrompt(opts: GenerateOptions): string {
       "give the amount as a number, a unit (oz, dash, barspoon, each, …), and set " +
       "garnish:true for garnishes and optional:true for non-essential items. Keep " +
       "ingredient lists tight (typically 3-6).",
+    "",
+    "Also estimate for each recipe: strength (ABV of the finished, diluted drink " +
+      "as a whole-number percentage), difficulty (easy / medium / advanced), 1-3 " +
+      `flavor tags from [${FLAVOR_TAGS.join(", ")}], and the base spirit's ` +
+      "ingredient name (null for spirit-free drinks).",
   ].join("\n");
 }
 
