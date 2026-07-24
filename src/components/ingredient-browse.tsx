@@ -6,6 +6,8 @@ import { addToPantry, removeFromPantry, usePantry } from "../lib/pantry/store";
 import { createClient } from "../lib/supabase/client";
 import type { Tables } from "../types/database";
 
+import { toast } from "./toast/store";
+
 type Ingredient = Pick<
   Tables<"ingredients">,
   "id" | "name" | "category" | "is_staple"
@@ -109,9 +111,15 @@ export function IngredientBrowse() {
                     <li key={it.id}>
                       <button
                         type="button"
-                        onClick={() =>
-                          inBar ? removeFromPantry(it.id) : addToPantry(it.id)
-                        }
+                        onClick={() => {
+                          if (inBar) {
+                            removeFromPantry(it.id);
+                            toast(`Removed ${it.name} from your bar`);
+                          } else {
+                            addToPantry(it.id);
+                            toast(`Added ${it.name} to your bar`);
+                          }
+                        }}
                         aria-pressed={inBar}
                         className={
                           inBar

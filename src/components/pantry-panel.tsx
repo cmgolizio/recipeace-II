@@ -7,6 +7,10 @@ import { clearPantry, removeFromPantry, usePantry } from "../lib/pantry/store";
 import { createClient } from "../lib/supabase/client";
 import type { Tables } from "../types/database";
 
+import { EmptyState } from "./empty-state";
+import { Skeleton } from "./skeleton";
+import { toast } from "./toast/store";
+
 type Ingredient = Pick<Tables<"ingredients">, "id" | "name" | "category">;
 
 export function PantryPanel() {
@@ -53,7 +57,10 @@ export function PantryPanel() {
         {pantry.length > 0 && (
           <button
             type="button"
-            onClick={clearPantry}
+            onClick={() => {
+              clearPantry();
+              toast("Cleared your bar");
+            }}
             className="text-sm text-muted underline hover:text-foreground"
           >
             Clear all
@@ -62,9 +69,13 @@ export function PantryPanel() {
       </div>
 
       {pantry.length === 0 ? (
-        <p className="mt-3 text-sm text-muted">
-          Your bar is empty. Search above and add what you have on hand.
-        </p>
+        <div className="mt-3">
+          <EmptyState
+            icon="glass"
+            title="Your bar is empty"
+            body="Search above or browse the ingredients to add what you have on hand."
+          />
+        </div>
       ) : (
         <>
           <ul className="mt-3 flex flex-wrap gap-2">
@@ -72,7 +83,10 @@ export function PantryPanel() {
               <li key={it.id}>
                 <button
                   type="button"
-                  onClick={() => removeFromPantry(it.id)}
+                  onClick={() => {
+                    removeFromPantry(it.id);
+                    toast(`Removed ${it.name} from your bar`);
+                  }}
                   title="Remove from bar"
                   className="group inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-sm hover:border-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
                 >
@@ -83,9 +97,12 @@ export function PantryPanel() {
                 </button>
               </li>
             ))}
-            {loadingCount > 0 && (
-              <li className="self-center text-sm opacity-50">Loading…</li>
-            )}
+            {loadingCount > 0 &&
+              Array.from({ length: loadingCount }, (_, i) => (
+                <li key={`loading-${i}`}>
+                  <Skeleton className="h-[30px] w-24 rounded-full" />
+                </li>
+              ))}
           </ul>
           <Link
             href="/matches"

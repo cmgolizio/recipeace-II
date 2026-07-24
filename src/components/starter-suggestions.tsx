@@ -6,6 +6,8 @@ import { addToPantry, usePantry, usePantryReady } from "../lib/pantry/store";
 import { createClient } from "../lib/supabase/client";
 import type { Database } from "../types/database";
 
+import { toast } from "./toast/store";
+
 type Starter =
   Database["public"]["Functions"]["popular_ingredients"]["Returns"][number];
 
@@ -57,7 +59,10 @@ export function StarterSuggestions() {
           <li key={s.id}>
             <button
               type="button"
-              onClick={() => addToPantry(s.id)}
+              onClick={() => {
+                addToPantry(s.id);
+                toast(`Added ${s.name} to your bar`);
+              }}
               className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-sm hover:bg-black/4 dark:hover:bg-white/6"
             >
               <span aria-hidden="true" className="opacity-50">

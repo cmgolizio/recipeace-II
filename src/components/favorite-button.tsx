@@ -9,6 +9,8 @@ import {
 } from "../lib/favorites/store";
 import { usePantryReady, useUser } from "../lib/pantry/store";
 
+import { toast } from "./toast/store";
+
 /**
  * Heart toggle for the recipe detail page. Signed-in users can favorite the
  * recipe; anonymous users get a log-in prompt instead. Renders nothing until
@@ -38,7 +40,10 @@ export function FavoriteButton({ recipeId }: { recipeId: number }) {
     <button
       type="button"
       aria-pressed={favorited}
-      onClick={() => toggleFavorite(recipeId)}
+      onClick={() => {
+        toggleFavorite(recipeId);
+        toast(favorited ? "Removed from favorites" : "Saved to favorites");
+      }}
       className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-black/4 dark:hover:bg-white/6"
     >
       <span

@@ -6,6 +6,8 @@ import { addToPantry, removeFromPantry, usePantry } from "../lib/pantry/store";
 import { createClient } from "../lib/supabase/client";
 import type { Database } from "../types/database";
 
+import { toast } from "./toast/store";
+
 type SearchResult =
   Database["public"]["Functions"]["search_ingredients"]["Returns"][number];
 
@@ -68,8 +70,10 @@ export function IngredientSearch() {
   function select(r: SearchResult) {
     if (pantry.includes(r.id)) {
       removeFromPantry(r.id);
+      toast(`Removed ${r.name} from your bar`);
     } else {
       addToPantry(r.id);
+      toast(`Added ${r.name} to your bar`);
       // Clear so the user can immediately type the next ingredient.
       setQuery("");
       setActiveIndex(-1);

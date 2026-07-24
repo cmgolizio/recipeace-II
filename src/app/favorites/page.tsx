@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import {
+  EmptyState,
+  emptyStateActionClass,
+} from "../../components/empty-state";
 import { RecipeCard } from "../../components/recipe-card";
+import { RecipeCardSkeleton } from "../../components/skeleton";
 import { useFavorites, useFavoritesReady } from "../../lib/favorites/store";
 import { usePantryReady, useUser } from "../../lib/pantry/store";
 import { createClient } from "../../lib/supabase/client";
@@ -11,7 +16,16 @@ import type { Tables } from "../../types/database";
 
 type Recipe = Pick<
   Tables<"recipes">,
-  "id" | "slug" | "name" | "description" | "method" | "glass" | "image_url"
+  | "id"
+  | "slug"
+  | "name"
+  | "description"
+  | "method"
+  | "glass"
+  | "image_url"
+  | "strength"
+  | "difficulty"
+  | "flavor_tags"
 >;
 
 // Keyed to the favorites it was computed for, so loading/error/results are
@@ -37,7 +51,9 @@ export default function FavoritesPage() {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("recipes")
-        .select("id,slug,name,description,method,glass,image_url")
+        .select(
+          "id,slug,name,description,method,glass,image_url,strength,difficulty,flavor_tags",
+        )
         .in("id", ids)
         .order("name");
       if (ignore) return;
@@ -56,12 +72,22 @@ export default function FavoritesPage() {
     </div>
   );
 
+  const skeletonGrid = (
+    <ul aria-hidden className="grid gap-3 sm:grid-cols-2">
+      {Array.from({ length: 4 }, (_, i) => (
+        <li key={i}>
+          <RecipeCardSkeleton media />
+        </li>
+      ))}
+    </ul>
+  );
+
   // Wait for auth/favorites hydration before deciding what to show.
   if (!authReady || !favoritesReady) {
     return (
       <div className="space-y-6">
         {heading}
-        <p className="text-muted">Loading…</p>
+        {skeletonGrid}
       </div>
     );
   }
@@ -84,13 +110,16 @@ export default function FavoritesPage() {
     return (
       <div className="space-y-6">
         {heading}
-        <p className="text-muted">
-          No favorites yet — tap “Save to favorites” on any{" "}
-          <Link href="/recipes" className="underline">
-            recipe
-          </Link>{" "}
-          to keep it here.
-        </p>
+        <EmptyState
+          icon="heart"
+          title="No favorites yet"
+          body="Tap “Save to favorites” on any recipe to keep it here."
+          action={
+            <Link href="/recipes" className={emptyStateActionClass}>
+              Browse recipes
+            </Link>
+          }
+        />
       </div>
     );
   }
@@ -104,7 +133,7 @@ export default function FavoritesPage() {
     <div className="space-y-6">
       {heading}
 
-      {loading && <p className="text-muted">Loading…</p>}
+      {loading && skeletonGrid}
       {error && (
         <p className="text-red-600 dark:text-red-400">
           Couldn’t load your favorites: {error}

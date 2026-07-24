@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import "./globals.css";
 import { SiteHeader } from "../components/site-header";
+import { Toaster } from "../components/toast/toaster";
 import { siteUrl } from "../lib/site-url";
 
 const geistSans = Geist({
@@ -48,6 +49,7 @@ export default function RootLayout({
         <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
           {children}
         </main>
+        <Toaster />
       </body>
     </html>
   );

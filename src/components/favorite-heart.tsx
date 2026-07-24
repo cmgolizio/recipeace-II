@@ -3,6 +3,8 @@
 import { toggleFavorite, useFavorites } from "../lib/favorites/store";
 import { useUser } from "../lib/pantry/store";
 
+import { toast } from "./toast/store";
+
 /**
  * Small heart shown next to a recipe name on image-less cards when the
  * signed-in user has favorited it. Renders nothing otherwise (including for
@@ -43,6 +45,7 @@ export function FavoriteHeartOverlay({ recipeId }: { recipeId: number }) {
         e.preventDefault();
         e.stopPropagation();
         toggleFavorite(recipeId);
+        toast(favorited ? "Removed from favorites" : "Saved to favorites");
       }}
       className="absolute right-2 top-2 flex size-7 items-center justify-center rounded-full bg-black/45 text-sm backdrop-blur-sm hover:bg-black/60"
     >
