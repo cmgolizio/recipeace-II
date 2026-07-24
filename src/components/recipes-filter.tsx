@@ -7,7 +7,10 @@ export type RecipeFilters = {
   q: string;
   method: string;
   glass: string;
-  sort: "name" | "newest";
+  difficulty: string;
+  spirit: string;
+  tags: string[];
+  sort: "name" | "newest" | "strength";
 };
 
 const selectClass =
@@ -24,10 +27,16 @@ export function RecipesFilter({
   filters,
   methods,
   glasses,
+  difficulties,
+  spirits,
+  tagOptions,
 }: {
   filters: RecipeFilters;
   methods: string[];
   glasses: string[];
+  difficulties: string[];
+  spirits: string[];
+  tagOptions: string[];
 }) {
   const router = useRouter();
   const form = useRef<HTMLFormElement>(null);
@@ -52,6 +61,13 @@ export function RecipesFilter({
     if (method) params.set("method", method);
     const glass = value("glass");
     if (glass) params.set("glass", glass);
+    const difficulty = value("difficulty");
+    if (difficulty) params.set("difficulty", difficulty);
+    const spirit = value("spirit");
+    if (spirit) params.set("spirit", spirit);
+    for (const tag of data.getAll("tag")) {
+      if (typeof tag === "string") params.append("tag", tag);
+    }
     const sort = value("sort");
     if (sort && sort !== "name") params.set("sort", sort);
     // Changing any control always restarts from page 1 (no page param).
@@ -116,6 +132,38 @@ export function RecipesFilter({
             ))}
           </select>
         )}
+        {difficulties.length > 0 && (
+          <select
+            name="difficulty"
+            defaultValue={filters.difficulty}
+            onChange={commit}
+            aria-label="Filter by difficulty"
+            className={selectClass}
+          >
+            <option value="">Any difficulty</option>
+            {difficulties.map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
+          </select>
+        )}
+        {spirits.length > 0 && (
+          <select
+            name="spirit"
+            defaultValue={filters.spirit}
+            onChange={commit}
+            aria-label="Filter by base spirit"
+            className={selectClass}
+          >
+            <option value="">All spirits</option>
+            {spirits.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        )}
         <select
           name="sort"
           defaultValue={filters.sort}
@@ -125,8 +173,32 @@ export function RecipesFilter({
         >
           <option value="name">Name A–Z</option>
           <option value="newest">Newest</option>
+          <option value="strength">Strongest first</option>
         </select>
       </div>
+      {tagOptions.length > 0 && (
+        <fieldset className="flex flex-wrap items-center gap-1.5 text-sm">
+          <legend className="sr-only">Filter by flavor</legend>
+          {tagOptions.map((tag) => (
+            // Checkbox chips: the checkbox drives form state (multi-select via
+            // repeated `tag` entries); the label styles its checked state.
+            <label
+              key={tag}
+              className="cursor-pointer rounded-full border border-border px-3 py-1 hover:bg-black/4 has-[:checked]:border-accent has-[:checked]:bg-accent/10 has-[:checked]:text-accent dark:hover:bg-white/6"
+            >
+              <input
+                type="checkbox"
+                name="tag"
+                value={tag}
+                defaultChecked={filters.tags.includes(tag)}
+                onChange={commit}
+                className="sr-only"
+              />
+              {tag}
+            </label>
+          ))}
+        </fieldset>
+      )}
     </form>
   );
 }

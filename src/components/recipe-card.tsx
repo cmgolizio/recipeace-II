@@ -8,7 +8,9 @@ import { FavoriteHeart, FavoriteHeartOverlay } from "./favorite-heart";
  * The card fields shared by every consumer. Description and image are
  * optional because the matches query doesn't select them: `undefined` means
  * "this surface doesn't do images" (no media block at all), while `null`
- * means "fetched, but the recipe has none" (branded fallback tile).
+ * means "fetched, but the recipe has none" (branded fallback tile). The
+ * metadata fields (difficulty/strength/tags) are likewise optional — the
+ * matches RPC doesn't return them, so those cards simply skip the pills.
  */
 export type RecipeCardRecipe = {
   id: number;
@@ -18,6 +20,9 @@ export type RecipeCardRecipe = {
   glass: string | null;
   description?: string | null;
   image_url?: string | null;
+  strength?: number | null;
+  difficulty?: string | null;
+  flavor_tags?: string[];
 };
 
 /**
@@ -40,7 +45,13 @@ export function RecipeCard({
   children?: ReactNode;
 }) {
   const hasMedia = recipe.image_url !== undefined;
-  const pills = [recipe.method, recipe.glass].filter((v): v is string => !!v);
+  const pills = [
+    recipe.method,
+    recipe.glass,
+    recipe.difficulty,
+    recipe.strength != null ? `~${recipe.strength}% ABV` : null,
+    ...(recipe.flavor_tags ?? []),
+  ].filter((v): v is string => !!v);
   return (
     <Link
       href={`/recipes/${recipe.slug}`}

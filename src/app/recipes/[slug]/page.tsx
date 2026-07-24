@@ -24,6 +24,9 @@ type RecipeHeader = Pick<
   | "garnish"
   | "instructions"
   | "image_url"
+  | "strength"
+  | "difficulty"
+  | "flavor_tags"
 >;
 
 type Props = { params: Promise<{ slug: string }> };
@@ -54,7 +57,7 @@ const getRecipe = cache(async (slug: string): Promise<RecipeHeader | null> => {
   const { data, error } = await supabase
     .from("recipes")
     .select(
-      "id,slug,name,description,method,glass,garnish,instructions,image_url",
+      "id,slug,name,description,method,glass,garnish,instructions,image_url,strength,difficulty,flavor_tags",
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -148,6 +151,26 @@ export default async function RecipeDetailPage({ params }: Props) {
           <p className="text-xs uppercase tracking-wide opacity-50">
             {[recipe.method, recipe.glass].filter(Boolean).join(" · ")}
           </p>
+        )}
+        {(recipe.difficulty ||
+          recipe.strength != null ||
+          recipe.flavor_tags.length > 0) && (
+          <div className="flex flex-wrap gap-1.5 pt-2">
+            {[
+              recipe.difficulty,
+              recipe.strength != null ? `~${recipe.strength}% ABV` : null,
+              ...recipe.flavor_tags,
+            ]
+              .filter((v): v is string => !!v)
+              .map((pill) => (
+                <span
+                  key={pill}
+                  className="rounded-full border border-border bg-surface px-2 py-0.5 text-xs text-muted"
+                >
+                  {pill}
+                </span>
+              ))}
+          </div>
         )}
         {recipe.description && (
           <p className="pt-1 text-muted">{recipe.description}</p>
