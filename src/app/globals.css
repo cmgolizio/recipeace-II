@@ -38,8 +38,8 @@
   --foreground: #fafaf9;
   --muted: #a8a29e;
   --border: #2a2522;
-      /* --accent: #f59e0b; */
-    --accent: #736bfb;
+  /* --accent: #f59e0b; */
+  --accent: #736bfb;
   --accent-foreground: #1c1917;
 }
 
@@ -51,7 +51,7 @@
   --muted: #78716c;
   --border: #e7e5e4;
   /* --accent: #b45309; */
-    --accent: #4339fb;
+  --accent: #4339fb;
   --accent-foreground: #ffffff;
 }
 
@@ -71,4 +71,17 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Toast entrance (see components/toast) — applied via motion-safe only. */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }

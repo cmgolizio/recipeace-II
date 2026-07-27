@@ -9,7 +9,37 @@ export type GeneratedIngredient = {
   garnish?: boolean;
 };
 
-export type GeneratedRecipe = {
+// Controlled flavor-tag vocabulary. Tags outside this list are dropped, so
+// the model can never invent taxonomy and catalog faceting stays sane.
+export const FLAVOR_TAGS = [
+  "citrusy",
+  "boozy",
+  "refreshing",
+  "creamy",
+  "bitter",
+  "sweet",
+  "sour",
+  "herbal",
+  "spicy",
+  "fruity",
+  "smoky",
+] as const;
+
+export type FlavorTag = (typeof FLAVOR_TAGS)[number];
+
+export const DIFFICULTIES = ["easy", "medium", "advanced"] as const;
+
+export type Difficulty = (typeof DIFFICULTIES)[number];
+
+/** The model-emitted metadata fields, before sanitization. */
+export type GeneratedMetadata = {
+  strength?: number | null;
+  difficulty?: string | null;
+  flavor_tags?: string[] | null;
+  base_spirit?: string | null;
+};
+
+export type GeneratedRecipe = GeneratedMetadata & {
   name: string;
   description?: string | null;
   glass?: string | null;
@@ -17,6 +47,13 @@ export type GeneratedRecipe = {
   garnish?: string | null;
   instructions?: string[];
   ingredients?: GeneratedIngredient[];
+};
+
+export type RecipeMetadata = {
+  strength: number | null;
+  difficulty: Difficulty | null;
+  flavor_tags: FlavorTag[];
+  base_spirit: string | null;
 };
 
 export type ResolvedIngredient = {
@@ -30,7 +67,7 @@ export type ResolvedIngredient = {
   raw_text: string | null;
 };
 
-export type ResolvedRecipe = {
+export type ResolvedRecipe = RecipeMetadata & {
   slug: string;
   name: string;
   description: string | null;
@@ -63,6 +100,31 @@ function str(value: unknown): string | null {
 
 function rawText(amount: number | null, unit: string | null, name: string): string {
   return [amount ?? "", unit ?? "", name].filter((x) => x !== "").join(" ").trim();
+}
+
+/**
+ * Sanitize model-emitted metadata: strength must be a plausible ABV
+ * percentage (rounded, 0-100, else null), difficulty and flavor tags are
+ * constrained to their fixed vocabularies (unknown tags dropped, duplicates
+ * removed), base_spirit is trimmed free text.
+ */
+export function sanitizeMetadata(gen: GeneratedMetadata): RecipeMetadata {
+  const strength =
+    typeof gen.strength === "number" &&
+    Number.isFinite(gen.strength) &&
+    gen.strength >= 0 &&
+    gen.strength <= 100
+      ? Math.round(gen.strength)
+      : null;
+  const difficulty = DIFFICULTIES.find((d) => d === gen.difficulty) ?? null;
+  const flavor_tags = [
+    ...new Set(
+      (gen.flavor_tags ?? []).filter((t): t is FlavorTag =>
+        (FLAVOR_TAGS as readonly string[]).includes(t),
+      ),
+    ),
+  ];
+  return { strength, difficulty, flavor_tags, base_spirit: str(gen.base_spirit) };
 }
 
 /**
@@ -147,6 +209,7 @@ export function validateRecipe(
       garnish: str(gen.garnish),
       instructions,
       ingredients: deduped.map((i, idx) => ({ ...i, display_order: idx + 1 })),
+      ...sanitizeMetadata(gen),
     },
   };
 }

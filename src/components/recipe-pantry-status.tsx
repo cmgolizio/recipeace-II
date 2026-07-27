@@ -9,6 +9,7 @@ import { createClient } from "../lib/supabase/client";
 import type { Database } from "../types/database";
 
 import { FavoriteButton } from "./favorite-button";
+import { toast } from "./toast/store";
 
 /** A plain recipe ingredient row, fetched server-side by the detail page. */
 export type IngredientRow = {
@@ -66,7 +67,10 @@ function AddToListButton({ name }: { name: string }) {
       type="button"
       aria-label={`Add ${name} to shopping list`}
       title="Add to shopping list"
-      onClick={() => addToShopping(name)}
+      onClick={() => {
+        addToShopping(name);
+        toast(`Added ${name} to your shopping list`);
+      }}
       className="rounded-md border border-border px-1.5 py-0.5 text-xs font-medium hover:bg-black/4 dark:hover:bg-white/6"
     >
       + list

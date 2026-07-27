@@ -300,6 +300,10 @@ export type Database = {
           is_published: boolean;
           created_at: string;
           updated_at: string;
+          strength: number | null;
+          difficulty: Database["public"]["Enums"]["recipe_difficulty"] | null;
+          flavor_tags: string[];
+          base_spirit: string | null;
         };
         Insert: {
           id?: number;
@@ -315,6 +319,10 @@ export type Database = {
           is_published?: boolean;
           created_at?: string;
           updated_at?: string;
+          strength?: number | null;
+          difficulty?: Database["public"]["Enums"]["recipe_difficulty"] | null;
+          flavor_tags?: string[];
+          base_spirit?: string | null;
         };
         Update: {
           id?: number;
@@ -330,6 +338,10 @@ export type Database = {
           is_published?: boolean;
           created_at?: string;
           updated_at?: string;
+          strength?: number | null;
+          difficulty?: Database["public"]["Enums"]["recipe_difficulty"] | null;
+          flavor_tags?: string[];
+          base_spirit?: string | null;
         };
         Relationships: [];
       };
@@ -430,6 +442,7 @@ export type Database = {
         | "garnish"
         | "other"
         | "staple";
+      recipe_difficulty: "easy" | "medium" | "advanced";
     };
     CompositeTypes: {
       [_ in never]: never;

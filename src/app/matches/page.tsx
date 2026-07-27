@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
 import { RecipeCard } from "../../components/recipe-card";
+import { RecipeCardSkeleton, Skeleton } from "../../components/skeleton";
+import { toast } from "../../components/toast/store";
 import { usePantry, usePantryReady } from "../../lib/pantry/store";
 import { addToShopping, useShopping } from "../../lib/shopping/store";
 import { createClient } from "../../lib/supabase/client";
@@ -94,6 +96,11 @@ function AddMissingButton({ names }: { names: string[] }) {
         e.preventDefault();
         e.stopPropagation();
         for (const n of remaining) addToShopping(n);
+        toast(
+          remaining.length === 1
+            ? `Added ${remaining[0]} to your shopping list`
+            : `Added ${remaining.length} ingredients to your shopping list`,
+        );
       }}
       className="mt-3 rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-black/4 dark:hover:bg-white/6"
     >
@@ -153,11 +160,30 @@ function MatchCard({ match: m }: { match: Match }) {
   );
 }
 
+function MatchesSkeletonList() {
+  return (
+    <ul aria-hidden className="space-y-3">
+      {Array.from({ length: 3 }, (_, i) => (
+        <li key={i}>
+          <RecipeCardSkeleton />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function MatchesLoading() {
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Matches</h1>
-      <p className="text-muted">Mixing…</p>
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Matches</h1>
+        <Skeleton className="mt-2 h-5 w-64 max-w-full" />
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <Skeleton className="h-8 w-72 max-w-full rounded-lg" />
+        <Skeleton className="h-8 w-28 rounded-lg" />
+      </div>
+      <MatchesSkeletonList />
     </div>
   );
 }
@@ -279,7 +305,7 @@ function MatchesContent() {
         </button>
       </div>
 
-      {loading && <p className="text-muted">Mixing…</p>}
+      {loading && <MatchesSkeletonList />}
       {error && (
         <p className="text-red-600 dark:text-red-400">
           Couldn’t load matches: {error}

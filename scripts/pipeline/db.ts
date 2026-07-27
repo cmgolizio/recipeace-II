@@ -4,7 +4,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "../../src/types/database.ts";
-import type { ResolvedRecipe, Resolver } from "./validate.ts";
+import type { RecipeMetadata, ResolvedRecipe, Resolver } from "./validate.ts";
 import type { VocabularyEntry } from "./generate.ts";
 
 export type Admin = SupabaseClient<Database>;
@@ -81,6 +81,10 @@ export async function ingestRecipe(admin: Admin, recipe: ResolvedRecipe): Promis
         instructions: recipe.instructions,
         source: "ai-generated",
         is_published: true,
+        strength: recipe.strength,
+        difficulty: recipe.difficulty,
+        flavor_tags: recipe.flavor_tags,
+        base_spirit: recipe.base_spirit,
       },
       { onConflict: "slug" },
     )
@@ -157,4 +161,44 @@ export async function setRecipeImageUrl(
 ): Promise<void> {
   const { error } = await admin.from("recipes").update({ image_url: imageUrl }).eq("id", id);
   if (error) throw new Error(`updating image_url for recipe ${id} failed: ${error.message}`);
+}
+
+// ── Metadata enrichment (polish-plan2 phase 5) ──────────────────────────────
+export type RecipeForEnrich = {
+  id: number;
+  name: string;
+  /** Human-readable ingredient lines ("2 oz gin"), for the LLM prompt. */
+  ingredients: string[];
+};
+
+/**
+ * Published recipes that still need metadata. A null difficulty marks an
+ * unenriched row — the enrich step always writes difficulty (possibly null on
+ * a bad model answer, in which case the recipe is simply retried next run).
+ */
+export async function loadRecipesMissingMetadata(admin: Admin): Promise<RecipeForEnrich[]> {
+  const { data, error } = await admin
+    .from("recipes")
+    .select("id,name,recipe_ingredients(amount,unit,ingredients(name))")
+    .eq("is_published", true)
+    .is("difficulty", null);
+  if (error) throw new Error(`loading recipes failed: ${error.message}`);
+  return (data ?? []).map((r) => ({
+    id: r.id,
+    name: r.name,
+    ingredients: r.recipe_ingredients.map((ri) =>
+      [ri.amount ?? "", ri.unit ?? "", ri.ingredients?.name ?? ""]
+        .filter((x) => x !== "")
+        .join(" "),
+    ),
+  }));
+}
+
+export async function updateRecipeMetadata(
+  admin: Admin,
+  id: number,
+  meta: RecipeMetadata,
+): Promise<void> {
+  const { error } = await admin.from("recipes").update(meta).eq("id", id);
+  if (error) throw new Error(`updating metadata for recipe ${id} failed: ${error.message}`);
 }
