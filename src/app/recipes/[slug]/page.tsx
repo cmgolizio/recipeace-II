@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
+import { RecipeCard } from "../../../components/recipe-card";
 import {
   RecipePantryStatus,
   type IngredientRow,
@@ -24,12 +25,21 @@ type RecipeHeader = Pick<
   | "garnish"
   | "instructions"
   | "image_url"
+  | "source"
   | "strength"
   | "difficulty"
   | "flavor_tags"
 >;
 
 type Props = { params: Promise<{ slug: string }> };
+
+/** "2 oz white rum, muddled" — the line schema.org's recipeIngredient wants. */
+function ingredientLine(ri: IngredientRow): string {
+  const line = [ri.amount != null ? String(ri.amount) : null, ri.unit, ri.name]
+    .filter((part): part is string => !!part)
+    .join(" ");
+  return ri.preparation ? `${line}, ${ri.preparation}` : line;
+}
 
 // Rendered statically at build time and revalidated hourly, so recipes
 // updated by the offline pipeline surface without a redeploy. Live pantry
@@ -57,7 +67,7 @@ const getRecipe = cache(async (slug: string): Promise<RecipeHeader | null> => {
   const { data, error } = await supabase
     .from("recipes")
     .select(
-      "id,slug,name,description,method,glass,garnish,instructions,image_url,strength,difficulty,flavor_tags",
+      "id,slug,name,description,method,glass,garnish,instructions,image_url,source,strength,difficulty,flavor_tags",
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -93,10 +103,20 @@ export default async function RecipeDetailPage({ params }: Props) {
 
   const supabase = createStaticClient();
   if (!supabase) throw new Error("Supabase environment is not configured");
-  const { data: rows, error } = await supabase
-    .from("recipe_ingredients")
-    .select("ingredient_id,amount,unit,preparation,is_optional,display_order,ingredients(name)")
-    .eq("recipe_id", recipe.id);
+  const [{ data: rows, error }, { data: relatedRows }] = await Promise.all([
+    supabase
+      .from("recipe_ingredients")
+      .select(
+        "ingredient_id,amount,unit,preparation,is_optional,is_garnish,display_order,ingredients(name)",
+      )
+      .eq("recipe_id", recipe.id),
+    // "More like this" is supplementary: an error here leaves the row out
+    // rather than failing the whole page.
+    supabase.rpc("related_recipes", {
+      p_recipe_id: recipe.id,
+      max_results: 4,
+    }),
+  ]);
   if (error) {
     throw new Error(`Couldn’t load this recipe: ${error.message}`);
   }
@@ -109,6 +129,7 @@ export default async function RecipeDetailPage({ params }: Props) {
       unit: r.unit,
       preparation: r.preparation,
       is_optional: r.is_optional,
+      is_garnish: r.is_garnish,
       display_order: r.display_order,
       name: r.ingredients?.name ?? "—",
     }))
@@ -116,6 +137,23 @@ export default async function RecipeDetailPage({ params }: Props) {
       (a, b) =>
         a.display_order - b.display_order || a.name.localeCompare(b.name),
     );
+  const related = relatedRows ?? [];
+
+  // Structured data for search engines. Built from the server-rendered rows,
+  // so it always matches the page as delivered — not the client pantry
+  // overlay, and not the reader's oz/ml or serving-scale preferences.
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Recipe",
+    name: recipe.name,
+    ...(recipe.description ? { description: recipe.description } : {}),
+    ...(recipe.image_url ? { image: recipe.image_url } : {}),
+    recipeIngredient: ingredients.map(ingredientLine),
+    ...(recipe.instructions.length > 0
+      ? { recipeInstructions: recipe.instructions }
+      : {}),
+    recipeYield: "1 cocktail",
+  };
 
   return (
     <article className="space-y-6">
@@ -179,6 +217,17 @@ export default async function RecipeDetailPage({ params }: Props) {
 
       <RecipePantryStatus recipeId={recipe.id} ingredients={ingredients} />
 
+      {/* The island renders the garnish ingredients when the recipe has any;
+          this free-text note is the fallback for recipes that don't. */}
+      {recipe.garnish && !ingredients.some((ri) => ri.is_garnish) && (
+        <section>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+            Garnish
+          </h2>
+          <p className="mt-1 opacity-90">{recipe.garnish}</p>
+        </section>
+      )}
+
       {recipe.instructions.length > 0 && (
         <section>
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
@@ -194,14 +243,46 @@ export default async function RecipeDetailPage({ params }: Props) {
         </section>
       )}
 
-      {recipe.garnish && (
+      {recipe.source && (
+        <p className="text-sm text-muted">Source: {recipe.source}</p>
+      )}
+
+      {related.length > 0 && (
         <section>
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
-            Garnish
+            More like this
           </h2>
-          <p className="mt-1 opacity-90">{recipe.garnish}</p>
+          <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+            {related.map((r) => (
+              <li key={r.recipe_id}>
+                <RecipeCard
+                  recipe={{
+                    id: r.recipe_id,
+                    slug: r.slug,
+                    name: r.name,
+                    method: r.method,
+                    glass: r.glass,
+                    image_url: r.image_url,
+                  }}
+                  titleAs="h3"
+                />
+              </li>
+            ))}
+          </ul>
         </section>
       )}
+
+      {/* Last child on purpose: the article's space-y-6 would otherwise put a
+          gap above the first visible element. A display:none script absorbs
+          that margin harmlessly here. */}
+      <script
+        type="application/ld+json"
+        // JSON.stringify doesn't escape markup; neutralise "<" so a stray
+        // tag in recipe text can't break out of the script element.
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
+        }}
+      />
     </article>
   );
 }

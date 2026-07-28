@@ -10,6 +10,8 @@ import { toast } from "../../components/toast/store";
 import { usePantry, usePantryReady } from "../../lib/pantry/store";
 import { addToShopping, useShopping } from "../../lib/shopping/store";
 import { createClient } from "../../lib/supabase/client";
+import { formatQuantity } from "../../lib/units/format";
+import { useUnit } from "../../lib/units/store";
 import type { Database } from "../../types/database";
 
 type Match =
@@ -110,6 +112,7 @@ function AddMissingButton({ names }: { names: string[] }) {
 }
 
 function MatchCard({ match: m }: { match: Match }) {
+  const unit = useUnit();
   const missing = new Set(m.missing_ingredients);
   const ingredients = m.ingredients as unknown as MatchIngredient[];
   return (
@@ -136,21 +139,26 @@ function MatchCard({ match: m }: { match: Match }) {
         }
       >
         <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-          {ingredients.map((ing, idx) => (
-            <li
-              key={idx}
-              className={
-                missing.has(ing.name)
-                  ? "text-red-600 dark:text-red-400"
-                  : "opacity-80"
-              }
-            >
-              {ing.amount != null && <span>{ing.amount} </span>}
-              {ing.unit && <span>{ing.unit} </span>}
-              {ing.name}
-              {ing.is_optional && <span className="opacity-50"> (optional)</span>}
-            </li>
-          ))}
+          {ingredients.map((ing, idx) => {
+            const quantity = formatQuantity(ing.amount, ing.unit, unit);
+            return (
+              <li
+                key={idx}
+                className={
+                  missing.has(ing.name)
+                    ? "text-red-600 dark:text-red-400"
+                    : "opacity-80"
+                }
+              >
+                {quantity.amount && <span>{quantity.amount} </span>}
+                {quantity.unit && <span>{quantity.unit} </span>}
+                {ing.name}
+                {ing.is_optional && (
+                  <span className="opacity-50"> (optional)</span>
+                )}
+              </li>
+            );
+          })}
         </ul>
         {m.missing_count > 0 && (
           <AddMissingButton names={m.missing_ingredients} />

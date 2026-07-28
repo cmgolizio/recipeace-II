@@ -6,10 +6,13 @@ import { useEffect, useState } from "react";
 import { usePantry } from "../lib/pantry/store";
 import { addToShopping, useShopping } from "../lib/shopping/store";
 import { createClient } from "../lib/supabase/client";
+import { formatQuantity, type Unit } from "../lib/units/format";
+import { useUnit } from "../lib/units/store";
 import type { Database } from "../types/database";
 
 import { FavoriteButton } from "./favorite-button";
 import { toast } from "./toast/store";
+import { UnitToggle } from "./unit-toggle";
 
 /** A plain recipe ingredient row, fetched server-side by the detail page. */
 export type IngredientRow = {
@@ -18,6 +21,7 @@ export type IngredientRow = {
   unit: string | null;
   preparation: string | null;
   is_optional: boolean;
+  is_garnish: boolean;
   display_order: number;
   name: string;
 };
@@ -78,6 +82,100 @@ function AddToListButton({ name }: { name: string }) {
   );
 }
 
+/** One ingredient line: quantity, name, and the pantry badge once it lands. */
+function IngredientItem({
+  row,
+  status,
+  unit,
+  scale,
+}: {
+  row: IngredientRow;
+  status: StatusRow | undefined;
+  unit: Unit;
+  scale: number;
+}) {
+  const quantity = formatQuantity(row.amount, row.unit, unit, scale);
+  return (
+    <li className="flex items-center justify-between gap-3 py-2">
+      <span className="min-w-0">
+        {quantity.amount && <span>{quantity.amount} </span>}
+        {quantity.unit && <span>{quantity.unit} </span>}
+        <span className="font-medium">{row.name}</span>
+        {row.preparation && (
+          <span className="text-muted">, {row.preparation}</span>
+        )}
+        {row.is_optional && <span className="opacity-50"> (optional)</span>}
+      </span>
+      {status && (
+        <span className="flex shrink-0 items-center gap-2">
+          <StatusBadge row={status} />
+          {status.status === "missing" && <AddToListButton name={row.name} />}
+        </span>
+      )}
+    </li>
+  );
+}
+
+const SCALE_PRESETS = [1, 2, 4];
+const MAX_SCALE = 12;
+
+/** Batch multiplier for the ingredient amounts: presets plus a ±1 stepper. */
+function ServingScaler({
+  scale,
+  onChange,
+}: {
+  scale: number;
+  onChange: (next: number) => void;
+}) {
+  const stepClass =
+    "rounded-md px-2 py-1 text-muted enabled:hover:text-foreground disabled:opacity-30";
+  return (
+    <div
+      role="group"
+      aria-label="Scale the recipe"
+      className="inline-flex items-center rounded-lg border border-border p-0.5 text-xs"
+    >
+      {SCALE_PRESETS.map((n) => (
+        <button
+          key={n}
+          type="button"
+          aria-pressed={scale === n}
+          onClick={() => onChange(n)}
+          className={
+            scale === n
+              ? "rounded-md bg-black/6 px-2 py-1 font-medium dark:bg-white/10"
+              : "rounded-md px-2 py-1 text-muted hover:text-foreground"
+          }
+        >
+          {n}×
+        </button>
+      ))}
+      <span aria-hidden className="mx-1 h-4 w-px bg-border" />
+      <button
+        type="button"
+        aria-label="Fewer servings"
+        disabled={scale <= 1}
+        onClick={() => onChange(Math.max(1, scale - 1))}
+        className={stepClass}
+      >
+        −
+      </button>
+      <span aria-live="polite" className="w-7 text-center font-medium tabular-nums">
+        {scale}×
+      </span>
+      <button
+        type="button"
+        aria-label="More servings"
+        disabled={scale >= MAX_SCALE}
+        onClick={() => onChange(Math.min(MAX_SCALE, scale + 1))}
+        className={stepClass}
+      >
+        +
+      </button>
+    </div>
+  );
+}
+
 /**
  * Client island for the recipe detail page: renders the ingredient list from
  * server-fetched rows immediately, then overlays pantry-status badges and the
@@ -92,6 +190,8 @@ export function RecipePantryStatus({
   ingredients: IngredientRow[];
 }) {
   const pantry = usePantry();
+  const unit = useUnit();
+  const [scale, setScale] = useState(1);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
 
   const pantryKey = [...pantry].sort((a, b) => a - b).join(",");
@@ -132,6 +232,11 @@ export function RecipePantryStatus({
     (s) => s.status === "substitute",
   ).length;
 
+  // Garnish lines get their own section, so a garnish isn't listed twice —
+  // once here and again in the recipe's free-text garnish field.
+  const poured = ingredients.filter((ri) => !ri.is_garnish);
+  const garnishes = ingredients.filter((ri) => ri.is_garnish);
+
   return (
     <>
       <FavoriteButton recipeId={recipeId} />
@@ -158,39 +263,25 @@ export function RecipePantryStatus({
       )}
 
       <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
-          Ingredients
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+            Ingredients
+          </h2>
+          <div className="flex items-center gap-2">
+            <ServingScaler scale={scale} onChange={setScale} />
+            <UnitToggle />
+          </div>
+        </div>
         <ul className="mt-2 divide-y divide-black/5 dark:divide-white/10">
-          {ingredients.map((ri) => {
-            const status = statusById.get(ri.ingredient_id);
-            return (
-              <li
-                key={ri.ingredient_id}
-                className="flex items-center justify-between gap-3 py-2"
-              >
-                <span className="min-w-0">
-                  {ri.amount != null && <span>{ri.amount} </span>}
-                  {ri.unit && <span>{ri.unit} </span>}
-                  <span className="font-medium">{ri.name}</span>
-                  {ri.preparation && (
-                    <span className="text-muted">, {ri.preparation}</span>
-                  )}
-                  {ri.is_optional && (
-                    <span className="opacity-50"> (optional)</span>
-                  )}
-                </span>
-                {status && (
-                  <span className="flex shrink-0 items-center gap-2">
-                    <StatusBadge row={status} />
-                    {status.status === "missing" && (
-                      <AddToListButton name={ri.name} />
-                    )}
-                  </span>
-                )}
-              </li>
-            );
-          })}
+          {poured.map((ri) => (
+            <IngredientItem
+              key={ri.ingredient_id}
+              row={ri}
+              status={statusById.get(ri.ingredient_id)}
+              unit={unit}
+              scale={scale}
+            />
+          ))}
         </ul>
         {!hasPantry && (
           <p className="mt-3 text-sm text-muted">
@@ -201,6 +292,25 @@ export function RecipePantryStatus({
           </p>
         )}
       </section>
+
+      {garnishes.length > 0 && (
+        <section>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+            Garnish
+          </h2>
+          <ul className="mt-2 divide-y divide-black/5 dark:divide-white/10">
+            {garnishes.map((ri) => (
+              <IngredientItem
+                key={ri.ingredient_id}
+                row={ri}
+                status={statusById.get(ri.ingredient_id)}
+                unit={unit}
+                scale={scale}
+              />
+            ))}
+          </ul>
+        </section>
+      )}
     </>
   );
 }

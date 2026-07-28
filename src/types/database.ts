@@ -426,6 +426,21 @@ export type Database = {
           derived_from: string | null;
         }[];
       };
+      related_recipes: {
+        Args: {
+          p_recipe_id: number;
+          max_results?: number;
+        };
+        Returns: {
+          recipe_id: number;
+          slug: string;
+          name: string;
+          method: string | null;
+          glass: string | null;
+          image_url: string | null;
+          shared_count: number;
+        }[];
+      };
     };
     Enums: {
       ingredient_category:
