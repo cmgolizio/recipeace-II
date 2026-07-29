@@ -154,6 +154,7 @@ export type Database = {
           parent_id: number | null;
           is_staple: boolean;
           created_at: string;
+          slug: string;
         };
         Insert: {
           id?: number;
@@ -162,6 +163,7 @@ export type Database = {
           parent_id?: number | null;
           is_staple?: boolean;
           created_at?: string;
+          slug: string;
         };
         Update: {
           id?: number;
@@ -170,6 +172,7 @@ export type Database = {
           parent_id?: number | null;
           is_staple?: boolean;
           created_at?: string;
+          slug?: string;
         };
         Relationships: [
           {
@@ -439,6 +442,27 @@ export type Database = {
           glass: string | null;
           image_url: string | null;
           shared_count: number;
+        }[];
+      };
+      slugify: {
+        Args: {
+          value: string;
+        };
+        Returns: string;
+      };
+      ingredient_detail: {
+        Args: {
+          p_slug: string;
+        };
+        Returns: {
+          id: number;
+          name: string;
+          slug: string;
+          category: Database["public"]["Enums"]["ingredient_category"];
+          is_staple: boolean;
+          recipes: Json;
+          substitutes: Json;
+          derives: Json;
         }[];
       };
     };

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { addToPantry, removeFromPantry, usePantry } from "../lib/pantry/store";
@@ -10,7 +11,7 @@ import { toast } from "./toast/store";
 
 type Ingredient = Pick<
   Tables<"ingredients">,
-  "id" | "name" | "category" | "is_staple"
+  "id" | "name" | "slug" | "category" | "is_staple"
 >;
 
 // Fixed display order. Staples are excluded from the browser entirely — they
@@ -50,7 +51,7 @@ export function IngredientBrowse() {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("ingredients")
-        .select("id,name,category,is_staple")
+        .select("id,name,slug,category,is_staple")
         .order("name");
       if (ignore) return;
       if (error) {
@@ -107,8 +108,13 @@ export function IngredientBrowse() {
               <ul className="flex flex-wrap gap-2 px-4 pb-3">
                 {items.map((it) => {
                   const inBar = pantry.includes(it.id);
+                  // Split chip: tapping the name toggles the bar, the trailing
+                  // arrow opens the ingredient's page.
+                  const tone = inBar
+                    ? "border-green-600/40 bg-green-50 text-green-700 dark:border-green-400/40 dark:bg-green-950/30 dark:text-green-400"
+                    : "border-border hover:bg-black/4 dark:hover:bg-white/6";
                   return (
-                    <li key={it.id}>
+                    <li key={it.id} className="inline-flex">
                       <button
                         type="button"
                         onClick={() => {
@@ -121,15 +127,18 @@ export function IngredientBrowse() {
                           }
                         }}
                         aria-pressed={inBar}
-                        className={
-                          inBar
-                            ? "inline-flex items-center gap-1.5 rounded-full border border-green-600/40 bg-green-50 px-3 py-1 text-sm text-green-700 dark:border-green-400/40 dark:bg-green-950/30 dark:text-green-400"
-                            : "inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-sm hover:bg-black/4 dark:hover:bg-white/6"
-                        }
+                        className={`inline-flex items-center gap-1.5 rounded-l-full border py-1 pl-3 pr-2 text-sm ${tone}`}
                       >
                         {inBar && <span aria-hidden="true">✓</span>}
                         {it.name}
                       </button>
+                      <Link
+                        href={`/ingredients/${it.slug}`}
+                        aria-label={`About ${it.name}`}
+                        className={`inline-flex items-center rounded-r-full border border-l-0 py-1 pl-1.5 pr-2.5 text-sm opacity-60 hover:opacity-100 ${tone}`}
+                      >
+                        <span aria-hidden="true">›</span>
+                      </Link>
                     </li>
                   );
                 })}

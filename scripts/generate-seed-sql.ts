@@ -16,9 +16,25 @@ const q = (s: string | null | undefined): string =>
 
 const join = (rows: string[]): string => rows.join(",\n");
 
+/**
+ * Ingredient name → URL slug for /ingredients/[slug]. Mirrors public.slugify
+ * in supabase/migrations/20260728120000_ingredient_slugs.sql, which backfills
+ * pre-existing rows; the ingredient-detail test asserts the two agree.
+ */
+const slugify = (name: string): string =>
+  name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // combining accents left by NFD
+    .toLowerCase()
+    .replace(/['’]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
 const ingredientValues = join(
   ingredients.map(
-    (i) => `  (${q(i.name)}, ${q(i.category)}, ${i.isStaple ? "true" : "false"})`,
+    (i) =>
+      `  (${q(i.name)}, ${q(slugify(i.name))}, ${q(i.category)}, ` +
+      `${i.isStaple ? "true" : "false"})`,
   ),
 );
 
@@ -52,9 +68,10 @@ const sql = `-- In House Mixers — reference data seed (GENERATED — do not ed
 begin;
 
 -- 1. Ingredients (parent_id is resolved by name in step 2).
-insert into public.ingredients (name, category, is_staple) values
+insert into public.ingredients (name, slug, category, is_staple) values
 ${ingredientValues}
 on conflict (name) do update set
+  slug = excluded.slug,
   category = excluded.category,
   is_staple = excluded.is_staple;
 

@@ -24,6 +24,7 @@ export type IngredientRow = {
   is_garnish: boolean;
   display_order: number;
   name: string;
+  slug: string | null;
 };
 
 type StatusRow =
@@ -100,7 +101,16 @@ function IngredientItem({
       <span className="min-w-0">
         {quantity.amount && <span>{quantity.amount} </span>}
         {quantity.unit && <span>{quantity.unit} </span>}
-        <span className="font-medium">{row.name}</span>
+        {row.slug ? (
+          <Link
+            href={`/ingredients/${row.slug}`}
+            className="font-medium underline decoration-border underline-offset-2 hover:decoration-current"
+          >
+            {row.name}
+          </Link>
+        ) : (
+          <span className="font-medium">{row.name}</span>
+        )}
         {row.preparation && (
           <span className="text-muted">, {row.preparation}</span>
         )}

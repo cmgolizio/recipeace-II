@@ -19,18 +19,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabase = createStaticClient();
   if (!supabase) return staticRoutes;
 
-  const { data, error } = await supabase
-    .from("recipes")
-    .select("slug,updated_at")
-    .eq("is_published", true)
-    .order("slug");
-  if (error) throw new Error(`Couldn’t build the sitemap: ${error.message}`);
+  const [recipeRows, ingredientRows] = await Promise.all([
+    supabase
+      .from("recipes")
+      .select("slug,updated_at")
+      .eq("is_published", true)
+      .order("slug"),
+    supabase.from("ingredients").select("slug").order("slug"),
+  ]);
+  const failure = recipeRows.error ?? ingredientRows.error;
+  if (failure) {
+    throw new Error(`Couldn’t build the sitemap: ${failure.message}`);
+  }
 
   return [
     ...staticRoutes,
-    ...(data ?? []).map((recipe) => ({
+    ...(recipeRows.data ?? []).map((recipe) => ({
       url: new URL(`/recipes/${recipe.slug}`, siteUrl).toString(),
       lastModified: new Date(recipe.updated_at),
+    })),
+    // Ingredient pages have no per-row timestamp — the taxonomy changes only
+    // when the seed is re-run — so they go in without lastModified.
+    ...(ingredientRows.data ?? []).map((ingredient) => ({
+      url: new URL(`/ingredients/${ingredient.slug}`, siteUrl).toString(),
     })),
   ];
 }
