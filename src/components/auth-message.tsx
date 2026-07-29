@@ -14,11 +14,12 @@ export function AuthMessage() {
 
   return user ? (
     <p className="text-muted">
-          Add the cocktail ingredients you have InHome!
-        </p>
+      Add the ingredients you have on hand, they will be saved in your bar.
+    </p>
   ) : (
     <p className="text-muted">
-          Add the cocktail ingredients you have InHome. Your bar stock will be saved temporarily. Sign in to save it permanently across all your devices!
-        </p>
+      Add the ingredients you have on hand. Your bar is saved on this device;
+      sign in to keep it across all of them.
+    </p>
   );
 }

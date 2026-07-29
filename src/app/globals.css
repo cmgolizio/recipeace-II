@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /*
- * Design tokens. Brand accent is copper/amber; neutrals are warm stone.
+ * Design tokens. Brand accent is indigo; neutrals are warm stone.
  * Light lives on :root; dark applies via the system preference AND via a
  * `.dark` class on <html> (the explicit override the theme toggle sets).
  * `.light`/`.dark` come after the media query so an explicit choice wins.
@@ -13,7 +13,6 @@
   --foreground: #1c1917;
   --muted: #78716c;
   --border: #e7e5e4;
-  /* --accent: #b45309; */
   --accent: #4339fb;
   --accent-foreground: #ffffff;
 }
@@ -25,7 +24,6 @@
     --foreground: #fafaf9;
     --muted: #a8a29e;
     --border: #2a2522;
-    /* --accent: #f59e0b; */
     --accent: #736bfb;
     --accent-foreground: #1c1917;
   }
@@ -38,7 +36,6 @@
   --foreground: #fafaf9;
   --muted: #a8a29e;
   --border: #2a2522;
-  /* --accent: #f59e0b; */
   --accent: #736bfb;
   --accent-foreground: #1c1917;
 }
@@ -50,7 +47,6 @@
   --foreground: #1c1917;
   --muted: #78716c;
   --border: #e7e5e4;
-  /* --accent: #b45309; */
   --accent: #4339fb;
   --accent-foreground: #ffffff;
 }

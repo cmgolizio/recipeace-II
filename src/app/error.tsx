@@ -1,5 +1,8 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
+import { useEffect } from "react";
+
 export default function Error({
   error,
   unstable_retry,
@@ -7,6 +10,11 @@ export default function Error({
   error: Error & { digest?: string };
   unstable_retry: () => void;
 }) {
+  // Client-side render errors don't reach the server, so report them here.
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
   return (
     <div className="space-y-4 rounded-xl border border-border bg-surface p-6">
       <h1 className="text-2xl font-semibold tracking-tight">

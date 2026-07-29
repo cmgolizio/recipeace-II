@@ -1,3 +1,5 @@
+import { withSentryConfig } from "@sentry/nextjs";
+
 // Recipe images are served from Supabase Storage. Next.js loads .env.local
 // before evaluating this config, so the host can be derived from
 // NEXT_PUBLIC_SUPABASE_URL (works for both local and hosted projects).
@@ -21,4 +23,11 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+// The Sentry plugin reads SENTRY_ORG, SENTRY_PROJECT and SENTRY_AUTH_TOKEN
+// from the environment. Without a token it has no way to upload source maps,
+// so builds that aren't releases (local, CI) skip that step and stay quiet.
+export default withSentryConfig(nextConfig, {
+  telemetry: false,
+  silent: !process.env.SENTRY_AUTH_TOKEN,
+  sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
+});

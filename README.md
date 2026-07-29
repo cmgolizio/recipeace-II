@@ -75,6 +75,9 @@ Environment variables (`.env.local`):
 | `ANTHROPIC_API_KEY`                    | pipeline        | recipe generation (default provider)                                                                                                                         |
 | `OPENAI_TEXT_API_KEY`                  | pipeline        | recipe generation with `--provider openai`                                                                                                                   |
 | `OPENAI_IMAGE_API_KEY`                 | pipeline:images | optional; without it a placeholder SVG is used                                                                                                               |
+| `NEXT_PUBLIC_SENTRY_DSN`               | app             | optional; error monitoring. Without it Sentry is never initialized and nothing is sent                                                                       |
+| `SENTRY_ORG`, `SENTRY_PROJECT`         | build           | optional; source-map upload target                                                                                                                           |
+| `SENTRY_AUTH_TOKEN`                    | build           | optional; enables source-map upload. Builds without it skip the upload                                                                                       |
 
 ## Content pipeline
 
@@ -83,7 +86,27 @@ npm run pipeline -- --count 8             # generate, validate, dedup, ingest
 npm run pipeline -- --count 12 --dry-run  # generate and validate only
 npm run pipeline -- --provider openai     # or PIPELINE_PROVIDER=openai
 npm run pipeline:images                   # backfill images for recipes missing one (idempotent)
+npm run pipeline:enrich                   # backfill strength/difficulty/tags/base spirit (idempotent)
 ```
+
+## Offline & installability
+
+The app ships a web manifest (`src/app/manifest.ts`) and a hand-written
+service worker (`public/sw.js`, registered in production only by
+`src/components/register-service-worker.tsx`). The worker precaches the app
+shell and serves recipe detail pages stale-while-revalidate, so a previously
+visited recipe opens offline. Pantry-, auth- and query-dependent routes
+(`/matches`, `/favorites`, `/shopping`, `/login`, `/auth/*`, the filtered
+catalog) are deliberately never cached. Bump `VERSION` in `public/sw.js` to
+invalidate every cache on the next deploy.
+
+## Analytics & monitoring
+
+Page views go to Vercel Analytics (`<Analytics/>` in the root layout — no
+configuration beyond deploying on Vercel). Errors go to Sentry: client, server
+and edge runtimes are initialized from `sentry.*.config.ts` and
+`src/instrumentation*.ts`, and the root `error.tsx` boundary reports what it
+catches. Both are inert without the env vars above.
 
 ## Google OAuth setup (manual)
 

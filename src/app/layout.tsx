@@ -1,8 +1,10 @@
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 
 import "./globals.css";
+import { RegisterServiceWorker } from "../components/register-service-worker";
 import { SiteHeader } from "../components/site-header";
 import { Toaster } from "../components/toast/toaster";
 import { siteUrl } from "../lib/site-url";
@@ -21,7 +23,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: "In House Mixers — what can I make?",
   description:
-    "Build your bar and instantly see which cocktails you can Mix from what you have In House.",
+    "Build your bar and instantly see which cocktails you can make from what you have on hand.",
 };
 
 // Runs synchronously during HTML parsing, before first paint, so an explicit
@@ -50,6 +52,8 @@ export default function RootLayout({
           {children}
         </main>
         <Toaster />
+        <RegisterServiceWorker />
+        <Analytics />
       </body>
     </html>
   );

@@ -23,7 +23,7 @@ export default function ShoppingPage() {
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight">Shopping list</h1>
         <p className="text-muted">
-          {"Get these last ingredients, and you\'ll be good to go!"}
+          The ingredients you’re missing, saved for your next store run.
         </p>
       </div>
 
