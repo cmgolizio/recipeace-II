@@ -66,8 +66,8 @@ test("staples are excluded even when a recipe requires them", async () => {
   // No seeded recipe requires a staple, so use a fixture: a recipe needing
   // gin plus sugar (a staple). Sugar must still not be suggested.
   await db.exec(`
-    insert into public.recipes (slug, name, is_published)
-    values ('test-popular-staple-fixture', 'Popular Staple Fixture', true);
+    insert into public.recipes (slug, name, domain, is_published)
+    values ('test-popular-staple-fixture', 'Popular Staple Fixture', 'cocktail', true);
     insert into public.recipe_ingredients (recipe_id, ingredient_id, display_order)
     select r.id, i.id, i.ord
     from public.recipes r,

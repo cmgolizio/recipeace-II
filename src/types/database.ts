@@ -294,6 +294,7 @@ export type Database = {
           slug: string;
           name: string;
           description: string | null;
+          domain: Database["public"]["Enums"]["recipe_domain"];
           method: string | null;
           glass: string | null;
           garnish: string | null;
@@ -313,6 +314,9 @@ export type Database = {
           slug: string;
           name: string;
           description?: string | null;
+          // Required, and no database default — every insert states its
+          // domain (see 20260801120000_recipe_domain.sql).
+          domain: Database["public"]["Enums"]["recipe_domain"];
           method?: string | null;
           glass?: string | null;
           garnish?: string | null;
@@ -332,6 +336,7 @@ export type Database = {
           slug?: string;
           name?: string;
           description?: string | null;
+          domain?: Database["public"]["Enums"]["recipe_domain"];
           method?: string | null;
           glass?: string | null;
           garnish?: string | null;
@@ -482,6 +487,7 @@ export type Database = {
         | "other"
         | "staple";
       recipe_difficulty: "easy" | "medium" | "advanced";
+      recipe_domain: "cocktail" | "food";
     };
     CompositeTypes: {
       [_ in never]: never;

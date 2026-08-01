@@ -75,6 +75,7 @@ export async function ingestRecipe(admin: Admin, recipe: ResolvedRecipe): Promis
         slug: recipe.slug,
         name: recipe.name,
         description: recipe.description,
+        domain: recipe.domain,
         method: recipe.method,
         glass: recipe.glass,
         garnish: recipe.garnish,
