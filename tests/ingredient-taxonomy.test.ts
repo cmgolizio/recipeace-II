@@ -77,9 +77,11 @@ test("an unknown category is still rejected", async () => {
   ).rejects.toThrow(/invalid input value for enum/i);
 });
 
-test("every seeded ingredient kept its id, slug and category", async () => {
-  // The migration only adds enum values, so nothing about existing rows can
-  // have moved. These are the anchors §9 asked to assert.
+test("seeded ingredients keep their identity across the taxonomy change", async () => {
+  // The migration only adds enum values, so no row's id or slug can move.
+  // Four categories were re-filed by hand in phase 9, once the vocabulary
+  // existed to file them properly: eggs are `egg` rather than `dairy`, and
+  // the two bar herbs are `herb`. Ids and slugs are untouched.
   const { rows } = await db.query<{
     name: string;
     slug: string;
@@ -91,7 +93,7 @@ test("every seeded ingredient kept its id, slug and category", async () => {
   );
   expect(rows).toEqual([
     { name: "bourbon", slug: "bourbon", category: "spirit" },
-    { name: "fresh mint", slug: "fresh-mint", category: "produce" },
+    { name: "fresh mint", slug: "fresh-mint", category: "herb" },
     { name: "lime juice", slug: "lime-juice", category: "juice" },
     { name: "salt", slug: "salt", category: "staple" },
   ]);

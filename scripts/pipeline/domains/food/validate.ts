@@ -209,13 +209,18 @@ export function validateFoodRecipe(
   }
 
   // Every ingredient should appear somewhere in the method; one that doesn't
-  // is usually a line the writer forgot to use.
+  // is usually a line the writer forgot to use. Matching is per word, since a
+  // recipe writes "the egg" for "whole egg" and "flour" for "all-purpose
+  // flour" — one word landing is enough to say it was used.
   const method = instructions.join(" ").toLowerCase();
   for (const line of source.ingredients ?? []) {
     const lineName = str(line?.name);
     if (!lineName) continue;
-    const head = lineName.toLowerCase().split(/[\s,]/)[0];
-    if (head.length > 3 && !method.includes(head)) {
+    const words = lineName
+      .toLowerCase()
+      .split(/[^a-z]+/)
+      .filter((word) => word.length >= 3);
+    if (words.length > 0 && !words.some((word) => method.includes(word))) {
       warnings.push(`${lineName} is never mentioned in the instructions`);
     }
   }

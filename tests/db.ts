@@ -46,6 +46,17 @@ export async function createSeededDb(): Promise<PGlite> {
 }
 
 /**
+ * The real curated food catalog (src/data/food-seed.ts, compiled to
+ * supabase/seed_food.sql by `npm run pipeline:food`). Loaded only by the
+ * suites that are about food data, so the cocktail suites keep asserting
+ * against a small, stable fixture set.
+ */
+export async function seedFoodCatalog(db: PGlite): Promise<void> {
+  const file = path.join(process.cwd(), "supabase", "seed_food.sql");
+  await db.exec(await readFile(file, "utf8"));
+}
+
+/**
  * A few food recipes for the domain tests, built entirely from ingredients
  * seed.sql already carries — the point of the expansion is that food and
  * cocktails share one catalog, so the fixture must not invent a second one.

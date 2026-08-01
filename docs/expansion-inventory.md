@@ -1113,4 +1113,59 @@ Validation: lint, `tsc --noEmit`, `next build`, `vitest run` (13 files,
 112 tests) all pass; `npm run pipeline:food -- --dry-run` runs clean against
 the (still empty) catalog.
 
-**Next up: Phase 9** — seed the first curated food catalog.
+### Phase 9 — The first curated food catalog · complete
+
+`src/data/food-seed.ts` — 13 recipes, 44 new canonical ingredients, 20 aliases
+— compiled by `npm run pipeline:food` to `supabase/seed_food.sql` (43 KB,
+idempotent, applied after `supabase/seed.sql`).
+
+**Content and licence.** Every recipe is **original**: written for this app,
+describing ordinary technique in its own words. Nothing is transcribed from a
+cookbook or a website — §15's line is that ingredient lists carry little
+protection but headnotes and instruction wording do. `source` and `license` are
+both `"original"`, and the validator rejects a recipe that states neither.
+
+**The 13**, chosen to cover §15.3's spread and to exercise the system rather
+than to be large: soft scrambled eggs on toast · overnight oats · banana
+pancakes · grilled cheese · cucumber tomato salad · lemon vinaigrette · garlic
+butter spaghetti · spaghetti with tomato sauce · chicken fried rice · lentil
+soup · sheet-pan chicken and potatoes · black bean tacos · chocolate chip
+cookies. Nine are vegetarian; times run 5–60 minutes; difficulty spans easy and
+medium.
+
+They deliberately exercise: shared cocktail ingredients (lemon juice, lime
+juice, fresh mint, fresh basil, milk, whole egg, sugar, salt, strawberry,
+cucumber, hot sauce), repeated lines ("butter, divided" twice in one recipe),
+sections ("For the sauce" / "To serve"), optional lines, weight *and* volume
+*and* count units, and every food category the taxonomy gained in phase 6.
+
+**"To taste" lines are optional.** Salt and pepper to taste is an adjustment,
+not a requirement, and an unowned pinch of pepper must not hide a dinner
+(§11.3). They still render — they are just not counted against a match.
+
+**Four categories re-filed.** Now that the vocabulary exists, `whole egg` and
+`egg white` moved from `dairy` to `egg`, and `fresh mint` / `fresh basil` from
+`produce` to `herb`, in `src/data/cocktail-seed.ts`. Ids and slugs are
+untouched (the seed upserts on name), and the taxonomy test asserts it.
+
+**No substitutions or derivations**, deliberately. Food substitutions are
+context-sensitive (§8.8) and this matcher treats them as universal and
+bidirectional, so shipping none beats shipping wrong ones; food derivations are
+mostly effortful transformations the matcher would wrongly treat as free
+(§8.9). Both are post-MVP.
+
+Tests: `tests/food-catalog.test.ts` (11) applies the *generated* SQL to a real
+database — the shipped catalog still validates (so the SQL cannot go stale
+unnoticed), every recipe has a detail row and provenance, no dangling
+ingredient references, shared ingredients are shared rather than duplicated,
+aliases resolve, a stocked kitchen pantry produces real matches, optional lines
+never block one, one pantry answers both domains, sections and repeated lines
+survive the round trip, and **the Bar's rankings are unchanged**.
+`tests/db.ts` gains `seedFoodCatalog` — loaded only by suites that are about
+food, so the cocktail suites keep asserting against their small fixture set.
+
+Validation: lint, `tsc --noEmit`, `next build`, `vitest run` (14 files,
+123 tests) all pass; `npm run pipeline:food -- --dry-run` reports 13 accepted,
+0 rejected, nothing unresolved.
+
+**Next up: Phase 10** — build Kitchen recipe browsing.

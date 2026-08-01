@@ -228,8 +228,8 @@ export const ingredients: SeedIngredient[] = [
   { name: "passion fruit syrup", category: "syrup" },
 
   // ─── Dairy / egg ───
-  { name: "egg white", category: "dairy" },
-  { name: "whole egg", category: "dairy" },
+  { name: "egg white", category: "egg" },
+  { name: "whole egg", category: "egg" },
   { name: "heavy cream", category: "dairy" },
   { name: "half-and-half", category: "dairy" },
   { name: "milk", category: "dairy" },
@@ -239,8 +239,8 @@ export const ingredients: SeedIngredient[] = [
   { name: "lemon", category: "produce" },
   { name: "orange", category: "produce" },
   { name: "grapefruit", category: "produce" },
-  { name: "fresh mint", category: "produce" },
-  { name: "fresh basil", category: "produce" },
+  { name: "fresh mint", category: "herb" },
+  { name: "fresh basil", category: "herb" },
   { name: "cucumber", category: "produce" },
   { name: "fresh ginger", category: "produce" },
   { name: "strawberry", category: "produce" },
