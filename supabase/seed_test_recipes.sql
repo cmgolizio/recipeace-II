@@ -6,40 +6,41 @@
 
 begin;
 
-insert into public.recipes (slug, name, method, glass, garnish, instructions, description, is_published) values
-('daiquiri','Daiquiri','shaken','coupe','Lime wheel',
+insert into public.recipes (slug, name, domain, method, glass, garnish, instructions, description, is_published) values
+('daiquiri','Daiquiri','cocktail','shaken','coupe','Lime wheel',
   array['Add rum, lime juice, and simple syrup to a shaker with ice.','Shake until well-chilled.','Strain into a chilled coupe.'],
   'The benchmark rum sour: bright, balanced, three ingredients.', true),
-('margarita','Margarita','shaken','rocks','Salt rim, lime wedge',
+('margarita','Margarita','cocktail','shaken','rocks','Salt rim, lime wedge',
   array['Rim a rocks glass with salt (optional).','Shake tequila, lime juice, and triple sec with ice.','Strain over fresh ice.'],
   'Tequila, lime, and orange liqueur — tart and refreshing.', true),
-('old-fashioned','Old Fashioned','stirred','rocks','Orange twist',
+('old-fashioned','Old Fashioned','cocktail','stirred','rocks','Orange twist',
   array['Stir bourbon, syrup, and bitters with ice.','Strain over a large cube.','Express an orange twist over the top.'],
   'The original cocktail: spirit, sugar, bitters.', true),
-('negroni','Negroni','stirred','rocks','Orange twist',
+('negroni','Negroni','cocktail','stirred','rocks','Orange twist',
   array['Stir gin, Campari, and sweet vermouth with ice.','Strain over fresh ice.','Garnish with an orange twist.'],
   'Equal parts gin, Campari, and sweet vermouth.', true),
-('whiskey-sour','Whiskey Sour','shaken','rocks','Angostura bitters',
+('whiskey-sour','Whiskey Sour','cocktail','shaken','rocks','Angostura bitters',
   array['Dry-shake bourbon, lemon, syrup, and egg white.','Add ice and shake again.','Strain over fresh ice and dot with bitters.'],
   'A creamy, balanced bourbon sour.', true),
-('mojito','Mojito','built','highball','Mint sprig',
+('mojito','Mojito','cocktail','built','highball','Mint sprig',
   array['Gently muddle mint with lime juice and syrup.','Add rum and ice, stir.','Top with soda water.'],
   'Rum, lime, mint, and soda — long and refreshing.', true),
-('manhattan','Manhattan','stirred','coupe','Luxardo cherry',
+('manhattan','Manhattan','cocktail','stirred','coupe','Luxardo cherry',
   array['Stir rye, sweet vermouth, and bitters with ice.','Strain into a chilled coupe.','Garnish with a cherry.'],
   'Rye whiskey and sweet vermouth, perfumed with bitters.', true),
-('cosmopolitan','Cosmopolitan','shaken','coupe','Lime wheel',
+('cosmopolitan','Cosmopolitan','cocktail','shaken','coupe','Lime wheel',
   array['Shake vodka, Cointreau, lime, and cranberry with ice.','Strain into a chilled coupe.'],
   'Vodka, orange liqueur, lime, and cranberry.', true),
-('aperol-spritz','Aperol Spritz','built','wine glass','Orange slice',
+('aperol-spritz','Aperol Spritz','cocktail','built','wine glass','Orange slice',
   array['Build Aperol, prosecco, and soda over ice in a wine glass.','Stir gently.','Garnish with an orange slice.'],
   'The classic low-ABV aperitivo spritz.', true),
-('gin-and-tonic','Gin & Tonic','built','highball','Lime wedge',
+('gin-and-tonic','Gin & Tonic','cocktail','built','highball','Lime wedge',
   array['Build gin and tonic over ice.','Stir briefly.','Garnish with a lime wedge.'],
   'Crisp, bittersweet, and effervescent.', true)
 on conflict (slug) do update set
-  name = excluded.name, method = excluded.method, glass = excluded.glass,
-  garnish = excluded.garnish, instructions = excluded.instructions,
+  name = excluded.name, domain = excluded.domain, method = excluded.method,
+  glass = excluded.glass, garnish = excluded.garnish,
+  instructions = excluded.instructions,
   description = excluded.description, is_published = excluded.is_published;
 
 insert into public.recipe_ingredients
