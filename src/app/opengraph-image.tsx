@@ -1,8 +1,10 @@
 import { ImageResponse } from "next/og";
 
+import { SITE_NAME } from "../lib/site";
+
 // Branded default Open Graph image for routes without their own — recipe
 // detail pages with an image_url override this via generateMetadata.
-export const alt = "RecipeAce — what can I make?";
+export const alt = `${SITE_NAME} — what can I make?`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -47,7 +49,7 @@ export default function Image() {
           }}
         >
           <div style={{ fontSize: 76, fontWeight: 600, color: "#fafaf9" }}>
-            RecipeAce
+            {SITE_NAME}
           </div>
           <div style={{ fontSize: 32, color: "#a8a29e" }}>
             Add what you have. Discover what you can make.

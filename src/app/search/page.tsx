@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { pageTitle } from "../../lib/site";
 import { RecipeCard } from "../../components/recipe-card";
 import { SearchForm } from "../../components/search-form";
 import {
@@ -12,7 +13,7 @@ import {
 import { createClient } from "../../lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Search — RecipeAce",
+  title: pageTitle("Search"),
   description: "Search every recipe by name, description or ingredient.",
   alternates: { canonical: "/search" },
 };

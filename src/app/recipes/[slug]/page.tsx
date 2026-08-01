@@ -19,6 +19,7 @@ import {
   getPublishedRecipeSlugs,
   getRecipeBySlug,
 } from "../../../lib/recipes/queries";
+import { pageTitle } from "../../../lib/site";
 import { siteUrl } from "../../../lib/site-url";
 import { createStaticClient } from "../../../lib/supabase/static";
 
@@ -66,7 +67,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const recipe = await getRecipe(slug);
   if (!recipe) return {};
-  const title = `${recipe.name} — ${DOMAIN_SURFACE[recipe.domain]} — RecipeAce`;
+  const title = pageTitle(`${recipe.name} — ${DOMAIN_SURFACE[recipe.domain]}`);
   const description = recipe.description ?? undefined;
   const images = recipe.image_url ? [recipe.image_url] : undefined;
   return {

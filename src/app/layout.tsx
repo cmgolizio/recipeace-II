@@ -7,6 +7,7 @@ import "./globals.css";
 import { RegisterServiceWorker } from "../components/register-service-worker";
 import { SiteHeader } from "../components/site-header";
 import { Toaster } from "../components/toast/toaster";
+import { SITE_NAME } from "../lib/site";
 import { siteUrl } from "../lib/site-url";
 
 const geistSans = Geist({
@@ -21,7 +22,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "RecipeAce — what can I make?",
+  title: `${SITE_NAME} — what can I make?`,
   description:
     "Add what you have. Discover what you can make — cocktails at the Bar, food in the Kitchen, from one shared pantry.",
 };

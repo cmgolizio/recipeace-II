@@ -19,7 +19,7 @@
 | Data          | `supabase/seed.sql` (regenerated: 4 ingredients re-categorised) and new `supabase/seed_food.sql` |
 | Routes        | `/bar`, `/bar/recipes`, `/bar/matches`, `/kitchen`, `/kitchen/recipes`, `/kitchen/matches`, `/search` |
 | Redirects     | `/recipes` → `/bar/recipes`, `/matches` → `/bar/matches` (307)                               |
-| Brand         | "In House Mixers" → "RecipeAce"; new fork-and-glass mark                                    |
+| Brand         | Name unchanged ("In House Mixers"), now sourced from `src/lib/site.ts`; new fork-and-glass mark |
 | Service worker| `VERSION` bumped to `v2`, invalidating every `v1` cache                                     |
 
 ---
@@ -117,7 +117,8 @@ Coarsest first. Each is independent.
 | Restore the old cocktail URLs   | The redirects are **307, not 308** — deliberately, so no browser has cached them permanently. Remove the `redirects()` block and move the two page files back. |
 | Restore previous query behaviour| Re-run the pre-expansion definitions of `match_recipes`, `match_recipes_detail`, `related_recipes`, `ingredient_detail` from git history; the application would need reverting too, since the projections changed. |
 | Undo the schema                 | §2's reversibility column. Drop in reverse order.                                        |
-| Revert the brand                | One string in `src/app/layout.tsx`, `manifest.ts`, `opengraph-image.tsx`, `site-header.tsx`, plus `icon.svg`. |
+| Change the product name         | One line: `SITE_NAME` in `src/lib/site.ts` (plus the README heading). Nothing else hardcodes it. |
+| Revert the mark                 | `src/app/icon.svg`, the inline SVG in `site-header.tsx`, and the one in `opengraph-image.tsx` — same three paths in each. |
 
 **Failed pipeline inserts** leave no partial recipes: the food adapter
 validates the whole catalog and writes *nothing* unless every recipe passes,

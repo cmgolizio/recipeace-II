@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { pageTitle } from "../../../lib/site";
 import type { ReactNode } from "react";
 
 // The matches page itself is a client component (it reads the local pantry),
 // so its metadata lives here.
 export const metadata: Metadata = {
-  title: "Kitchen matches — RecipeAce",
+  title: pageTitle("Kitchen matches"),
   description:
     "Food recipes ranked by how few ingredients you’re missing, from the pantry you already have.",
   alternates: { canonical: "/kitchen/matches" },

@@ -3312,9 +3312,15 @@ schema with and without the change and diffing the results.
 6. **No food substitutions or derivations shipped.** This matcher treats
    substitutions as universal and bidirectional and derivations as free; both
    assumptions are wrong for food (§8.8, §8.9). Post-MVP.
-7. **The product is RecipeAce**, resolving §10's first open question the way
-   this plan always named it. "In House Mixers" was a bar's name on a product
-   with a Kitchen.
+7. **The product name stayed "In House Mixers" and §10's first open question
+   is still open.** This document's own naming — its title, §49, and the
+   repository name — was read as a decision during implementation and the
+   product was briefly renamed; the owner corrected it. The name is expected
+   to change again, so it now lives in exactly one place, `SITE_NAME` in
+   `src/lib/site.ts`, and changing it is one line. **Note for future
+   sessions: this plan calls the product "RecipeAce" throughout, and that is
+   not the site's name.** The mark, separately, is now a fork and a glass
+   rather than a martini glass.
 8. **Deprecated columns were kept.** `recipes.method`, `glass`, `garnish`,
    `strength`, `base_spirit` and `flavor_tags` are unread, unwritten, and
    commented as deprecated. Dropping them is scheduled after a stability

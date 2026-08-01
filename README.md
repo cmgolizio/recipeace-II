@@ -1,4 +1,4 @@
-# RecipeAce
+# In House Mixers
 
 A pantry-matching app for food and drink. Add what you have and see what you
 can make, what you're closest to making, and what one ingredient would unlock
@@ -12,6 +12,10 @@ One pantry answers two surfaces:
   and difficulty.
 
 Built with Next.js 16 (App Router) and Supabase (Postgres + Auth + Storage).
+
+The product name lives in `src/lib/site.ts` and nowhere else — page titles,
+the manifest, the Open Graph image and the header wordmark all read it from
+there.
 
 ## Architecture
 

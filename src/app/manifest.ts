@@ -1,12 +1,14 @@
 import type { MetadataRoute } from "next";
 
+import { SITE_NAME } from "../lib/site";
+
 // Colors come from the globals.css light palette (--background #fafaf9); a
 // manifest has a single set of colors and can't express the dark variant
 // (#0c0a09), so the install splash always uses the light one.
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "RecipeAce",
-    short_name: "RecipeAce",
+    name: SITE_NAME,
+    short_name: SITE_NAME,
     description:
       "Add what you have. Discover what you can make — cocktails at the Bar, food in the Kitchen, from one shared pantry.",
     start_url: "/",

@@ -11,6 +11,7 @@ import {
   useUser,
 } from "../lib/pantry/store";
 import { useShopping } from "../lib/shopping/store";
+import { SITE_NAME } from "../lib/site";
 import { DomainSwitcher } from "./domain-switcher";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -122,7 +123,7 @@ export function SiteHeader() {
             <path d="M360 232v128" />
             <path d="M316 396h88" />
           </svg>
-          <span className="hidden min-[480px]:inline">RecipeAce</span>
+          <span className="hidden min-[480px]:inline">{SITE_NAME}</span>
         </Link>
         <nav className="flex items-center gap-3 text-sm sm:gap-4">
           <DomainSwitcher />

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { pageTitle } from "../../../lib/site";
 import { FoodFilter } from "../../../components/food-filter";
 import { Pagination } from "../../../components/pagination";
 import { RecipeCard } from "../../../components/recipe-card";
@@ -12,7 +13,7 @@ import {
 import { createClient } from "../../../lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Food recipes — RecipeAce",
+  title: pageTitle("Food recipes"),
   description:
     "Browse the food catalog by course, cuisine, total time and difficulty.",
   alternates: { canonical: "/kitchen/recipes" },

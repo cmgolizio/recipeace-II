@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { pageTitle } from "../../lib/site";
 import { getRecipes } from "../../lib/recipes/queries";
 import { createClient } from "../../lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "The Kitchen — RecipeAce",
+  title: pageTitle("The Kitchen"),
   description:
     "Food recipes matched against the same pantry that powers the Bar. Browse the catalog or see what dinner your shelves already hold.",
   alternates: { canonical: "/kitchen" },

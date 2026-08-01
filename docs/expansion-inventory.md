@@ -624,18 +624,24 @@ Ordered by the phase that needs them.
 Two things could not be resolved by inspection and need a product answer before
 the phases that depend on them.
 
-**1. Product name.** The plan calls the product _RecipeAce_; the repository is
-`recipeace-II`; the localStorage keys are `recipeace.*`; but every piece of
-user-facing copy, the `<title>`, the manifest, the OG image and the logo say
-**In House Mixers**. Phases 4 and 15 rewrite that copy, so the target name
-needs deciding first. Nothing before Phase 4 depends on it.
+**1. Product name — STILL OPEN, and the owner's to decide.** The plan calls
+the product _RecipeAce_; the repository is `recipeace-II`; the localStorage
+keys are `recipeace.*`; but every piece of user-facing copy, the `<title>`,
+the manifest, the OG image and the logo say **In House Mixers**.
 
-**2. Cross-domain staple policy.** Staples are currently global, unconditional,
-and invisible in the UI (§5.10). Plan §11.4 lists four options and recommends
-"a small, explicit staple policy, made visible". Phase 3 has to pick one. The
-narrowest change that satisfies the plan is to keep the existing global set,
-add no food staples beyond `salt`/`sugar`/`water` (already present), and surface
-the assumption in the Kitchen match UI in Phase 11.
+Phase 15 mistook the plan's naming for a decision and renamed the product;
+that was reverted. The site is **In House Mixers** and the name is expected to
+change again, so the outcome is that it is no longer a decision the code cares
+about: `SITE_NAME` in `src/lib/site.ts` is the only place it appears, and
+changing it is one line plus the README heading.
+
+**2. Cross-domain staple policy — RESOLVED in phase 3.** Staples are global, unconditional,
+and were invisible in the UI (§5.10). Plan §11.4 lists four options and
+recommends "a small, explicit staple policy, made visible". Taken: the
+existing five (`water`, `ice`, `crushed ice`, `sugar`, `salt`) unchanged, no
+food staples added, and the assumption stated under both matches pages by
+`components/staple-note.tsx`, which reads the list from the database so the
+note cannot drift from the policy.
 
 ---
 
@@ -1288,18 +1294,26 @@ than being split into per-domain event names. No platform, no queue: if the
 script isn't there the call is a no-op, and a failure can never break a user
 action.
 
-**The product name.** §10's first open decision is resolved as the plan itself
-resolves it: the product is **RecipeAce** (plan title, §49, and the repository
-name), and the user-facing "In House Mixers" is gone. It was a bar's name on a
-product that now has a Kitchen — exactly the mismatch §40 exists to fix. The
-change is contained: root metadata, page titles, manifest, OG image, header
-wordmark, README. _This is the one change here a maintainer might want to
-veto; it is a string in a handful of files._
+**The product name.** §10's first open decision is **still open**, and is the
+owner's to make. I first read the plan's own naming (its title, §49, and the
+repository name `recipeace-II`) as a decision and renamed the product to
+"RecipeAce"; the owner corrected that — the site is **In House Mixers**, and
+the name is expected to change again.
+
+So the name is unchanged, and the useful work is that it is now in one place:
+`SITE_NAME` in `src/lib/site.ts`, with `pageTitle()` beside it. Root metadata,
+every page title, the manifest, the Open Graph image and the header wordmark
+read it from there; changing the name is that one line plus the README
+heading. Deliberately *not* covered: the `recipeace.*` localStorage keys
+(renaming them would discard every anonymous pantry and shopping list), the
+`ihm-*` service-worker cache names, and the repository name — none is
+user-facing.
 
 **The mark** was a martini glass. It is now a fork and a glass side by side —
 the Kitchen and the Bar in one mark — in `icon.svg`, the header, and the OG
 image. Same stroke weight, same palette, same geometry language: §40 asks for
-polish, not a redesign.
+polish, not a redesign. This one is independent of the name, and reverting it
+is three paths in three files (rollout §6).
 
 **Copy** finishes what phase 12 started: the service worker's route list and
 version (bumped to `v2`, since the shell, routes and brand all moved), the

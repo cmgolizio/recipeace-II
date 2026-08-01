@@ -5,6 +5,7 @@ import { cache } from "react";
 
 import { RecipeCard } from "../../../components/recipe-card";
 import { matchPills, type RecipeDomain } from "../../../lib/recipes/domain";
+import { SITE_NAME, pageTitle } from "../../../lib/site";
 import { createStaticClient } from "../../../lib/supabase/static";
 import type { Database } from "../../../types/database";
 
@@ -58,11 +59,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const ingredient = await getIngredient(slug);
   if (!ingredient) return {};
   const recipes = ingredient.recipes as unknown as UsedIn[];
-  const title = `${ingredient.name} — RecipeAce`;
+  const title = pageTitle(ingredient.name);
   const description =
     recipes.length > 0
       ? `${recipes.length} recipe${recipes.length > 1 ? "s" : ""} made with ${ingredient.name}, plus what you can use instead.`
-      : `${ingredient.name} — a ${categoryLabel(ingredient.category)} in the RecipeAce ingredient index.`;
+      : `${ingredient.name} — a ${categoryLabel(ingredient.category)} in the ${SITE_NAME} ingredient index.`;
   return {
     title,
     description,
