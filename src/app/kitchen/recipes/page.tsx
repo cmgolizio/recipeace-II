@@ -12,7 +12,7 @@ import {
 import { createClient } from "../../../lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Food recipes — In House Mixers",
+  title: "Food recipes — RecipeAce",
   description:
     "Browse the food catalog by course, cuisine, total time and difficulty.",
   alternates: { canonical: "/kitchen/recipes" },

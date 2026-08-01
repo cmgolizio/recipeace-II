@@ -5,7 +5,7 @@ import { getRecipes } from "../../lib/recipes/queries";
 import { createClient } from "../../lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "The Bar — In House Mixers",
+  title: "The Bar — RecipeAce",
   description:
     "Cocktails you can make from the ingredients you already have. Browse the drinks catalog or see what your pantry unlocks.",
   alternates: { canonical: "/bar" },

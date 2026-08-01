@@ -1265,4 +1265,52 @@ malformed storage ignored rather than thrown.
 Validation: lint, `tsc --noEmit`, `next build`, `vitest run` (16 files,
 140 tests) all pass.
 
-**Next up: Phase 14** — expand search, filters and discovery.
+### Phases 14 and 15 — Search, discovery, and the unified product · complete
+
+**Search** (`/search`, `20260806120000_search_recipes.sql`). One function over
+the whole catalog, narrowable by domain: a recipe matches on its own name or
+description, or on the name **or alias** of an ingredient it calls for — so
+"lime" finds the daiquiri and the tacos, "dijon" finds the vinaigrette through
+its ingredient list, and "scallions" finds the fried rice through the alias
+table. Ranking is deliberately explainable (name > description > ingredient,
+then alphabetical) and it reuses the existing trigram indexes rather than
+introducing a search service (§12). The page is a Server Component: the term
+and the All / Bar / Kitchen scope live in the URL, so the query never runs in
+the browser, and a no-results state in one domain offers to widen the search.
+
+**Analytics** (`src/lib/analytics.ts`, §17). Three custom events on top of
+Vercel's page views — `domain_switched`, `search_submitted`,
+`shopping_ingredients_added` — each carrying `domain` as a **property** rather
+than being split into per-domain event names. No platform, no queue: if the
+script isn't there the call is a no-op, and a failure can never break a user
+action.
+
+**The product name.** §10's first open decision is resolved as the plan itself
+resolves it: the product is **RecipeAce** (plan title, §49, and the repository
+name), and the user-facing "In House Mixers" is gone. It was a bar's name on a
+product that now has a Kitchen — exactly the mismatch §40 exists to fix. The
+change is contained: root metadata, page titles, manifest, OG image, header
+wordmark, README. _This is the one change here a maintainer might want to
+veto; it is a string in a handful of files._
+
+**The mark** was a martini glass. It is now a fork and a glass side by side —
+the Kitchen and the Bar in one mark — in `icon.svg`, the header, and the OG
+image. Same stroke weight, same palette, same geometry language: §40 asks for
+polish, not a redesign.
+
+**Copy** finishes what phase 12 started: the service worker's route list and
+version (bumped to `v2`, since the shell, routes and brand all moved), the
+manifest description, and the README — which now opens on the two surfaces,
+documents the shared-core architecture, the food adapter, the staple policy
+and the food seed workflow.
+
+Tests: `tests/search.test.ts` (8) — both domains in one search, domain
+narrowing, ingredient hits, alias hits, rank ordering, domain-shaped card
+metadata, unpublished recipes never surfacing, and an empty term returning
+nothing rather than everything.
+
+Validation: lint, `tsc --noEmit`, `next build` (24 routes), `vitest run`
+(17 files, 148 tests) all pass.
+
+**Next up: Phase 16** — performance, security, accessibility and regression
+review.

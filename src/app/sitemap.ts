@@ -19,6 +19,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/kitchen",
     "/kitchen/recipes",
     "/kitchen/matches",
+    "/search",
     "/login",
   ].map((path) => ({ url: new URL(path, siteUrl).toString() }));
 

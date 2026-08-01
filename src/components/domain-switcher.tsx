@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { track } from "../lib/analytics";
 import {
   DOMAIN_ROUTES,
   DOMAIN_SURFACE,
@@ -29,6 +30,9 @@ export function DomainSwitcher() {
           <Link
             key={domain}
             href={href}
+            onClick={() => {
+              if (!active) track("domain_switched", { domain });
+            }}
             aria-current={active ? "page" : undefined}
             className={
               active

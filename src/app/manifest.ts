@@ -5,8 +5,8 @@ import type { MetadataRoute } from "next";
 // (#0c0a09), so the install splash always uses the light one.
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "In House Mixers",
-    short_name: "In House Mixers",
+    name: "RecipeAce",
+    short_name: "RecipeAce",
     description:
       "Add what you have. Discover what you can make — cocktails at the Bar, food in the Kitchen, from one shared pantry.",
     start_url: "/",

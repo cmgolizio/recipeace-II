@@ -21,7 +21,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "In House Mixers — what can I make?",
+  title: "RecipeAce — what can I make?",
   description:
     "Add what you have. Discover what you can make — cocktails at the Bar, food in the Kitchen, from one shared pantry.",
 };

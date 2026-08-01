@@ -585,6 +585,23 @@ export type Database = {
           shared_count: number;
         }[];
       };
+      search_recipes: {
+        Args: {
+          q: string;
+          p_domain?: Database["public"]["Enums"]["recipe_domain"] | null;
+          max_results?: number;
+        };
+        Returns: {
+          recipe_id: number;
+          slug: string;
+          name: string;
+          domain: Database["public"]["Enums"]["recipe_domain"];
+          image_url: string | null;
+          metadata: Json;
+          matched: string;
+          rank: number;
+        }[];
+      };
       slugify: {
         Args: {
           value: string;

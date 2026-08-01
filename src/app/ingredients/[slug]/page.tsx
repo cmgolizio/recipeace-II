@@ -58,11 +58,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const ingredient = await getIngredient(slug);
   if (!ingredient) return {};
   const recipes = ingredient.recipes as unknown as UsedIn[];
-  const title = `${ingredient.name} — In House Mixers`;
+  const title = `${ingredient.name} — RecipeAce`;
   const description =
     recipes.length > 0
       ? `${recipes.length} recipe${recipes.length > 1 ? "s" : ""} made with ${ingredient.name}, plus what you can use instead.`
-      : `${ingredient.name} — a ${categoryLabel(ingredient.category)} in the In House Mixers ingredient index.`;
+      : `${ingredient.name} — a ${categoryLabel(ingredient.category)} in the RecipeAce ingredient index.`;
   return {
     title,
     description,

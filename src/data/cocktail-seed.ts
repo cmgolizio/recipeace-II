@@ -1,5 +1,5 @@
 /**
- * In House Mixers — starter cocktail ingredient taxonomy (v1 seed data).
+ * RecipeAce — starter cocktail ingredient taxonomy (v1 seed data).
  * Sized to cover the ingredients for ~35 canonical cocktails.
  *
  * SEED ORDER (idempotent):

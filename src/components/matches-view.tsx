@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
+import { track } from "../lib/analytics";
 import { usePantry, usePantryReady } from "../lib/pantry/store";
 import type { RecipeDomain } from "../lib/recipes/domain";
 import { matchPills } from "../lib/recipes/domain";
@@ -131,6 +132,10 @@ function AddMissingButton({
         e.preventDefault();
         e.stopPropagation();
         for (const n of remaining) addToShopping(n, from);
+        track("shopping_ingredients_added", {
+          domain: from.domain,
+          count: remaining.length,
+        });
         toast(
           remaining.length === 1
             ? `Added ${remaining[0]} to your shopping list`

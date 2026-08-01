@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 
 // Branded default Open Graph image for routes without their own — recipe
 // detail pages with an image_url override this via generateMetadata.
-export const alt = "In House Mixers — what can I make?";
+export const alt = "RecipeAce — what can I make?";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -31,11 +31,12 @@ export default function Image() {
           strokeLinecap="round"
           strokeLinejoin="round"
         >
-          <path d="M116 132h280L256 290z" />
-          <path d="M256 290v104" />
-          <path d="M172 394h168" />
-          <path d="M312 180 356 118" strokeWidth="12" />
-          <circle cx="312" cy="180" r="26" fill="#b45309" stroke="none" />
+          <path d="M120 116v84M170 116v84M220 116v84" />
+          <path d="M120 200h100" />
+          <path d="M170 200v196" />
+          <path d="M292 140h136l-68 92z" />
+          <path d="M360 232v128" />
+          <path d="M316 396h88" />
         </svg>
         <div
           style={{
@@ -46,10 +47,10 @@ export default function Image() {
           }}
         >
           <div style={{ fontSize: 76, fontWeight: 600, color: "#fafaf9" }}>
-            In House Mixers
+            RecipeAce
           </div>
           <div style={{ fontSize: 32, color: "#a8a29e" }}>
-            See which cocktails you can mix from what you have in house
+            Add what you have. Discover what you can make.
           </div>
         </div>
       </div>
