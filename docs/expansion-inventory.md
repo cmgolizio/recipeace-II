@@ -1,13 +1,16 @@
-# Expansion Inventory — Phase 0 Baseline
+# Expansion Inventory and Phase Log
 
 > **File:** `docs/expansion-inventory.md`
-> **Phase:** 0 — Establish baseline and expansion inventory (see `docs/expansion-plan.md` §25)
-> **Status:** complete. No application code, schema, or data was changed in this phase.
+> **Started as:** phase 0 — baseline and inventory (see `docs/expansion-plan.md` §25)
+> **Now:** the running record of the whole expansion, phases 0–17.
 >
-> This document records the state of the repository _before_ the food expansion
-> begins. It is the reference every later phase checks its assumptions against.
-> When a later phase changes something described here, update the relevant
-> section rather than letting this drift.
+> §§1–11 describe the repository as it was _before_ the expansion, updated in
+> place where a later phase changed something. §12 is the phase log: what each
+> phase actually did, and why, including where it departed from the plan. §13
+> checks the result against the plan's definition of MVP completion.
+>
+> Companions: `docs/expansion-plan.md` (the plan, with §50 recording the
+> as-built architecture) and `docs/expansion-rollout.md` (deploy and rollback).
 
 ---
 
@@ -1312,5 +1315,101 @@ nothing rather than everything.
 Validation: lint, `tsc --noEmit`, `next build` (24 routes), `vitest run`
 (17 files, 148 tests) all pass.
 
-**Next up: Phase 16** — performance, security, accessibility and regression
-review.
+### Phase 16 — Review · complete
+
+**Security.** `tests/rls.test.ts` (9) stops asserting RLS and starts
+exercising it: the Supabase table grants are reproduced, then every query runs
+`set role anon`. An unpublished recipe is invisible, and so are its detail row
+and its ingredient lines; the catalog views inherit the base tables' policies
+(which is what `security_invoker = on` buys); search and matching never return
+it; another user's pantry, favorites and profile return nothing; and the
+content tables reject writes from the API roles. Every new function is
+`security invoker` with `set search_path = ''` and is granted only to
+`anon, authenticated`. The caveat is written into the test file: PGlite is not
+the Supabase platform, so this proves the policies are written and enforced,
+not that the deployed project is configured correctly — that check is in the
+rollout.
+
+**Performance**, measured rather than assumed, against the shipped data
+(23 recipes, 204 ingredients, 71 aliases, 149 ingredient lines), 20 runs each:
+
+| Query                          | Mean    |
+| ------------------------------ | ------- |
+| `match_recipes` (both domains) | 3.9 ms  |
+| `match_recipes_detail` (food)  | 3.5 ms  |
+| `search_recipes`               | 1.9 ms  |
+| catalog page (24 rows)         | 1.5 ms  |
+| facet scan                     | 1.0 ms  |
+
+The known limits — unpaginated matches, the per-request facet scan,
+`generateStaticParams` prerendering everything, no index on `description` or
+on the food facets — are all real and none of them bites at this size. Each is
+listed in `docs/expansion-rollout.md` §7 **with the catalog size that makes it
+start to matter**, rather than being fixed speculatively.
+
+**Accessibility.** The domain switcher is a labelled `<nav>` of links with
+`aria-current` (not a button group — they are places); every filter control
+has an `aria-label`; segmented controls use `role="group"` with
+`aria-pressed`; headings run h1 → h2 → h3 on every new page; match status is
+never colour alone (✓ / ↺ / ✗ plus text); card images are decorative with the
+name in the title. Added: a global `prefers-reduced-motion` rule — the card
+lift and the toast entrance were the only motion, and honouring the preference
+centrally beats each component remembering. Known imperfection, recorded not
+hidden: recipe cards are `<a>` elements containing buttons (favourite,
+add-to-list). That predates the expansion; restructuring the card is in the
+rollout's limits table.
+
+**Regression.** The whole cocktail surface is covered by tests that predate
+the expansion plus the ranking baseline added in phase 3, and all of it still
+passes: derivations, substitutions, staples, zero-overlap exclusion,
+`max_missing`, detail parity, related-recipe ranking, ingredient pages,
+popular ingredients, metadata round-trips, unit formatting. Phase 9 adds an
+explicit "the Bar is untouched by the food catalog" test.
+
+### Phase 17 — Rollout · documented, not executed
+
+`docs/expansion-rollout.md` is the procedure: what ships, the migration order
+with a **reversibility verdict for each of the eight**, the deploy sequence,
+a smoke-test checklist that starts with cocktail behaviour, what to monitor,
+the rollback levers (coarsest first — `update recipes set is_published = false
+where domain = 'food'` empties the Kitchen with no deploy), how to find a
+half-applied import, the known limits with their triggers, and the deferred
+cleanup of the deprecated columns with the verification query to run first.
+
+**Not executed, and cannot be from here:** this repository has no `.env*` and
+no linked Supabase CLI, so no migration has been run against a live project.
+Everything was verified against the real migration files in PGlite. The
+document says so at the top rather than implying otherwise.
+
+`docs/expansion-plan.md` gains §50, the as-built architecture: what was built,
+the eight decisions taken during implementation that differ from what the plan
+proposed (each with its reason), and what is deferred.
+
+---
+
+## 13. Where the expansion landed
+
+Against §48's definition of MVP completion:
+
+| Criterion                                            | Status                                                     |
+| ---------------------------------------------------- | ---------------------------------------------------------- |
+| Visible Bar and Kitchen experiences                  | yes — `/bar`, `/kitchen`, switcher in the header            |
+| Existing cocktail functionality still works          | yes — full suite green, ranking baseline frozen             |
+| Recipes have a valid domain                          | yes — NOT NULL, no default, enum-constrained                |
+| Domain only on recipes                               | yes — asserted by test, not just by convention              |
+| One Supabase project / ingredient catalog / pantry / matcher | yes                                                 |
+| Browse food recipes                                  | yes — `/kitchen/recipes`, four facets, pagination           |
+| View food recipe details                             | yes — one route, domain-composed                            |
+| See food recipes you can make                        | yes — `/kitchen/matches`                                    |
+| See missing food ingredients                         | yes — named, and addable to the shared list                 |
+| Favorite food recipes                                | yes — one table, All/Bar/Kitchen filter                     |
+| Add missing food ingredients to the shared list      | yes — with recipe provenance                                |
+| Reviewed ingredients and instructions                | yes — 13 original recipes, licensed, validated              |
+| Validated, idempotent food ingestion                 | yes — refuses to write anything unless the catalog is clean |
+| Kitchen routes responsive and accessible             | yes — same patterns as the Bar, reviewed in phase 16        |
+| Bar routes stable                                    | yes — redirects verified against a production build         |
+| Database security reviewed                           | yes — exercised as `anon` in `tests/rls.test.ts`            |
+| Rollout and rollback documented                      | yes — `docs/expansion-rollout.md`                           |
+
+Final validation: `npm run lint`, `npx tsc --noEmit`, `npm run build`
+(22 routes) and `npm test` (18 files, 157 tests) all pass.
