@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: "In House Mixers — what can I make?",
   description:
-    "Build your bar and instantly see which cocktails you can make from what you have on hand.",
+    "Add what you have. Discover what you can make — cocktails at the Bar, food in the Kitchen, from one shared pantry.",
 };
 
 // Runs synchronously during HTML parsing, before first paint, so an explicit

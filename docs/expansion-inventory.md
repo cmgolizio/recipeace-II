@@ -223,21 +223,28 @@ mirrors the same expansion per-ingredient and additionally reports
 
 ### 3.7 Route map
 
+_Updated in phase 4: the cocktail catalog and matches moved under `/bar`._
+
 | Route                                                                      | Rendering                    | Data source                                                                          |
 | -------------------------------------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------ |
 | `/`                                                                        | static; client islands       | `search_ingredients`, `popular_ingredients`, `ingredients`, `match_recipes_detail`   |
-| `/recipes`                                                                 | **dynamic server**           | `recipes` table, offset pagination (24/page) + a second unpaginated facet query      |
+| `/bar`                                                                     | dynamic server               | `recipes` count for the cocktail domain                                              |
+| `/bar/recipes` (was `/recipes`)                                            | **dynamic server**           | `recipes` table, offset pagination (24/page) + a second unpaginated facet query      |
+| `/bar/matches` (was `/matches`)                                            | **client component**         | `match_recipes_detail`, no pagination                                                |
+| `/kitchen`                                                                 | static placeholder           | none yet                                                                             |
 | `/recipes/[slug]`                                                          | **SSG**, `revalidate = 3600` | `recipes`, `recipe_ingredients`, `related_recipes`; pantry status in a client island |
-| `/matches`                                                                 | **client component**         | `match_recipes_detail`, no pagination                                                |
 | `/ingredients/[slug]`                                                      | **SSG**, `revalidate = 3600` | `ingredient_detail`                                                                  |
 | `/favorites`                                                               | client component             | `favorite_recipes` store + `recipes` by id                                           |
 | `/shopping`                                                                | client component             | localStorage only                                                                    |
 | `/login`, `/auth/reset`, `/auth/callback`                                  | auth                         | Supabase Auth                                                                        |
 | `/sitemap.xml`, `/robots.txt`, `/manifest.webmanifest`, `/opengraph-image` | metadata                     | `recipes`, `ingredients`                                                             |
 
-Navigation (`src/components/site-header.tsx`): `my bar` · `recipes` ·
-`matches` · `favorites` · `shopping`, with a pantry-count badge, theme toggle,
-and a mobile overflow menu.
+`/recipes` and `/matches` are 307 redirects to their `/bar` equivalents
+(`next.config.mjs`), query strings preserved.
+
+Navigation (`src/components/site-header.tsx`): a Bar/Kitchen domain switcher,
+then `pantry` · `favorites` · `shopping`, with a pantry-count badge, theme
+toggle, and a mobile overflow menu.
 
 ### 3.8 Query entry points
 
@@ -796,4 +803,48 @@ ingredients not raising `missing_count`, cross-domain staple behaviour, and
 Validation: lint, `tsc --noEmit`, `next build` (17 routes), `vitest run`
 (9 files, 65 tests) all pass.
 
-**Next up: Phase 4** — Bar and Kitchen application structure.
+### Phase 4 — Bar and Kitchen structure · complete
+
+**Route convention** (now `DOMAIN_ROUTES` in `src/lib/recipes/domain.ts`, so
+the mapping is declared once): each domain owns a subtree — `/bar`,
+`/bar/recipes`, `/bar/matches`; `/kitchen`, `/kitchen/recipes`,
+`/kitchen/matches` — and everything shared stays outside them: the pantry at
+`/`, recipe details at `/recipes/[slug]`, `/favorites`, `/shopping`,
+`/ingredients/[slug]`.
+
+Moves (`git mv`, so history follows): `/recipes` → `/bar/recipes` (with its
+loading skeleton), `/matches` → `/bar/matches`. Both old paths are **307**
+redirects in `next.config.mjs` — temporary rather than permanent while the
+expansion is in flight, and verified against a production build to preserve
+the query string (`/matches?missing=1` → `/bar/matches?missing=1`).
+`/recipes/[slug]` is untouched: one shared detail route, per §9.4.
+
+New pages: `/bar` (overview — live cocktail count, entry points to matches and
+the catalog, and a line saying the pantry is shared) and `/kitchen` (honest
+placeholder — no food recipes exist yet, and it says so rather than linking to
+routes that aren't built; §29's completion criteria explicitly ask for this).
+`/bar/matches` is a client component, so its metadata lives in a sibling
+`layout.tsx`.
+
+`DomainSwitcher` (`src/components/domain-switcher.tsx`) sits in the header on
+every viewport. Bar and Kitchen are two *places*, so it is a labelled `<nav>`
+of links with `aria-current` on the active one — not a button group (§18). The
+header's other links are secondary: `pantry` · `favorites` · `shopping`, with
+the mobile overflow menu now carrying `pantry` too.
+
+Copy: only the lines that described the product as drinks-only. Root metadata
+description, the home `<h1>` ("Build your bar" → "Your pantry"), the first-run
+hero (now the plan's "Add what you have. Discover what you can make."), the
+matches empty state, the ingredient page's back link, the pantry badge
+tooltip. The remaining "your bar" toasts and the `In House Mixers` brand
+itself are phase 15's audit.
+
+Internal links repointed: `recipes-filter`, `pantry-panel`,
+`almost-there-nudge`, `/shopping`, `/favorites`, `sitemap.ts`, and the recipe
+detail back-link — which now reads its own recipe's domain and returns to that
+domain's catalog.
+
+Validation: lint, `tsc --noEmit`, `next build` (19 routes), `vitest run`
+(9 files, 65 tests) all pass; redirects checked against `next start`.
+
+**Next up: Phase 5** — normalize shared and domain-specific recipe metadata.

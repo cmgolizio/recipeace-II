@@ -105,7 +105,7 @@ export function PantryPanel() {
               ))}
           </ul>
           <Link
-            href="/matches"
+            href="/bar/matches"
             className="mt-4 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90"
           >
             See what I can make →

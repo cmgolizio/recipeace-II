@@ -99,7 +99,7 @@ export default async function IngredientPage({ params }: Props) {
           href="/"
           className="text-sm text-muted underline hover:text-foreground"
         >
-          ← Build your bar
+          ← Your pantry
         </Link>
       </div>
 

@@ -35,5 +35,22 @@ export const DOMAIN_SURFACE: Record<RecipeDomain, string> = {
 /** Singular noun for one recipe of this domain. */
 export const DOMAIN_NOUN: Record<RecipeDomain, string> = {
   cocktail: "cocktail",
-  food: "recipe",
+  food: "dish",
+};
+
+/**
+ * The route convention: each domain owns a subtree, and everything shared —
+ * the pantry at `/`, recipe details at `/recipes/[slug]`, favorites, the
+ * shopping list — sits outside them (docs/expansion-plan.md §9).
+ */
+export const DOMAIN_ROUTES: Record<
+  RecipeDomain,
+  { home: string; recipes: string; matches: string }
+> = {
+  cocktail: { home: "/bar", recipes: "/bar/recipes", matches: "/bar/matches" },
+  food: {
+    home: "/kitchen",
+    recipes: "/kitchen/recipes",
+    matches: "/kitchen/matches",
+  },
 };

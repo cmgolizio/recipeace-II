@@ -16,10 +16,10 @@ export function HomeHero() {
   return (
     <section className="rounded-xl border border-border bg-surface p-5">
       <h2 className="text-lg font-semibold tracking-tight">
-        Your shelf is already a cocktail menu
+        Add what you have. Discover what you can make.
       </h2>
       <p className="mt-1 text-sm text-muted">
-        Tell us what you have and we’ll match it against every recipe —
+        Tell us what’s on your shelves and we’ll match it against every recipe —
         substitutions included.
       </p>
       <ol className="mt-4 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-6">

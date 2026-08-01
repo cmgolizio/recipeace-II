@@ -11,6 +11,7 @@ import {
   useUser,
 } from "../lib/pantry/store";
 import { useShopping } from "../lib/shopping/store";
+import { DomainSwitcher } from "./domain-switcher";
 import { ThemeToggle } from "./theme-toggle";
 
 function NavLink({
@@ -120,11 +121,10 @@ export function SiteHeader() {
           <span className="hidden min-[480px]:inline">In House Mixers</span>
         </Link>
         <nav className="flex items-center gap-3 text-sm sm:gap-4">
-          <NavLink href="/" exact>
-            my bar
+          <DomainSwitcher />
+          <NavLink href="/" exact className="hidden sm:inline">
+            pantry
           </NavLink>
-          <NavLink href="/recipes">recipes</NavLink>
-          <NavLink href="/matches">matches</NavLink>
           {user && (
             <NavLink href="/favorites" className="hidden sm:inline">
               favorites
@@ -137,7 +137,11 @@ export function SiteHeader() {
           )}
           <span
             className="rounded-full bg-accent px-2.5 py-0.5 text-xs tabular-nums text-accent-foreground"
-            title={ready ? `${pantry.length} in your bar` : "Loading your bar"}
+            title={
+              ready
+                ? `${pantry.length} in your pantry`
+                : "Loading your pantry"
+            }
           >
             {ready ? pantry.length : "–"}
           </span>
@@ -187,6 +191,9 @@ export function SiteHeader() {
             </button>
             {menuOpen && (
               <div className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-border bg-surface p-1.5 shadow-lg">
+                <MenuLink href="/" onNavigate={() => setMenuOpen(false)}>
+                  pantry
+                </MenuLink>
                 {user ? (
                   <>
                     <MenuLink

@@ -52,7 +52,7 @@ export function AlmostThereNudge() {
 
   return (
     <Link
-      href="/matches?missing=1"
+      href="/bar/matches?missing=1"
       className="block rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm hover:border-accent"
     >
       You’re one bottle away from{" "}

@@ -1,13 +1,21 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
-import { RecipeCard } from "../../components/recipe-card";
-import { RecipesFilter } from "../../components/recipes-filter";
+import { RecipeCard } from "../../../components/recipe-card";
+import { RecipesFilter } from "../../../components/recipes-filter";
 import {
   getRecipeFacets,
   getRecipes,
   type RecipeListFilters,
-} from "../../lib/recipes/queries";
-import { createClient } from "../../lib/supabase/server";
+} from "../../../lib/recipes/queries";
+import { createClient } from "../../../lib/supabase/server";
+
+export const metadata: Metadata = {
+  title: "Cocktail recipes — In House Mixers",
+  description:
+    "Browse the cocktail catalog by method, glass, base spirit and flavour.",
+  alternates: { canonical: "/bar/recipes" },
+};
 
 const PAGE_SIZE = 24;
 
@@ -28,7 +36,7 @@ function pageHref(filters: RecipeListFilters, page: number) {
   if (filters.tags.length > 0) query.tag = filters.tags;
   if (filters.sort !== "name") query.sort = filters.sort;
   if (page > 1) query.page = String(page);
-  return { pathname: "/recipes", query };
+  return { pathname: "/bar/recipes", query };
 }
 
 function single(value: string | string[] | undefined): string {
@@ -105,10 +113,12 @@ export default async function RecipesPage({
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Recipes</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Cocktail recipes
+        </h1>
         <p className="text-muted">
-          Browse the catalog. Open any cocktail to see the full build and what
-          you’re missing from your bar.
+          Browse the drinks catalog. Open any cocktail to see the full build and
+          what you’re missing from your pantry.
         </p>
       </div>
 

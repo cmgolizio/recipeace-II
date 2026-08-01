@@ -9,11 +9,14 @@ import { createStaticClient } from "../lib/supabase/static";
 export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // Public routes only — /favorites and /auth/* are user-specific.
+  // Public routes only — /favorites and /auth/* are user-specific. The
+  // pre-expansion /recipes and /matches now redirect, so they are not listed.
   const staticRoutes: MetadataRoute.Sitemap = [
     "/",
-    "/recipes",
-    "/matches",
+    "/bar",
+    "/bar/recipes",
+    "/bar/matches",
+    "/kitchen",
     "/login",
   ].map((path) => ({ url: new URL(path, siteUrl).toString() }));
 

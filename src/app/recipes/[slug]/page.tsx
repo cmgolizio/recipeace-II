@@ -11,6 +11,10 @@ import {
 } from "../../../components/recipe-pantry-status";
 import { ShareButton } from "../../../components/share-button";
 import {
+  DOMAIN_ROUTES,
+  DOMAIN_SURFACE,
+} from "../../../lib/recipes/domain";
+import {
   getPublishedRecipeSlugs,
   getRecipeBySlug,
 } from "../../../lib/recipes/queries";
@@ -134,11 +138,13 @@ export default async function RecipeDetailPage({ params }: Props) {
   return (
     <article className="space-y-6">
       <div className="flex items-center justify-between">
+        {/* Back to the catalog this recipe belongs to — the detail route is
+            shared, the browsing surfaces are not. */}
         <Link
-          href="/recipes"
+          href={DOMAIN_ROUTES[recipe.domain].recipes}
           className="text-sm text-muted underline hover:text-foreground"
         >
-          ← All recipes
+          ← All {DOMAIN_SURFACE[recipe.domain].toLowerCase()} recipes
         </Link>
         <ShareButton
           title={recipe.name}

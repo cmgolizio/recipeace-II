@@ -4,15 +4,15 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
-import { RecipeCard } from "../../components/recipe-card";
-import { RecipeCardSkeleton, Skeleton } from "../../components/skeleton";
-import { toast } from "../../components/toast/store";
-import { usePantry, usePantryReady } from "../../lib/pantry/store";
-import { addToShopping, useShopping } from "../../lib/shopping/store";
-import { createClient } from "../../lib/supabase/client";
-import { formatQuantity } from "../../lib/units/format";
-import { useUnit } from "../../lib/units/store";
-import type { Database } from "../../types/database";
+import { RecipeCard } from "../../../components/recipe-card";
+import { RecipeCardSkeleton, Skeleton } from "../../../components/skeleton";
+import { toast } from "../../../components/toast/store";
+import { usePantry, usePantryReady } from "../../../lib/pantry/store";
+import { addToShopping, useShopping } from "../../../lib/shopping/store";
+import { createClient } from "../../../lib/supabase/client";
+import { formatQuantity } from "../../../lib/units/format";
+import { useUnit } from "../../../lib/units/store";
+import type { Database } from "../../../types/database";
 
 type Match =
   Database["public"]["Functions"]["match_recipes_detail"]["Returns"][number];
@@ -192,7 +192,7 @@ function MatchesLoading() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Matches</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Bar matches</h1>
         <Skeleton className="mt-2 h-5 w-64 max-w-full" />
       </div>
       <div className="flex flex-wrap items-center gap-3">
@@ -240,9 +240,9 @@ function MatchesContent() {
   if (pantry.length === 0) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Matches</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Bar matches</h1>
         <p className="text-muted">
-          Your bar is empty.{" "}
+          Your pantry is empty.{" "}
           <Link href="/" className="underline">
             Add some ingredients
           </Link>{" "}
@@ -265,9 +265,12 @@ function MatchesContent() {
 
   function selectFilter(value: MaxMissing) {
     // 2 is the default, so keep the URL clean for it.
-    router.replace(value === 2 ? "/matches" : `/matches?missing=${value}`, {
-      scroll: false,
-    });
+    router.replace(
+      value === 2 ? "/bar/matches" : `/bar/matches?missing=${value}`,
+      {
+        scroll: false,
+      },
+    );
   }
 
   function surpriseMe() {
@@ -278,10 +281,11 @@ function MatchesContent() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Matches</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Bar matches</h1>
         <p className="text-muted">
-          Ranked by how few ingredients you’re missing, from your bar of{" "}
-          {pantry.length}.
+          Ranked by how few ingredients you’re missing, from the{" "}
+          {pantry.length} ingredient{pantry.length === 1 ? "" : "s"} in your
+          pantry.
         </p>
       </div>
 

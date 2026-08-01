@@ -35,7 +35,7 @@ export default function ShoppingPage() {
           title="Nothing on your list"
           body="Add missing ingredients from your matches or any recipe page."
           action={
-            <Link href="/matches" className={emptyStateActionClass}>
+            <Link href="/bar/matches" className={emptyStateActionClass}>
               See your matches
             </Link>
           }

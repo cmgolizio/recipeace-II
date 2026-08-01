@@ -10,7 +10,7 @@ export default function Home() {
   return (
     <div className="space-y-8">
       <div className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Build your bar</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Your pantry</h1>
         <AuthMessage />
       </div>
       <HomeHero />
