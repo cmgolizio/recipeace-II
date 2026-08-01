@@ -87,7 +87,7 @@ export default async function RecipeDetailPage({ params }: Props) {
     supabase
       .from("recipe_ingredients")
       .select(
-        "ingredient_id,amount,unit,preparation,is_optional,is_garnish,display_order,ingredients(name,slug)",
+        "ingredient_id,amount,unit,preparation,is_optional,is_garnish,display_order,section,ingredients(name,slug)",
       )
       .eq("recipe_id", recipe.id),
     // "More like this" is supplementary: an error here leaves the row out
@@ -111,6 +111,7 @@ export default async function RecipeDetailPage({ params }: Props) {
       is_optional: r.is_optional,
       is_garnish: r.is_garnish,
       display_order: r.display_order,
+      section: r.section,
       name: r.ingredients?.name ?? "—",
       slug: r.ingredients?.slug ?? null,
     }))

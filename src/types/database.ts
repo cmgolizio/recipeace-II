@@ -322,6 +322,7 @@ export type Database = {
           is_garnish: boolean;
           display_order: number;
           raw_text: string | null;
+          section: string | null;
         };
         Insert: {
           id?: number;
@@ -334,6 +335,7 @@ export type Database = {
           is_garnish?: boolean;
           display_order?: number;
           raw_text?: string | null;
+          section?: string | null;
         };
         Update: {
           id?: number;
@@ -346,6 +348,7 @@ export type Database = {
           is_garnish?: boolean;
           display_order?: number;
           raw_text?: string | null;
+          section?: string | null;
         };
         Relationships: [
           {

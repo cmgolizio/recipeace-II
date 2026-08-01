@@ -6,6 +6,7 @@
 // 'food' (docs/expansion-plan.md §16.2, §16.3).
 
 import type { Enums } from "../../src/types/database.ts";
+import { normalizeUnit } from "../../src/lib/units/vocabulary.ts";
 
 export type RecipeDomain = Enums<"recipe_domain">;
 
@@ -73,6 +74,8 @@ export type ResolvedIngredient = {
   is_garnish: boolean;
   display_order: number;
   raw_text: string | null;
+  /** Heading this line sits under; null is the main list (phase 7). */
+  section: string | null;
 };
 
 /**
@@ -192,7 +195,9 @@ export function validateRecipe(
     const amount = typeof raw.amount === "number" && Number.isFinite(raw.amount)
       ? raw.amount
       : null;
-    const unit = str(raw.unit);
+    // Folded to the controlled vocabulary; an unrecognised unit is kept as
+    // written rather than dropped (see src/lib/units/vocabulary.ts).
+    const unit = normalizeUnit(raw.unit);
     ingredients.push({
       ingredient_id: id,
       amount,
@@ -202,11 +207,15 @@ export function validateRecipe(
       is_garnish: isGarnish,
       display_order: ingredients.length + 1,
       raw_text: rawText(amount, unit, ingName),
+      // Cocktails are one list. The food adapter sets this (phase 8).
+      section: null,
     });
   }
 
-  // De-duplicate ingredient ids within the recipe (the table is unique on
-  // (recipe_id, ingredient_id)); keep the first occurrence.
+  // De-duplicate ingredient ids within the recipe. The table stopped
+  // enforcing this in phase 7 — food genuinely repeats an ingredient ("olive
+  // oil, divided") — but a cocktail listing the same bottle twice is a model
+  // slip, so the drinks adapter keeps collapsing them.
   const seen = new Set<number>();
   const deduped = ingredients.filter((i) => {
     if (seen.has(i.ingredient_id)) return false;

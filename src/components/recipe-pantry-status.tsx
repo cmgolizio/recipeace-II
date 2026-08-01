@@ -23,9 +23,28 @@ export type IngredientRow = {
   is_optional: boolean;
   is_garnish: boolean;
   display_order: number;
+  /** Heading this line sits under; null is the main list. */
+  section: string | null;
   name: string;
   slug: string | null;
 };
+
+/**
+ * Split lines into their sections, in first-appearance order. Food recipes
+ * group under "For the sauce" / "For the topping"; every cocktail is one
+ * unnamed group, which renders exactly as it always has.
+ */
+function bySection(
+  rows: IngredientRow[],
+): { section: string | null; rows: IngredientRow[] }[] {
+  const groups: { section: string | null; rows: IngredientRow[] }[] = [];
+  for (const row of rows) {
+    const group = groups.find((g) => g.section === row.section);
+    if (group) group.rows.push(row);
+    else groups.push({ section: row.section, rows: [row] });
+  }
+  return groups;
+}
 
 type StatusRow =
   Database["public"]["Functions"]["recipe_pantry_status"]["Returns"][number];
@@ -282,17 +301,26 @@ export function RecipePantryStatus({
             <UnitToggle />
           </div>
         </div>
-        <ul className="mt-2 divide-y divide-black/5 dark:divide-white/10">
-          {poured.map((ri) => (
-            <IngredientItem
-              key={ri.ingredient_id}
-              row={ri}
-              status={statusById.get(ri.ingredient_id)}
-              unit={unit}
-              scale={scale}
-            />
-          ))}
-        </ul>
+        {bySection(poured).map((group) => (
+          <div key={group.section ?? ""}>
+            {group.section && (
+              <h3 className="mt-3 text-xs font-semibold uppercase tracking-wide text-muted">
+                {group.section}
+              </h3>
+            )}
+            <ul className="mt-2 divide-y divide-black/5 dark:divide-white/10">
+              {group.rows.map((ri) => (
+                <IngredientItem
+                  key={ri.display_order}
+                  row={ri}
+                  status={statusById.get(ri.ingredient_id)}
+                  unit={unit}
+                  scale={scale}
+                />
+              ))}
+            </ul>
+          </div>
+        ))}
         {!hasPantry && (
           <p className="mt-3 text-sm text-muted">
             <Link href="/" className="underline">
@@ -311,7 +339,7 @@ export function RecipePantryStatus({
           <ul className="mt-2 divide-y divide-black/5 dark:divide-white/10">
             {garnishes.map((ri) => (
               <IngredientItem
-                key={ri.ingredient_id}
+                key={ri.display_order}
                 row={ri}
                 status={statusById.get(ri.ingredient_id)}
                 unit={unit}

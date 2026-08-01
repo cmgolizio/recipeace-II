@@ -86,7 +86,7 @@ export async function seedFoodFixture(db: PGlite): Promise<void> {
     ) as v(recipe_slug, ingredient_name, amount, unit, is_optional, display_order)
     join public.recipes r on r.slug = v.recipe_slug
     join public.ingredients i on i.name = v.ingredient_name
-    on conflict (recipe_id, ingredient_id) do nothing;
+    on conflict (recipe_id, display_order) do nothing;
   `);
 }
 

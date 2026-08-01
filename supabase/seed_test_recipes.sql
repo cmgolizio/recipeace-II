@@ -111,8 +111,11 @@ from (values
 ) as v(recipe_slug, ingredient_name, amount, unit, is_optional, is_garnish, display_order)
 join public.recipes r on r.slug = v.recipe_slug
 join public.ingredients i on i.name = v.ingredient_name
-on conflict (recipe_id, ingredient_id) do update set
-  amount = excluded.amount, unit = excluded.unit, is_optional = excluded.is_optional,
-  is_garnish = excluded.is_garnish, display_order = excluded.display_order;
+-- Keyed on the line position: an ingredient may legitimately appear twice in
+-- one recipe from phase 7 on, so (recipe_id, ingredient_id) is no longer unique.
+on conflict (recipe_id, display_order) do update set
+  ingredient_id = excluded.ingredient_id, amount = excluded.amount,
+  unit = excluded.unit, is_optional = excluded.is_optional,
+  is_garnish = excluded.is_garnish;
 
 commit;

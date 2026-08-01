@@ -973,4 +973,62 @@ stay excluded from `popular_ingredients`.
 Validation: lint, `tsc --noEmit`, `next build`, `vitest run` (11 files,
 83 tests) all pass.
 
-**Next up: Phase 7** — make recipe ingredients food-ready.
+### Phase 7 — Food-ready ingredient lines · complete
+
+`20260804120000_recipe_ingredients_food_ready.sql` does three things, each
+forced by how food recipes are actually written:
+
+1. **Drops `unique (recipe_id, ingredient_id)`** — §5's item 5, "the single
+   hardest blocker". "2 tablespoons olive oil, divided", butter in the dough
+   and butter for the pan, salt in two stages: all of those were impossible,
+   and the cocktail validator silently dropped the second occurrence.
+2. **Adds `section`** — the heading a line sits under. Null is the main list,
+   which is every cocktail, so nothing about drinks moved.
+3. **Adds `unique (recipe_id, display_order)`** — with `ingredient_id` no
+   longer unique per recipe, the line's position is its natural key. That gives
+   seeds and upserts a conflict target (both were updated) and makes ordering
+   unambiguous.
+
+Dropping the constraint means the two functions that *count* ingredients had to
+stop counting a repeated one twice — both body-only changes:
+
+- `match_recipes`'s `required` CTE groups by `(recipe_id, ingredient_id)` and
+  keeps `min(display_order)`, so a recipe requires an ingredient once however
+  many lines mention it, and `missing_ingredients` keeps its written order.
+- `recipe_pantry_status` collapses repeated lines the same way, taking the
+  first line's quantity and treating an ingredient as optional only when
+  *every* line mentioning it is optional. The detail page renders its own
+  lines and looks status up by ingredient id, so this is what keeps the
+  "missing N ingredients" banner honest.
+
+The cocktail ranking baseline in `tests/matcher.test.ts` still passes
+unchanged, which is the proof that no drink moved.
+
+**Units** (§32): `src/lib/units/vocabulary.ts` holds the controlled set —
+volume (`tsp`, `tbsp`, `cup`, `oz`, `ml`, `l`, `dash`, `splash`, `drop`,
+`barspoon`), weight (`g`, `kg`, `lb`), pieces (`each`, `pinch`, `clove`,
+`slice`, `can`, `sprig`, `leaves`) — with `normalizeUnit` folding written
+spellings ("Tablespoons" → `tbsp`, "large" → `each`) and `isKnownUnit` for
+validators. The column stays `text`: an unanticipated unit ("handful") is
+better recorded than dropped, which is the plan's "intentional fallback". One
+wart, deliberately documented in the module: **`oz` means fluid ounce** here,
+because that is what the bar has always meant and `format.ts` converts on that
+basis — so food weights use `g`/`kg`/`lb`, never `oz`.
+
+Rendering: `IngredientRow` carries `section`; the detail page selects it; the
+pantry-status island groups lines by section in first-appearance order (an
+unnamed group renders exactly as before) and keys rows by `display_order`
+rather than `ingredient_id`, which repeated ingredients would have collided on.
+The cocktail validator normalises units, sets `section: null`, and **keeps** its
+de-duplication — a drink listing the same bottle twice is a model slip, not a
+"divided" line. That is now adapter policy rather than a schema constraint.
+
+Tests: `tests/recipe-ingredient-lines.test.ts` (9) — repeated lines, required
+counted once, status reported once, optional lines, a "to taste" line with no
+amount or unit, section grouping and order, the new position constraint,
+cocktail lines byte-identical, and unit folding including the fallback.
+
+Validation: lint, `tsc --noEmit`, `next build`, `vitest run` (12 files,
+92 tests) all pass.
+
+**Next up: Phase 8** — build the food ingestion adapter.
