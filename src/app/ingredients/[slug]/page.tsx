@@ -64,7 +64,7 @@ const getIngredient = cache(async (slug: string): Promise<Detail | null> => {
 });
 
 const categoryLabel = (category: Detail["category"]) =>
-  category.replace("_", " ");
+  category.replaceAll("_", " ");
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;

@@ -187,7 +187,7 @@ export function IngredientSearch() {
                     <span className="opacity-50"> · “{r.matched_alias}”</span>
                   )}
                   <span className="ml-2 text-xs uppercase tracking-wide opacity-40">
-                    {r.category.replace("_", " ")}
+                    {r.category.replaceAll("_", " ")}
                   </span>
                 </span>
                 <span

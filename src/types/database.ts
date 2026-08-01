@@ -614,7 +614,22 @@ export type Database = {
         | "produce"
         | "garnish"
         | "other"
-        | "staple";
+        | "staple"
+        | "meat"
+        | "seafood"
+        | "egg"
+        | "grain"
+        | "pasta"
+        | "bread"
+        | "legume"
+        | "canned_good"
+        | "oil_and_fat"
+        | "herb"
+        | "spice"
+        | "condiment"
+        | "sauce"
+        | "baking"
+        | "sweetener";
       recipe_difficulty: "easy" | "medium" | "advanced";
       recipe_domain: "cocktail" | "food";
     };

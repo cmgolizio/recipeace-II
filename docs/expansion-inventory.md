@@ -922,4 +922,55 @@ arriving on a match card. `tests/recipe-queries.test.ts` grew to 12, including
 Validation: lint, `tsc --noEmit`, `next build` (19 routes), `vitest run`
 (10 files, 77 tests) all pass.
 
-**Next up: Phase 6** — expand the ingredient taxonomy.
+### Phase 6 — Ingredient taxonomy · complete
+
+**Decision: extend the enum, don't replace it.** The plan offers a lookup table
+as an option (§8.6); an enum remains the simplest model that meets the actual
+requirement. The taxonomy is a fixed product vocabulary rather than user data,
+and no surface needs per-category metadata — the pantry browser already holds
+the display order, and labels are the value with underscores replaced. Cost of
+the choice, recorded so it can be revisited: adding a category needs a
+migration. The moment a category has to carry data of its own — a shopping-list
+aisle, an icon, a translated label — the lookup table becomes the right call.
+
+`20260803120000_food_ingredient_categories.sql` adds 15 values: `meat`,
+`seafood`, `egg`, `grain`, `pasta`, `bread`, `legume`, `canned_good`,
+`oil_and_fat`, `herb`, `spice`, `condiment`, `sauce`, `baking`, `sweetener`.
+The plan's other suggestions were already covered — Produce and Dairy exist,
+Alcohol is the spirit/liqueur/wine/fortified_wine/bitters split, Beverages are
+`mixer`/`juice`. Migration risk 3 is handled by the migration only *adding*
+values; the first rows using them arrive with the phase 9 seed.
+
+Taxonomy rules, now written into the migration header:
+
+1. One catalog, no domain on ingredients — lime juice is one row.
+2. `category` = what kind of thing this is (display and grouping only; the
+   matcher never reads it).
+3. `is_staple` = whether matching assumes you own it. **Independent** of
+   category: flour is `baking` and is *not* a staple. This resolves §4's open
+   item — the `staple` category and the `is_staple` boolean answer different
+   questions, and the five existing rows keep both.
+4. `parent_id` is the is-a hierarchy; categories are flat and play no part.
+5. One category per ingredient until a surface needs more.
+
+Risk 9 in §8 (`popular_ingredients` / `related_recipes` hardcode
+`category <> 'garnish'`) turned out not to bite: extending rather than
+replacing the enum keeps `garnish` a valid value, so both predicates still mean
+what they meant. A test asserts it rather than leaving it to inspection.
+
+Application: the `Category` union in `src/data/cocktail-seed.ts` (the seed's
+source of truth) and the enum in `src/types/database.ts` gained the same 15
+values; `CATEGORY_ORDER` in `ingredient-browse.tsx` now lists Bar shelves,
+then Kitchen shelves, then shared, and category labels use `replaceAll` so
+`oil_and_fat` renders as "oil and fat".
+
+Tests: `tests/ingredient-taxonomy.test.ts` (6) — every food category exists,
+the cocktail vocabulary is untouched, unknown categories are still rejected,
+seeded ingredients kept id/slug/category, a new food ingredient lands in the
+one shared catalog and is findable through `search_ingredients`, and garnishes
+stay excluded from `popular_ingredients`.
+
+Validation: lint, `tsc --noEmit`, `next build`, `vitest run` (11 files,
+83 tests) all pass.
+
+**Next up: Phase 7** — make recipe ingredients food-ready.

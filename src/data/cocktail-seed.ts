@@ -19,7 +19,13 @@
  * `parent` is the immediate hierarchy edge. They are independent.
  */
 
+/**
+ * The shared ingredient taxonomy — cocktail buckets first, then the food ones
+ * added in expansion phase 6. Mirrors public.ingredient_category; keep the two
+ * in step (supabase/migrations/20260803120000_food_ingredient_categories.sql).
+ */
 export type Category =
+  // Bar
   | "spirit"
   | "liqueur"
   | "fortified_wine"
@@ -28,9 +34,26 @@ export type Category =
   | "mixer"
   | "juice"
   | "syrup"
+  | "garnish"
+  // Kitchen
+  | "meat"
+  | "seafood"
+  | "egg"
+  | "grain"
+  | "pasta"
+  | "bread"
+  | "legume"
+  | "canned_good"
+  | "oil_and_fat"
+  | "herb"
+  | "spice"
+  | "condiment"
+  | "sauce"
+  | "baking"
+  | "sweetener"
+  // Shared
   | "dairy"
   | "produce"
-  | "garnish"
   | "other"
   | "staple";
 
