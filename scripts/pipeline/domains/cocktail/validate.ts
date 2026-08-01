@@ -5,10 +5,17 @@
 // domain = 'cocktail'. A food adapter supplies its own validator and stamps
 // 'food' (docs/expansion-plan.md §16.2, §16.3).
 
-import type { Enums } from "../../src/types/database.ts";
-import { normalizeUnit } from "../../src/lib/units/vocabulary.ts";
+import { normalizeUnit } from "../../../../src/lib/units/vocabulary.ts";
+import { slugify } from "../../core/slug.ts";
+import type {
+  Difficulty,
+  ResolvedCocktailDetails,
+  ResolvedIngredient,
+  ResolvedRecipe,
+  Resolver,
+} from "../../core/types.ts";
 
-export type RecipeDomain = Enums<"recipe_domain">;
+export type { ResolvedRecipe, Resolver };
 
 export type GeneratedIngredient = {
   name: string;
@@ -38,8 +45,6 @@ export type FlavorTag = (typeof FLAVOR_TAGS)[number];
 
 export const DIFFICULTIES = ["easy", "medium", "advanced"] as const;
 
-export type Difficulty = (typeof DIFFICULTIES)[number];
-
 /** The model-emitted metadata fields, before sanitization. */
 export type GeneratedMetadata = {
   strength?: number | null;
@@ -65,59 +70,9 @@ export type RecipeMetadata = {
   base_spirit: string | null;
 };
 
-export type ResolvedIngredient = {
-  ingredient_id: number;
-  amount: number | null;
-  unit: string | null;
-  preparation: string | null;
-  is_optional: boolean;
-  is_garnish: boolean;
-  display_order: number;
-  raw_text: string | null;
-  /** Heading this line sits under; null is the main list (phase 7). */
-  section: string | null;
-};
-
-/**
- * Drink-only metadata, matching public.cocktail_recipe_details. Difficulty is
- * NOT here: it applies to any recipe and stays on `recipes` (phase 5).
- */
-export type ResolvedCocktailDetails = {
-  method: string | null;
-  glass: string | null;
-  garnish: string | null;
-  strength: number | null;
-  base_spirit: string | null;
-  flavor_tags: FlavorTag[];
-};
-
-export type ResolvedRecipe = {
-  domain: RecipeDomain;
-  slug: string;
-  name: string;
-  description: string | null;
-  difficulty: Difficulty | null;
-  instructions: string[];
-  ingredients: ResolvedIngredient[];
-  /** The cocktail adapter always produces this; phase 8 adds a food variant. */
-  cocktail: ResolvedCocktailDetails;
-};
-
 export type ValidationResult =
   | { status: "ok"; recipe: ResolvedRecipe; dropped: string[] }
   | { status: "rejected"; reason: string };
-
-/** Resolve an ingredient name (or alias) to its id, or null if unknown. */
-export type Resolver = (name: string) => number | null;
-
-export function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/\p{Diacritic}/gu, "") // strip diacritics
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
 
 function str(value: unknown): string | null {
   return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
@@ -229,6 +184,14 @@ export function validateRecipe(
   }
 
   const metadata = sanitizeMetadata(gen);
+  const cocktail: ResolvedCocktailDetails = {
+    method: str(gen.method),
+    glass: str(gen.glass),
+    garnish: str(gen.garnish),
+    strength: metadata.strength,
+    base_spirit: metadata.base_spirit,
+    flavor_tags: metadata.flavor_tags,
+  };
   return {
     status: "ok",
     dropped,
@@ -240,14 +203,11 @@ export function validateRecipe(
       difficulty: metadata.difficulty,
       instructions,
       ingredients: deduped.map((i, idx) => ({ ...i, display_order: idx + 1 })),
-      cocktail: {
-        method: str(gen.method),
-        glass: str(gen.glass),
-        garnish: str(gen.garnish),
-        strength: metadata.strength,
-        base_spirit: metadata.base_spirit,
-        flavor_tags: metadata.flavor_tags,
-      },
+      // Generated drinks are published on ingest, as they always have been;
+      // their provenance is exactly that (§15).
+      provenance: { source: "ai-generated", source_url: null, license: null },
+      is_published: true,
+      cocktail,
     },
   };
 }

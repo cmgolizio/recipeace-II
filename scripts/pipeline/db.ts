@@ -4,8 +4,8 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "../../src/types/database.ts";
-import type { RecipeMetadata, ResolvedRecipe, Resolver } from "./validate.ts";
-import type { VocabularyEntry } from "./generate.ts";
+import type { RecipeMetadata, ResolvedRecipe, Resolver } from "./domains/cocktail/validate.ts";
+import type { VocabularyEntry } from "./domains/cocktail/generate.ts";
 
 export type Admin = SupabaseClient<Database>;
 
@@ -68,6 +68,12 @@ export async function loadExistingRecipes(
 }
 
 export async function ingestRecipe(admin: Admin, recipe: ResolvedRecipe): Promise<void> {
+  if (recipe.domain !== "cocktail") {
+    // The food adapter emits idempotent SQL rather than writing through the
+    // admin client (see scripts/pipeline/domains/food/README of intent in
+    // ingest-food.ts); this path is the drinks one.
+    throw new Error(`ingestRecipe only handles cocktails, got "${recipe.domain}"`);
+  }
   // Shared fields only — drink metadata goes to cocktail_recipe_details below
   // (phase 5). The deprecated columns on `recipes` are no longer written.
   const { data, error } = await admin
@@ -79,8 +85,10 @@ export async function ingestRecipe(admin: Admin, recipe: ResolvedRecipe): Promis
         description: recipe.description,
         domain: recipe.domain,
         instructions: recipe.instructions,
-        source: "ai-generated",
-        is_published: true,
+        source: recipe.provenance.source,
+        source_url: recipe.provenance.source_url,
+        license: recipe.provenance.license,
+        is_published: recipe.is_published,
         difficulty: recipe.difficulty,
       },
       { onConflict: "slug" },

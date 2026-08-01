@@ -380,6 +380,8 @@ export type Database = {
           image_url: string | null;
           instructions: string[];
           source: string | null;
+          source_url: string | null;
+          license: string | null;
           is_published: boolean;
           created_at: string;
           updated_at: string;
@@ -402,6 +404,8 @@ export type Database = {
           image_url?: string | null;
           instructions?: string[];
           source?: string | null;
+          source_url?: string | null;
+          license?: string | null;
           is_published?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -422,6 +426,8 @@ export type Database = {
           image_url?: string | null;
           instructions?: string[];
           source?: string | null;
+          source_url?: string | null;
+          license?: string | null;
           is_published?: boolean;
           created_at?: string;
           updated_at?: string;

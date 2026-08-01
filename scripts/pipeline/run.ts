@@ -17,8 +17,8 @@ import {
   loadExistingRecipes,
   loadTaxonomy,
 } from "./db.ts";
-import { generateRecipes, type Provider } from "./generate.ts";
-import { validateRecipe } from "./validate.ts";
+import { generateRecipes, type Provider } from "./domains/cocktail/generate.ts";
+import { validateRecipe } from "./domains/cocktail/validate.ts";
 
 type Args = { count: number; dryRun: boolean; provider: Provider | null };
 

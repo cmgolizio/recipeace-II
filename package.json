@@ -10,6 +10,7 @@
     "test": "vitest run",
     "generate:seed": "node --experimental-strip-types scripts/generate-seed-sql.ts > supabase/seed.sql",
     "pipeline": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/pipeline/run.ts",
+    "pipeline:food": "node --experimental-strip-types scripts/pipeline/ingest-food.ts",
     "pipeline:images": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/pipeline/images.ts",
     "pipeline:enrich": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/pipeline/enrich.ts"
   },

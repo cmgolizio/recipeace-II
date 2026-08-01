@@ -1031,4 +1031,86 @@ cocktail lines byte-identical, and unit folding including the fallback.
 Validation: lint, `tsc --noEmit`, `next build`, `vitest run` (12 files,
 92 tests) all pass.
 
-**Next up: Phase 8** — build the food ingestion adapter.
+### Phase 8 — Food ingestion adapter · complete
+
+**Structure.** The pipeline now has the core/domains split §16 asks for, with
+the existing files moved rather than rewritten:
+
+```
+scripts/pipeline/
+  run.ts, db.ts, enrich.ts, images.ts, image.ts   unchanged behaviour
+  ingest-food.ts                                   food CLI
+  core/  types.ts · slug.ts · report.ts
+  domains/
+    cocktail/  generate.ts · validate.ts          (git mv, history intact)
+    food/      source.ts · validate.ts · ingest.ts
+```
+
+`core/types.ts` holds the shape every adapter produces: a `ResolvedRecipe`
+discriminated on domain, carrying shared fields, its own domain's details,
+`provenance` and `is_published`. The cocktail adapter stamps
+`{source: "ai-generated"}` and `is_published: true` — exactly what `db.ts`
+hardcoded before — so drinks ingestion is unchanged.
+
+**Decision: the food adapter emits SQL rather than writing through the admin
+client.** Food content is curated and reviewed (Decision 12), which makes it
+reference data, and this repository already has a shape for reference data: a
+typed source in `src/data` compiled to an idempotent SQL file
+(`scripts/generate-seed-sql.ts` → `supabase/seed.sql`). Emitting SQL keeps the
+entire path runnable and *testable* with no Supabase project — the tests apply
+the generated file to PGlite and re-apply it to prove idempotence — and
+idempotency comes from the same on-conflict clauses the existing seeds use.
+`ingestRecipe` now refuses a non-cocktail recipe rather than silently writing
+one badly.
+
+**Input** (`domains/food/source.ts`): a `FoodCatalog` of the canonical
+ingredients the recipes need, the aliases mapping real-world names onto them,
+and the recipes — plain data, reviewable in a diff. `parseCatalog` fails a
+malformed file at file level rather than a hundred times over.
+
+**Validation** (`domains/food/validate.ts`, pure — §16.4): name, slug,
+ordered instructions, source name *and* licence (§15 requires both), plausible
+servings, non-negative times with `total` derived from prep + cook and rejected
+if it is less than its parts, positive amounts, units folded to the vocabulary,
+at least two required ingredients, and every ingredient resolving to the shared
+taxonomy. Unresolved ingredients reject the recipe and are reported by name.
+Warnings — off-vocabulary units, an amount with no unit, an ingredient the
+instructions never mention — never block. Repeated ingredients are **kept**
+(that is the whole point of phase 7); the drinks adapter still collapses them.
+
+**Domain and publication**: every food recipe is stamped `domain: "food"` and
+lands `is_published: false` unless the catalog explicitly says `publish: true`
+(§34, invariant 16).
+
+**Report** (`core/report.ts`, §16.5): proposed recipes with their normalized
+lines, newly proposed canonical ingredients, alias mappings, unresolved
+ingredients, duplicate candidates, warnings, rejections with reasons, and the
+expected database operations. `isClean` gates the write — a run with anything
+unresolved, duplicated or invalid writes nothing and exits non-zero.
+
+**Duplicate detection** (§16.6, and §8 migration risk 5): slug collisions
+within the batch and against supplied existing slugs, plus normalized-name
+near-duplicates. The risk the inventory flagged — a food recipe silently
+overwriting a cocktail through the `on conflict (slug)` upsert — is closed by a
+guard the emitter puts *before* the transaction: it raises with the offending
+slugs, so nothing is written. A test proves the seeded Daiquiri survives an
+attempt to overwrite it.
+
+CLI: `npm run pipeline:food -- --dry-run` (report only), `npm run pipeline:food`
+(writes `supabase/seed_food.sql`), `--catalog x.json`, `--out path.sql`.
+
+Schema: `20260805120000_recipe_source_provenance.sql` adds `source_url` and
+`license` to `recipes` and documents what `source` means now.
+
+Tests: `tests/food-pipeline.test.ts` (20) — acceptance and domain stamping,
+opt-in publication, metadata carry-through, unit folding, sections, repeated
+ingredients, unresolved reporting, catalog-introduced ingredients, seven
+rejection cases, warnings, all three duplicate paths, report content,
+malformed-catalog handling, generated SQL applied twice with an identical
+snapshot, and the cross-domain slug guard.
+
+Validation: lint, `tsc --noEmit`, `next build`, `vitest run` (13 files,
+112 tests) all pass; `npm run pipeline:food -- --dry-run` runs clean against
+the (still empty) catalog.
+
+**Next up: Phase 9** — seed the first curated food catalog.

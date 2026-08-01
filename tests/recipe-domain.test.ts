@@ -7,7 +7,7 @@ import { afterAll, beforeAll, expect, test } from "vitest";
 import type { PGlite } from "@electric-sql/pglite";
 
 import { createSeededDb } from "./db";
-import { validateRecipe, type GeneratedRecipe } from "../scripts/pipeline/validate";
+import { validateRecipe, type GeneratedRecipe } from "../scripts/pipeline/domains/cocktail/validate";
 
 let db: PGlite;
 

@@ -7,7 +7,7 @@ import { afterAll, beforeAll, expect, test } from "vitest";
 
 import type { PGlite } from "@electric-sql/pglite";
 
-import { sanitizeMetadata } from "../scripts/pipeline/validate.ts";
+import { sanitizeMetadata } from "../scripts/pipeline/domains/cocktail/validate.ts";
 import { createSeededDb, recipeIdBySlug } from "./db";
 
 test("sanitizeMetadata passes valid metadata through, rounding strength", () => {
