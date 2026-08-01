@@ -10,7 +10,7 @@ export type RecipeFilters = {
   difficulty: string;
   spirit: string;
   tags: string[];
-  sort: "name" | "newest" | "strength";
+  sort: string;
 };
 
 const selectClass =

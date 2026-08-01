@@ -13,9 +13,9 @@ import { ShareButton } from "../../../components/share-button";
 import {
   DOMAIN_ROUTES,
   DOMAIN_SURFACE,
+  formatMinutes,
 } from "../../../lib/recipes/domain";
 import {
-  formatMinutes,
   getPublishedRecipeSlugs,
   getRecipeBySlug,
 } from "../../../lib/recipes/queries";

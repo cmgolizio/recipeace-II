@@ -11,7 +11,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database, Enums, Tables } from "../../types/database";
 import type { DomainFilter, RecipeDomain } from "./domain";
-import { RECIPE_DOMAINS } from "./domain";
+import { formatMinutes, RECIPE_DOMAINS } from "./domain";
 
 export type RecipeClient = SupabaseClient<Database>;
 
@@ -57,13 +57,6 @@ type FoodCardRow = {
   total_minutes: number | null;
 };
 
-export function formatMinutes(minutes: number): string {
-  if (minutes < 60) return `${minutes} min`;
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  return rest === 0 ? `${hours} hr` : `${hours} hr ${rest} min`;
-}
-
 function toPreview(row: CocktailCardRow | FoodCardRow): RecipePreview {
   const pills =
     "method" in row
@@ -80,7 +73,8 @@ function toPreview(row: CocktailCardRow | FoodCardRow): RecipePreview {
   };
 }
 
-export type RecipeSort = "name" | "newest" | "strength";
+/** `strength` is a Bar sort, `time` a Kitchen one; both fall back to name. */
+export type RecipeSort = "name" | "newest" | "strength" | "time";
 
 export type RecipeListFilters = {
   q: string;
@@ -92,6 +86,11 @@ export type RecipeListFilters = {
   glass: string;
   spirit: string;
   tags: string[];
+  /** Kitchen facets; ignored outside the food domain. */
+  course: string;
+  cuisine: string;
+  /** Upper bound on total time, in minutes. 0 means unfiltered. */
+  maxMinutes: number;
 };
 
 export const EMPTY_FILTERS: RecipeListFilters = {
@@ -102,6 +101,9 @@ export const EMPTY_FILTERS: RecipeListFilters = {
   glass: "",
   spirit: "",
   tags: [],
+  course: "",
+  cuisine: "",
+  maxMinutes: 0,
 };
 
 export type RecipeListResult = {
@@ -128,6 +130,7 @@ function ilikePattern(q: string): string {
  */
 type CatalogQuery = {
   eq(column: string, value: unknown): CatalogQuery;
+  lte(column: string, value: unknown): CatalogQuery;
   in(column: string, values: unknown[]): CatalogQuery;
   or(filters: string): CatalogQuery;
   contains(column: string, value: string[]): CatalogQuery;
@@ -184,7 +187,11 @@ export async function getRecipes(
         ? query
             .order("strength", { ascending: false, nullsFirst: false })
             .order("name")
-        : query.order("name");
+        : filters.sort === "time" && !cocktails
+          ? query
+              .order("total_minutes", { ascending: true, nullsFirst: false })
+              .order("name")
+          : query.order("name");
 
   if (filters.difficulty) query = query.eq("difficulty", filters.difficulty);
   if (cocktails) {
@@ -193,6 +200,11 @@ export async function getRecipes(
     if (filters.spirit) query = query.eq("base_spirit", filters.spirit);
     if (filters.tags.length > 0)
       query = query.contains("flavor_tags", filters.tags);
+  } else {
+    if (filters.course) query = query.eq("course", filters.course);
+    if (filters.cuisine) query = query.eq("cuisine", filters.cuisine);
+    if (filters.maxMinutes > 0)
+      query = query.lte("total_minutes", filters.maxMinutes);
   }
   if (filters.q) {
     const pattern = ilikePattern(filters.q);
@@ -223,6 +235,22 @@ export async function getCocktailFacets(
   const { data } = await client
     .from("cocktail_recipes")
     .select("method,glass,difficulty,base_spirit,flavor_tags")
+    .eq("is_published", true);
+  return data ?? [];
+}
+
+export type FoodFacetRow = Pick<
+  Tables<"food_recipes">,
+  "course" | "cuisine" | "difficulty" | "total_minutes"
+>;
+
+/** Facet values for the Kitchen filter controls. */
+export async function getFoodFacets(
+  client: RecipeClient,
+): Promise<FoodFacetRow[]> {
+  const { data } = await client
+    .from("food_recipes")
+    .select("course,cuisine,difficulty,total_minutes")
     .eq("is_published", true);
   return data ?? [];
 }

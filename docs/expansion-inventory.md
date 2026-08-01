@@ -1168,4 +1168,53 @@ Validation: lint, `tsc --noEmit`, `next build`, `vitest run` (14 files,
 123 tests) all pass; `npm run pipeline:food -- --dry-run` reports 13 accepted,
 0 rejected, nothing unresolved.
 
-**Next up: Phase 10** — build Kitchen recipe browsing.
+### Phases 10 and 11 — Kitchen browsing and matching · complete
+
+`/kitchen` is now a real overview (live recipe count, entry points to matches
+and the catalog) that still degrades honestly to "still being stocked" when the
+catalog is empty. `/kitchen/recipes` and `/kitchen/matches` are built.
+
+**Browsing** (`/kitchen/recipes`): a server component with the same shape as
+the Bar catalog — server-side fetch, 24 per page, offset pagination, empty and
+error states — over `getRecipes({domain: "food"})`. Its filters are food's
+(§13.3): course, cuisine, total time (15/30/60 minutes) and difficulty, plus
+name search and a "quickest first" sort. `FoodFilter` is its own client
+component rather than a branch inside `RecipesFilter`, because the two facet
+sets have nothing in common (§14.2). Both catalogs now share
+`components/pagination.tsx`, which is the part that genuinely is identical.
+
+**Matching** (`/kitchen/matches`): `components/matches-view.tsx` is the Bar
+matches page, extracted and parameterised by a small `MatchesCopy` object —
+domain, heading, route, empty-state wording, and the noun for "unlock N more
+___". The matcher call, the ranking, the ready/missing-1/missing-2 sections,
+the buy-next suggestion, "Surprise me" and the add-to-shopping-list action are
+all literally the same code for both domains (Decision 9). Each route file is a
+dozen lines of copy.
+
+Card pills come from `matchPills(domain, metadata)` in
+`lib/recipes/domain.ts`, which reads the domain-shaped `metadata` object the
+RPC already returns — method and glass for a drink, course and total time for a
+dish. `formatMinutes` moved there too, so the three surfaces that render a
+duration share one implementation.
+
+**The staple policy is now visible** (§11.4, and the second of §10's open
+decisions). `components/staple-note.tsx` renders "Matches assume you have
+crushed ice, ice, salt, sugar, water — those never count as missing" under both
+matches pages, reading the list *from the database* rather than repeating it in
+markup, so the note cannot drift from the policy.
+
+Tests: `tests/kitchen.test.ts` (11). The catalog view is food-only; each of the
+four filters narrows it; quickest-first really sorts by total time; the facet
+lists span the catalog. A PGlite-backed stand-in for the Supabase client then
+drives the **real query layer** end to end — cards carry food pills (never a
+glass), a course filter narrows the page, two pages never overlap, and the
+Kitchen's facet columns are food's. Finally the matches side: results are
+food-only and ranked fewest-missing-first, pills are food's, the staple list is
+exactly the documented five, and missing ingredients are named so they can go
+on the shopping list.
+
+Validation: lint, `tsc --noEmit`, `next build` (23 routes), `vitest run`
+(15 files, 134 tests) all pass.
+
+**Next up: Phase 12** — integrate the shared pantry, favorites and shopping
+list.

@@ -4,8 +4,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 
 import { RecipeCard } from "../../../components/recipe-card";
-import type { RecipeDomain } from "../../../lib/recipes/domain";
-import { formatMinutes } from "../../../lib/recipes/queries";
+import { matchPills, type RecipeDomain } from "../../../lib/recipes/domain";
 import { createStaticClient } from "../../../lib/supabase/static";
 import type { Database } from "../../../types/database";
 
@@ -23,18 +22,6 @@ type UsedIn = {
   image_url: string | null;
 };
 
-/** Card pills for a recipe of either domain, in the order each one reads. */
-function pillsFor(recipe: UsedIn): string[] {
-  const { metadata } = recipe;
-  const keys =
-    recipe.domain === "cocktail"
-      ? ["method", "glass"]
-      : ["course", "total_minutes"];
-  return keys
-    .map((key) => metadata[key])
-    .filter((v): v is string | number => v != null)
-    .map((v) => (typeof v === "number" ? formatMinutes(v) : v));
-}
 type RelatedIngredient = { name: string; slug: string; note?: string | null };
 
 type Props = { params: Promise<{ slug: string }> };
@@ -155,7 +142,10 @@ export default async function IngredientPage({ params }: Props) {
             {recipes.map((recipe) => (
               <li key={recipe.id}>
                 <RecipeCard
-                  recipe={{ ...recipe, pills: pillsFor(recipe) }}
+                  recipe={{
+                    ...recipe,
+                    pills: matchPills(recipe.domain, recipe.metadata),
+                  }}
                   titleAs="h3"
                 />
               </li>

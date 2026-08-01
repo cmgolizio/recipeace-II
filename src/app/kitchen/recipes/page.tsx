@@ -1,20 +1,21 @@
 import type { Metadata } from "next";
+
+import { FoodFilter } from "../../../components/food-filter";
 import { Pagination } from "../../../components/pagination";
 import { RecipeCard } from "../../../components/recipe-card";
-import { RecipesFilter } from "../../../components/recipes-filter";
 import {
   EMPTY_FILTERS,
-  getCocktailFacets,
+  getFoodFacets,
   getRecipes,
   type RecipeListFilters,
 } from "../../../lib/recipes/queries";
 import { createClient } from "../../../lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Cocktail recipes — In House Mixers",
+  title: "Food recipes — In House Mixers",
   description:
-    "Browse the cocktail catalog by method, glass, base spirit and flavour.",
-  alternates: { canonical: "/bar/recipes" },
+    "Browse the food catalog by course, cuisine, total time and difficulty.",
+  alternates: { canonical: "/kitchen/recipes" },
 };
 
 const PAGE_SIZE = 24;
@@ -22,57 +23,43 @@ const PAGE_SIZE = 24;
 // Enum order, not alphabetical — used for both parsing and facet display.
 const DIFFICULTIES = ["easy", "medium", "advanced"] as const;
 
-// This is the Bar catalog: cocktails only. Food browsing gets its own route
-// under /kitchen rather than a mode switch here (docs/expansion-plan.md §9.2).
-const DOMAIN = "cocktail" as const;
+const DOMAIN = "food" as const;
 
 function pageHref(filters: RecipeListFilters, page: number) {
-  const query: Record<string, string | string[]> = {};
+  const query: Record<string, string> = {};
   if (filters.q) query.q = filters.q;
-  if (filters.method) query.method = filters.method;
-  if (filters.glass) query.glass = filters.glass;
+  if (filters.course) query.course = filters.course;
+  if (filters.cuisine) query.cuisine = filters.cuisine;
   if (filters.difficulty) query.difficulty = filters.difficulty;
-  if (filters.spirit) query.spirit = filters.spirit;
-  if (filters.tags.length > 0) query.tag = filters.tags;
+  if (filters.maxMinutes > 0) query.time = String(filters.maxMinutes);
   if (filters.sort !== "name") query.sort = filters.sort;
   if (page > 1) query.page = String(page);
-  return { pathname: "/bar/recipes", query };
+  return { pathname: "/kitchen/recipes", query };
 }
 
 function single(value: string | string[] | undefined): string {
   return (Array.isArray(value) ? value[0] : value)?.trim() ?? "";
 }
 
-function multi(value: string | string[] | undefined): string[] {
-  const values = Array.isArray(value) ? value : value !== undefined ? [value] : [];
-  return values.map((v) => v.trim()).filter((v) => v !== "");
-}
-
-export default async function RecipesPage({
+export default async function KitchenRecipesPage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const params = await searchParams;
   const sortParam = single(params.sort);
-  // Narrowed to the enum here so the .eq() in the query layer type-checks
-  // against the difficulty column.
   const difficulty =
     DIFFICULTIES.find((d) => d === single(params.difficulty)) ?? "";
+  const minutes = Number.parseInt(single(params.time), 10);
   const filters: RecipeListFilters = {
     ...EMPTY_FILTERS,
     q: single(params.q),
-    method: single(params.method),
-    glass: single(params.glass),
+    course: single(params.course),
+    cuisine: single(params.cuisine),
     difficulty,
-    spirit: single(params.spirit),
-    tags: multi(params.tag),
+    maxMinutes: Number.isFinite(minutes) && minutes > 0 ? minutes : 0,
     sort:
-      sortParam === "newest"
-        ? "newest"
-        : sortParam === "strength"
-          ? "strength"
-          : "name",
+      sortParam === "newest" ? "newest" : sortParam === "time" ? "time" : "name",
   };
   const page = Math.max(1, Number.parseInt(single(params.page) || "1", 10) || 1);
 
@@ -84,52 +71,41 @@ export default async function RecipesPage({
       page,
       pageSize: PAGE_SIZE,
     }),
-    getCocktailFacets(supabase),
+    getFoodFacets(supabase),
   ]);
 
-  const facetValues = (key: "method" | "glass" | "base_spirit") =>
+  const facetValues = (key: "course" | "cuisine") =>
     [
       ...new Set(facetRows.map((r) => r[key]).filter((v): v is string => !!v)),
     ].sort();
-  const methods = facetValues("method");
-  const glasses = facetValues("glass");
-  const spirits = facetValues("base_spirit");
   const difficulties = DIFFICULTIES.filter((d) =>
     facetRows.some((r) => r.difficulty === d),
   );
-  const tagOptions = [
-    ...new Set(facetRows.flatMap((r) => r.flavor_tags)),
-  ].sort();
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const filtered = !!(
     filters.q ||
-    filters.method ||
-    filters.glass ||
+    filters.course ||
+    filters.cuisine ||
     filters.difficulty ||
-    filters.spirit ||
-    filters.tags.length > 0
+    filters.maxMinutes > 0
   );
 
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Cocktail recipes
-        </h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Food recipes</h1>
         <p className="text-muted">
-          Browse the drinks catalog. Open any cocktail to see the full build and
+          Browse the kitchen catalog. Open any recipe to see the full method and
           what you’re missing from your pantry.
         </p>
       </div>
 
-      <RecipesFilter
-        filters={filters}
-        methods={methods}
-        glasses={glasses}
+      <FoodFilter
+        filters={{ ...filters, sort: filters.sort }}
+        courses={facetValues("course")}
+        cuisines={facetValues("cuisine")}
         difficulties={difficulties}
-        spirits={spirits}
-        tagOptions={tagOptions}
       />
 
       {error && (
@@ -139,17 +115,7 @@ export default async function RecipesPage({
       )}
       {!error && total === 0 && !filtered && (
         <p className="text-muted">
-          No recipes yet — check back soon.
-          {process.env.NODE_ENV === "development" && (
-            <>
-              {" "}
-              Run{" "}
-              <code className="rounded bg-black/6 px-1 dark:bg-white/10">
-                supabase/seed_test_recipes.sql
-              </code>{" "}
-              to add some.
-            </>
-          )}
+          No food recipes yet — the Kitchen is still being stocked.
         </p>
       )}
       {!error && filtered && recipes.length === 0 && (
@@ -173,7 +139,6 @@ export default async function RecipesPage({
         totalPages={totalPages}
         href={(next) => pageHref(filters, next)}
       />
-
     </div>
   );
 }

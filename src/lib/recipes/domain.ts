@@ -54,3 +54,29 @@ export const DOMAIN_ROUTES: Record<
     matches: "/kitchen/matches",
   },
 };
+
+/**
+ * Card pills from a match's domain-shaped `metadata` object
+ * (match_recipes_detail builds it; ingredient_detail uses the same shape).
+ * Each domain contributes what it has and nothing else — the object never
+ * carries the other domain's keys, and nulls are stripped before it arrives.
+ */
+export function matchPills(domain: RecipeDomain, metadata: unknown): string[] {
+  const fields = (metadata ?? {}) as Record<string, string | number>;
+  const keys =
+    domain === "cocktail" ? ["method", "glass"] : ["course", "total_minutes"];
+  return keys
+    .map((key) => fields[key])
+    .filter((value): value is string | number => value != null)
+    .map((value) =>
+      typeof value === "number" ? formatMinutes(value) : value,
+    );
+}
+
+/** "45 min", "1 hr 15 min". */
+export function formatMinutes(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest === 0 ? `${hours} hr` : `${hours} hr ${rest} min`;
+}
