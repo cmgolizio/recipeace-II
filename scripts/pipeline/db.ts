@@ -68,6 +68,8 @@ export async function loadExistingRecipes(
 }
 
 export async function ingestRecipe(admin: Admin, recipe: ResolvedRecipe): Promise<void> {
+  // Shared fields only — drink metadata goes to cocktail_recipe_details below
+  // (phase 5). The deprecated columns on `recipes` are no longer written.
   const { data, error } = await admin
     .from("recipes")
     .upsert(
@@ -76,16 +78,10 @@ export async function ingestRecipe(admin: Admin, recipe: ResolvedRecipe): Promis
         name: recipe.name,
         description: recipe.description,
         domain: recipe.domain,
-        method: recipe.method,
-        glass: recipe.glass,
-        garnish: recipe.garnish,
         instructions: recipe.instructions,
         source: "ai-generated",
         is_published: true,
-        strength: recipe.strength,
         difficulty: recipe.difficulty,
-        flavor_tags: recipe.flavor_tags,
-        base_spirit: recipe.base_spirit,
       },
       { onConflict: "slug" },
     )
@@ -96,6 +92,15 @@ export async function ingestRecipe(admin: Admin, recipe: ResolvedRecipe): Promis
   }
 
   const recipeId = data.id;
+  const details = await admin
+    .from("cocktail_recipe_details")
+    .upsert({ recipe_id: recipeId, ...recipe.cocktail }, { onConflict: "recipe_id" });
+  if (details.error) {
+    throw new Error(
+      `upsert cocktail details for "${recipe.slug}" failed: ${details.error.message}`,
+    );
+  }
+
   // Replace the ingredient set so re-ingesting a recipe stays clean.
   const del = await admin.from("recipe_ingredients").delete().eq("recipe_id", recipeId);
   if (del.error) {
@@ -133,8 +138,9 @@ export async function ensureImageBucket(admin: Admin): Promise<void> {
 }
 
 export async function loadRecipesMissingImages(admin: Admin): Promise<RecipeForImage[]> {
+  // The prompt describes a drink, so this reads the cocktail catalog view.
   const { data, error } = await admin
-    .from("recipes")
+    .from("cocktail_recipes")
     .select("id,slug,name,description,method,glass,garnish")
     .is("image_url", null);
   if (error) throw new Error(`loading recipes failed: ${error.message}`);
@@ -178,10 +184,13 @@ export type RecipeForEnrich = {
  * a bad model answer, in which case the recipe is simply retried next run).
  */
 export async function loadRecipesMissingMetadata(admin: Admin): Promise<RecipeForEnrich[]> {
+  // Cocktails only: the enrichment prompt is a bartender's, and its output
+  // lands in cocktail_recipe_details.
   const { data, error } = await admin
     .from("recipes")
     .select("id,name,recipe_ingredients(amount,unit,ingredients(name))")
     .eq("is_published", true)
+    .eq("domain", "cocktail")
     .is("difficulty", null);
   if (error) throw new Error(`loading recipes failed: ${error.message}`);
   return (data ?? []).map((r) => ({
@@ -195,11 +204,35 @@ export async function loadRecipesMissingMetadata(admin: Admin): Promise<RecipeFo
   }));
 }
 
+/**
+ * Enrichment writes land in two places from phase 5 on: difficulty applies to
+ * any recipe and stays on `recipes`; strength, flavor tags and base spirit are
+ * drink-only and belong to cocktail_recipe_details.
+ */
 export async function updateRecipeMetadata(
   admin: Admin,
   id: number,
   meta: RecipeMetadata,
 ): Promise<void> {
-  const { error } = await admin.from("recipes").update(meta).eq("id", id);
-  if (error) throw new Error(`updating metadata for recipe ${id} failed: ${error.message}`);
+  const shared = await admin
+    .from("recipes")
+    .update({ difficulty: meta.difficulty })
+    .eq("id", id);
+  if (shared.error) {
+    throw new Error(`updating metadata for recipe ${id} failed: ${shared.error.message}`);
+  }
+  const details = await admin.from("cocktail_recipe_details").upsert(
+    {
+      recipe_id: id,
+      strength: meta.strength,
+      flavor_tags: meta.flavor_tags,
+      base_spirit: meta.base_spirit,
+    },
+    { onConflict: "recipe_id" },
+  );
+  if (details.error) {
+    throw new Error(
+      `updating drink metadata for recipe ${id} failed: ${details.error.message}`,
+    );
+  }
 }

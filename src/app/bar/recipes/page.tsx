@@ -4,7 +4,7 @@ import Link from "next/link";
 import { RecipeCard } from "../../../components/recipe-card";
 import { RecipesFilter } from "../../../components/recipes-filter";
 import {
-  getRecipeFacets,
+  getCocktailFacets,
   getRecipes,
   type RecipeListFilters,
 } from "../../../lib/recipes/queries";
@@ -83,7 +83,7 @@ export default async function RecipesPage({
       page,
       pageSize: PAGE_SIZE,
     }),
-    getRecipeFacets(supabase, DOMAIN),
+    getCocktailFacets(supabase),
   ]);
 
   const facetValues = (key: "method" | "glass" | "base_spirit") =>

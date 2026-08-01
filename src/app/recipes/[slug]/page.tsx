@@ -15,6 +15,7 @@ import {
   DOMAIN_SURFACE,
 } from "../../../lib/recipes/domain";
 import {
+  formatMinutes,
   getPublishedRecipeSlugs,
   getRecipeBySlug,
 } from "../../../lib/recipes/queries";
@@ -119,6 +120,27 @@ export default async function RecipeDetailPage({ params }: Props) {
     );
   const related = relatedRows ?? [];
 
+  // Its own domain's metadata, and only that. The union in getRecipeBySlug
+  // means a food recipe has no `cocktail` member to read by accident.
+  const cocktail = recipe.domain === "cocktail" ? recipe.cocktail : null;
+  const food = recipe.domain === "food" ? recipe.food : null;
+  const subtitle = (
+    cocktail ? [cocktail.method, cocktail.glass] : [food?.course, food?.cuisine]
+  ).filter((v): v is string => !!v);
+  const pills = (
+    cocktail
+      ? [
+          recipe.difficulty,
+          cocktail.strength != null ? `~${cocktail.strength}% ABV` : null,
+          ...cocktail.flavor_tags,
+        ]
+      : [
+          recipe.difficulty,
+          food?.total_minutes != null ? formatMinutes(food.total_minutes) : null,
+          food?.servings != null ? `serves ${food.servings}` : null,
+        ]
+  ).filter((v): v is string => !!v);
+
   // Structured data for search engines. Built from the server-rendered rows,
   // so it always matches the page as delivered — not the client pantry
   // overlay, and not the reader's oz/ml or serving-scale preferences.
@@ -132,7 +154,11 @@ export default async function RecipeDetailPage({ params }: Props) {
     ...(recipe.instructions.length > 0
       ? { recipeInstructions: recipe.instructions }
       : {}),
-    recipeYield: "1 cocktail",
+    ...(cocktail
+      ? { recipeYield: "1 cocktail" }
+      : food?.servings != null
+        ? { recipeYield: `${food.servings} servings` }
+        : {}),
   };
 
   return (
@@ -167,29 +193,21 @@ export default async function RecipeDetailPage({ params }: Props) {
 
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">{recipe.name}</h1>
-        {(recipe.method || recipe.glass) && (
+        {subtitle.length > 0 && (
           <p className="text-xs uppercase tracking-wide opacity-50">
-            {[recipe.method, recipe.glass].filter(Boolean).join(" · ")}
+            {subtitle.join(" · ")}
           </p>
         )}
-        {(recipe.difficulty ||
-          recipe.strength != null ||
-          recipe.flavor_tags.length > 0) && (
+        {pills.length > 0 && (
           <div className="flex flex-wrap gap-1.5 pt-2">
-            {[
-              recipe.difficulty,
-              recipe.strength != null ? `~${recipe.strength}% ABV` : null,
-              ...recipe.flavor_tags,
-            ]
-              .filter((v): v is string => !!v)
-              .map((pill) => (
-                <span
-                  key={pill}
-                  className="rounded-full border border-border bg-surface px-2 py-0.5 text-xs text-muted"
-                >
-                  {pill}
-                </span>
-              ))}
+            {pills.map((pill) => (
+              <span
+                key={pill}
+                className="rounded-full border border-border bg-surface px-2 py-0.5 text-xs text-muted"
+              >
+                {pill}
+              </span>
+            ))}
           </div>
         )}
         {recipe.description && (
@@ -201,12 +219,12 @@ export default async function RecipeDetailPage({ params }: Props) {
 
       {/* The island renders the garnish ingredients when the recipe has any;
           this free-text note is the fallback for recipes that don't. */}
-      {recipe.garnish && !ingredients.some((ri) => ri.is_garnish) && (
+      {cocktail?.garnish && !ingredients.some((ri) => ri.is_garnish) && (
         <section>
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
             Garnish
           </h2>
-          <p className="mt-1 opacity-90">{recipe.garnish}</p>
+          <p className="mt-1 opacity-90">{cocktail.garnish}</p>
         </section>
       )}
 
@@ -242,8 +260,9 @@ export default async function RecipeDetailPage({ params }: Props) {
                     id: r.recipe_id,
                     slug: r.slug,
                     name: r.name,
-                    method: r.method,
-                    glass: r.glass,
+                    pills: [r.method, r.glass].filter(
+                      (v): v is string => !!v,
+                    ),
                     image_url: r.image_url,
                   }}
                   titleAs="h3"

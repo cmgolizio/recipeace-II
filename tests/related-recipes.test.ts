@@ -75,14 +75,20 @@ test("a matching base_spirit outranks an equal-scoring recipe without one", asyn
   // Both tie at one shared ingredient with the Negroni; giving Manhattan the
   // subject's base spirit has to lift it above the alphabetically-first tie.
   await db.exec(`
-    update public.recipes set base_spirit = 'gin' where slug in ('negroni', 'manhattan');
+    update public.cocktail_recipe_details set base_spirit = 'gin'
+    where recipe_id in (
+      select id from public.recipes where slug in ('negroni', 'manhattan')
+    );
   `);
   try {
     const related = await relatedTo("negroni");
     expect(related.map((r) => r.slug)).toEqual(["manhattan", "gin-and-tonic"]);
   } finally {
     await db.exec(
-      "update public.recipes set base_spirit = null where slug in ('negroni', 'manhattan')",
+      `update public.cocktail_recipe_details set base_spirit = null
+       where recipe_id in (
+         select id from public.recipes where slug in ('negroni', 'manhattan')
+       )`,
     );
   }
 });

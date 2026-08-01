@@ -123,6 +123,9 @@ function MatchCard({ match: m }: { match: Match }) {
   const missing = new Set(m.missing_ingredients);
   const ingredients = m.ingredients as unknown as MatchIngredient[];
   const metadata = m.metadata as unknown as CocktailMatchMetadata;
+  const pills = [metadata.method, metadata.glass].filter(
+    (p): p is string => !!p,
+  );
   return (
     <li>
       <RecipeCard
@@ -130,8 +133,7 @@ function MatchCard({ match: m }: { match: Match }) {
           id: m.recipe_id,
           slug: m.slug,
           name: m.name,
-          method: metadata.method ?? null,
-          glass: metadata.glass ?? null,
+          pills,
         }}
         titleAs="h3"
         badge={

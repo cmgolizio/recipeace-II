@@ -43,6 +43,13 @@ on conflict (slug) do update set
   instructions = excluded.instructions,
   description = excluded.description, is_published = excluded.is_published;
 
+-- Drink metadata lives in the detail table from phase 5 onward; the columns
+-- above are the deprecated originals, kept until the phase 17 cleanup.
+insert into public.cocktail_recipe_details (recipe_id, method, glass, garnish)
+select id, method, glass, garnish from public.recipes where domain = 'cocktail'
+on conflict (recipe_id) do update set
+  method = excluded.method, glass = excluded.glass, garnish = excluded.garnish;
+
 insert into public.recipe_ingredients
   (recipe_id, ingredient_id, amount, unit, is_optional, is_garnish, display_order)
 select r.id, i.id, v.amount::numeric, v.unit::text,

@@ -5,6 +5,7 @@ import { cache } from "react";
 
 import { RecipeCard } from "../../../components/recipe-card";
 import type { RecipeDomain } from "../../../lib/recipes/domain";
+import { formatMinutes } from "../../../lib/recipes/queries";
 import { createStaticClient } from "../../../lib/supabase/static";
 import type { Database } from "../../../types/database";
 
@@ -17,10 +18,23 @@ type UsedIn = {
   slug: string;
   name: string;
   domain: RecipeDomain;
-  method: string | null;
-  glass: string | null;
+  /** Domain-shaped card metadata; keys vary by domain, values are never null. */
+  metadata: Record<string, string | number>;
   image_url: string | null;
 };
+
+/** Card pills for a recipe of either domain, in the order each one reads. */
+function pillsFor(recipe: UsedIn): string[] {
+  const { metadata } = recipe;
+  const keys =
+    recipe.domain === "cocktail"
+      ? ["method", "glass"]
+      : ["course", "total_minutes"];
+  return keys
+    .map((key) => metadata[key])
+    .filter((v): v is string | number => v != null)
+    .map((v) => (typeof v === "number" ? formatMinutes(v) : v));
+}
 type RelatedIngredient = { name: string; slug: string; note?: string | null };
 
 type Props = { params: Promise<{ slug: string }> };
@@ -140,7 +154,10 @@ export default async function IngredientPage({ params }: Props) {
           <ul className="mt-3 grid gap-3 sm:grid-cols-2">
             {recipes.map((recipe) => (
               <li key={recipe.id}>
-                <RecipeCard recipe={recipe} titleAs="h3" />
+                <RecipeCard
+                  recipe={{ ...recipe, pills: pillsFor(recipe) }}
+                  titleAs="h3"
+                />
               </li>
             ))}
           </ul>

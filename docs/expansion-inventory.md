@@ -847,4 +847,79 @@ domain's catalog.
 Validation: lint, `tsc --noEmit`, `next build` (19 routes), `vitest run`
 (9 files, 65 tests) all pass; redirects checked against `next start`.
 
-**Next up: Phase 5** — normalize shared and domain-specific recipe metadata.
+### Phase 5 — Shared recipe, domain-specific details · complete
+
+**The field-by-field verdict** (§3.1's table, resolved):
+
+| Field                                                                                            | Verdict          | Where it lives now                         |
+| ------------------------------------------------------------------------------------------------ | ---------------- | ------------------------------------------ |
+| id, slug, name, description, instructions, source, is_published, image_url, created_at, updated_at | shared           | `recipes`                                  |
+| domain                                                                                           | shared           | `recipes` (the one place it is persisted)  |
+| difficulty                                                                                       | **shared**       | `recipes` — easy/medium/advanced fits both |
+| method, glass, garnish, strength, base_spirit, flavor_tags                                       | cocktail-only    | `cocktail_recipe_details`                  |
+| prep/cook/total minutes, servings, course, cuisine                                               | food-only (new)  | `food_recipe_details`                      |
+
+`20260802120000_recipe_detail_tables.sql` creates both detail tables (PK on
+`recipe_id`, so at most one row per recipe; `on delete cascade`, so no orphans;
+check constraints on strength, times and servings), enables RLS with the same
+published-recipe rule `recipe_ingredients` uses, backfills every cocktail —
+including all-null rows, so "a cocktail has exactly one details row" is a real
+invariant — and asserts the backfill missed nothing.
+
+Neither detail table has a `domain` column. §3 forbids it, so the pairing is
+enforced by the writers and asserted by a test that joins each detail table
+back to `recipes` and expects no mismatches. No cross-table trigger (§8.3).
+
+The old cocktail columns on `recipes` are **kept, marked DEPRECATED in
+`comment on column`, and no longer read or written**. Dropping them is phase
+17's cleanup, per §23's additive-first rule.
+
+**Catalog views.** A catalog page filters, sorts and paginates across shared
+*and* domain fields in one query, which PostgREST cannot do across an embedded
+resource (you cannot order parent rows by an embedded column). So
+`cocktail_recipes` and `food_recipes` are `security_invoker` views that flatten
+each detail table onto the shared fields. Storage stays normalised; the query
+layer stays one implementation; RLS stays the base tables'.
+
+**Query layer** (`src/lib/recipes/queries.ts`): `getRecipes({domain, …})` now
+reads that domain's view, and `RecipePreview` carries `pills` — the domain's
+short card metadata, already resolved — instead of `method`/`glass`.
+`RecipeCard` takes `pills` and renders them; deciding what they are belongs to
+the domain (§14.2's "prefer composition"). `getRecipeBySlug` returns a
+discriminated union (`{domain: "cocktail", cocktail} | {domain: "food", food}`)
+so the detail page cannot read the wrong domain's metadata by accident.
+`getRecipesByIds` reads each domain's view and merges, keeping every row
+domain-filtered in the database. Facets are domain-shaped by nature, so
+`getRecipeFacets` became `getCocktailFacets`; the Kitchen gets its own in
+phase 10.
+
+One deliberate seam: `catalogQuery()` casts the builder to a small structural
+type. The two views have different columns, so supabase-js infers a different
+builder for each; without it the shared filter/sort/page logic would have to be
+written out twice.
+
+**Functions** (`20260802120100_functions_read_recipe_details.sql`, all
+`create or replace` — no signature changes): `match_recipes_detail` builds its
+`metadata` object from the detail tables and now fills the food branch
+(`total_minutes`, `servings`, `course`); `related_recipes` reads `base_spirit`
+and the card's method/glass from `cocktail_recipe_details`; `ingredient_detail`
+returns a domain-shaped `metadata` object per recipe instead of bare
+`method`/`glass`, since its list spans both domains.
+
+**Pipeline**: `ResolvedRecipe` splits into shared fields plus a nested
+`cocktail` object (difficulty stays shared); `ingestRecipe` upserts `recipes`
+then `cocktail_recipe_details`; `updateRecipeMetadata` writes difficulty to
+`recipes` and the drink fields to the detail table;
+`loadRecipesMissingMetadata` is scoped to the cocktail domain (the enrichment
+prompt is a bartender's); `loadRecipesMissingImages` reads the cocktail view.
+
+Tests: `tests/recipe-details.test.ts` (9) covers the backfill count and
+content, one-row-per-recipe, cascade delete, orphan rejection, the check
+constraints, the cross-domain invariant, both views, and food metadata
+arriving on a match card. `tests/recipe-queries.test.ts` grew to 12, including
+"drink facets are never applied to a food query".
+
+Validation: lint, `tsc --noEmit`, `next build` (19 routes), `vitest run`
+(10 files, 77 tests) all pass.
+
+**Next up: Phase 6** — expand the ingredient taxonomy.

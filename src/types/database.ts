@@ -42,6 +42,82 @@ export type Database = {
           },
         ];
       };
+      cocktail_recipe_details: {
+        Row: {
+          recipe_id: number;
+          method: string | null;
+          glass: string | null;
+          garnish: string | null;
+          strength: number | null;
+          base_spirit: string | null;
+          flavor_tags: string[];
+        };
+        Insert: {
+          recipe_id: number;
+          method?: string | null;
+          glass?: string | null;
+          garnish?: string | null;
+          strength?: number | null;
+          base_spirit?: string | null;
+          flavor_tags?: string[];
+        };
+        Update: {
+          recipe_id?: number;
+          method?: string | null;
+          glass?: string | null;
+          garnish?: string | null;
+          strength?: number | null;
+          base_spirit?: string | null;
+          flavor_tags?: string[];
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cocktail_recipe_details_recipe_id_fkey";
+            columns: ["recipe_id"];
+            isOneToOne: true;
+            referencedRelation: "recipes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      food_recipe_details: {
+        Row: {
+          recipe_id: number;
+          prep_minutes: number | null;
+          cook_minutes: number | null;
+          total_minutes: number | null;
+          servings: number | null;
+          course: string | null;
+          cuisine: string | null;
+        };
+        Insert: {
+          recipe_id: number;
+          prep_minutes?: number | null;
+          cook_minutes?: number | null;
+          total_minutes?: number | null;
+          servings?: number | null;
+          course?: string | null;
+          cuisine?: string | null;
+        };
+        Update: {
+          recipe_id?: number;
+          prep_minutes?: number | null;
+          cook_minutes?: number | null;
+          total_minutes?: number | null;
+          servings?: number | null;
+          course?: string | null;
+          cuisine?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "food_recipe_details_recipe_id_fkey";
+            columns: ["recipe_id"];
+            isOneToOne: true;
+            referencedRelation: "recipes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       ingredient_aliases: {
         Row: {
           id: number;
@@ -355,7 +431,54 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      // Read-only catalog views: each domain's detail table flattened onto the
+      // shared recipe fields (20260802120000_recipe_detail_tables.sql).
+      cocktail_recipes: {
+        Row: {
+          id: number;
+          slug: string;
+          name: string;
+          description: string | null;
+          domain: Database["public"]["Enums"]["recipe_domain"];
+          instructions: string[];
+          source: string | null;
+          is_published: boolean;
+          image_url: string | null;
+          created_at: string;
+          updated_at: string;
+          difficulty: Database["public"]["Enums"]["recipe_difficulty"] | null;
+          method: string | null;
+          glass: string | null;
+          garnish: string | null;
+          strength: number | null;
+          base_spirit: string | null;
+          flavor_tags: string[];
+        };
+        Relationships: [];
+      };
+      food_recipes: {
+        Row: {
+          id: number;
+          slug: string;
+          name: string;
+          description: string | null;
+          domain: Database["public"]["Enums"]["recipe_domain"];
+          instructions: string[];
+          source: string | null;
+          is_published: boolean;
+          image_url: string | null;
+          created_at: string;
+          updated_at: string;
+          difficulty: Database["public"]["Enums"]["recipe_difficulty"] | null;
+          prep_minutes: number | null;
+          cook_minutes: number | null;
+          total_minutes: number | null;
+          servings: number | null;
+          course: string | null;
+          cuisine: string | null;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
       match_recipes: {
@@ -503,9 +626,10 @@ export type Database = {
 
 // ── Convenience helpers (single `public` schema) ────────────────────────────
 type PublicSchema = Database["public"];
+type TablesAndViews = PublicSchema["Tables"] & PublicSchema["Views"];
 
-export type Tables<T extends keyof PublicSchema["Tables"]> =
-  PublicSchema["Tables"][T]["Row"];
+export type Tables<T extends keyof TablesAndViews> =
+  TablesAndViews[T]["Row"];
 export type TablesInsert<T extends keyof PublicSchema["Tables"]> =
   PublicSchema["Tables"][T]["Insert"];
 export type TablesUpdate<T extends keyof PublicSchema["Tables"]> =

@@ -75,16 +75,29 @@ export type ResolvedIngredient = {
   raw_text: string | null;
 };
 
-export type ResolvedRecipe = RecipeMetadata & {
+/**
+ * Drink-only metadata, matching public.cocktail_recipe_details. Difficulty is
+ * NOT here: it applies to any recipe and stays on `recipes` (phase 5).
+ */
+export type ResolvedCocktailDetails = {
+  method: string | null;
+  glass: string | null;
+  garnish: string | null;
+  strength: number | null;
+  base_spirit: string | null;
+  flavor_tags: FlavorTag[];
+};
+
+export type ResolvedRecipe = {
   domain: RecipeDomain;
   slug: string;
   name: string;
   description: string | null;
-  method: string | null;
-  glass: string | null;
-  garnish: string | null;
+  difficulty: Difficulty | null;
   instructions: string[];
   ingredients: ResolvedIngredient[];
+  /** The cocktail adapter always produces this; phase 8 adds a food variant. */
+  cocktail: ResolvedCocktailDetails;
 };
 
 export type ValidationResult =
@@ -206,6 +219,7 @@ export function validateRecipe(
     return { status: "rejected", reason: `"${name}" resolved fewer than 2 core ingredients` };
   }
 
+  const metadata = sanitizeMetadata(gen);
   return {
     status: "ok",
     dropped,
@@ -214,12 +228,17 @@ export function validateRecipe(
       slug,
       name,
       description: str(gen.description),
-      method: str(gen.method),
-      glass: str(gen.glass),
-      garnish: str(gen.garnish),
+      difficulty: metadata.difficulty,
       instructions,
       ingredients: deduped.map((i, idx) => ({ ...i, display_order: idx + 1 })),
-      ...sanitizeMetadata(gen),
+      cocktail: {
+        method: str(gen.method),
+        glass: str(gen.glass),
+        garnish: str(gen.garnish),
+        strength: metadata.strength,
+        base_spirit: metadata.base_spirit,
+        flavor_tags: metadata.flavor_tags,
+      },
     },
   };
 }

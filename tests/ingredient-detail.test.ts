@@ -87,8 +87,8 @@ test("returns the ingredient with the published recipes that use it", async () =
     slug: "daiquiri",
     name: "Daiquiri",
     domain: "cocktail",
-    method: "shaken",
-    glass: "coupe",
+    // Domain-shaped card metadata, nulls stripped (phase 5).
+    metadata: { method: "shaken", glass: "coupe" },
     image_url: null,
   });
 });
