@@ -45,6 +45,51 @@ export async function createSeededDb(): Promise<PGlite> {
   return db;
 }
 
+/**
+ * A few food recipes for the domain tests, built entirely from ingredients
+ * seed.sql already carries — the point of the expansion is that food and
+ * cocktails share one catalog, so the fixture must not invent a second one.
+ *
+ * `rum-lime-sorbet` deliberately has the same required ingredient set as the
+ * seeded daiquiri: the only thing separating them is the domain.
+ */
+export async function seedFoodFixture(db: PGlite): Promise<void> {
+  await db.exec(`
+    insert into public.recipes (slug, name, domain, instructions, description, is_published) values
+    ('berry-basil-salad','Berry Basil Salad','food',
+      array['Hull and halve the strawberries.','Tear the basil over the top.','Dress with lemon juice and sugar.'],
+      'Strawberries, basil, lemon.', true),
+    ('cucumber-mint-salad','Cucumber Mint Salad','food',
+      array['Slice the cucumber thin.','Toss with torn mint.'],
+      'Cool, crunchy, five minutes.', true),
+    ('rum-lime-sorbet','Rum Lime Sorbet','food',
+      array['Stir the syrup and lime juice together.','Add the rum.','Churn until set.'],
+      'The daiquiri, frozen — same ingredients, different domain.', true)
+    on conflict (slug) do nothing;
+
+    insert into public.recipe_ingredients
+      (recipe_id, ingredient_id, amount, unit, is_optional, is_garnish, display_order)
+    select r.id, i.id, v.amount::numeric, v.unit::text,
+           v.is_optional::boolean, false, v.display_order::int
+    from (values
+      ('berry-basil-salad','strawberry',2.0,'cup',false,1),
+      ('berry-basil-salad','fresh basil',6.0,'leaves',false,2),
+      ('berry-basil-salad','lemon juice',1.0,'tsp',false,3),
+
+      ('cucumber-mint-salad','cucumber',1.0,'each',false,1),
+      ('cucumber-mint-salad','fresh mint',6.0,'leaves',false,2),
+      ('cucumber-mint-salad','fresh basil',2.0,'leaves',true,3),
+
+      ('rum-lime-sorbet','white rum',2.0,'oz',false,1),
+      ('rum-lime-sorbet','lime juice',1.0,'oz',false,2),
+      ('rum-lime-sorbet','simple syrup',0.75,'oz',false,3)
+    ) as v(recipe_slug, ingredient_name, amount, unit, is_optional, display_order)
+    join public.recipes r on r.slug = v.recipe_slug
+    join public.ingredients i on i.name = v.ingredient_name
+    on conflict (recipe_id, ingredient_id) do nothing;
+  `);
+}
+
 /** Resolve ingredient names to ids, in the given order. Throws on a miss. */
 export async function ingredientIds(
   db: PGlite,

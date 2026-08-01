@@ -458,6 +458,8 @@ export type Database = {
       ingredient_detail: {
         Args: {
           p_slug: string;
+          /** null (the default) lists recipes from every domain. */
+          p_domain?: Database["public"]["Enums"]["recipe_domain"] | null;
         };
         Returns: {
           id: number;

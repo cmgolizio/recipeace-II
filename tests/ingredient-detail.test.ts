@@ -86,6 +86,7 @@ test("returns the ingredient with the published recipes that use it", async () =
     id: expect.any(Number),
     slug: "daiquiri",
     name: "Daiquiri",
+    domain: "cocktail",
     method: "shaken",
     glass: "coupe",
     image_url: null,

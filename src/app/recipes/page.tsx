@@ -1,33 +1,24 @@
 import Link from "next/link";
 
 import { RecipeCard } from "../../components/recipe-card";
+import { RecipesFilter } from "../../components/recipes-filter";
 import {
-  RecipesFilter,
-  type RecipeFilters,
-} from "../../components/recipes-filter";
+  getRecipeFacets,
+  getRecipes,
+  type RecipeListFilters,
+} from "../../lib/recipes/queries";
 import { createClient } from "../../lib/supabase/server";
-import type { Tables } from "../../types/database";
 
 const PAGE_SIZE = 24;
 
 // Enum order, not alphabetical — used for both parsing and facet display.
 const DIFFICULTIES = ["easy", "medium", "advanced"] as const;
 
-type Recipe = Pick<
-  Tables<"recipes">,
-  | "id"
-  | "slug"
-  | "name"
-  | "description"
-  | "method"
-  | "glass"
-  | "image_url"
-  | "strength"
-  | "difficulty"
-  | "flavor_tags"
->;
+// This is the Bar catalog: cocktails only. Food browsing gets its own route
+// under /kitchen rather than a mode switch here (docs/expansion-plan.md §9.2).
+const DOMAIN = "cocktail" as const;
 
-function pageHref(filters: RecipeFilters, page: number) {
+function pageHref(filters: RecipeListFilters, page: number) {
   const query: Record<string, string | string[]> = {};
   if (filters.q) query.q = filters.q;
   if (filters.method) query.method = filters.method;
@@ -56,11 +47,11 @@ export default async function RecipesPage({
 }) {
   const params = await searchParams;
   const sortParam = single(params.sort);
-  // Narrowed to the enum here so the .eq() below type-checks against the
-  // difficulty column.
+  // Narrowed to the enum here so the .eq() in the query layer type-checks
+  // against the difficulty column.
   const difficulty =
     DIFFICULTIES.find((d) => d === single(params.difficulty)) ?? "";
-  const filters: RecipeFilters = {
+  const filters: RecipeListFilters = {
     q: single(params.q),
     method: single(params.method),
     glass: single(params.glass),
@@ -75,65 +66,32 @@ export default async function RecipesPage({
           : "name",
   };
   const page = Math.max(1, Number.parseInt(single(params.page) || "1", 10) || 1);
-  const from = (page - 1) * PAGE_SIZE;
 
   const supabase = await createClient();
-  let query = supabase
-    .from("recipes")
-    .select(
-      "id,slug,name,description,method,glass,image_url,strength,difficulty,flavor_tags",
-      { count: "exact" },
-    )
-    .eq("is_published", true)
-    .range(from, from + PAGE_SIZE - 1);
-  query =
-    filters.sort === "newest"
-      ? query.order("created_at", { ascending: false }).order("name")
-      : filters.sort === "strength"
-        ? query
-            .order("strength", { ascending: false, nullsFirst: false })
-            .order("name")
-        : query.order("name");
-  if (filters.method) query = query.eq("method", filters.method);
-  if (filters.glass) query = query.eq("glass", filters.glass);
-  if (difficulty) query = query.eq("difficulty", difficulty);
-  if (filters.spirit) query = query.eq("base_spirit", filters.spirit);
-  if (filters.tags.length > 0) query = query.contains("flavor_tags", filters.tags);
-  if (filters.q) {
-    // The pattern is double-quoted because PostgREST's or= list treats , ( )
-    // specially; backslash-escape the quote/backslash chars inside it.
-    const pattern = `%${filters.q.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}%`;
-    query = query.or(`name.ilike."${pattern}",description.ilike."${pattern}"`);
-  }
-
-  // Facet options come from the whole published catalog (not the filtered
-  // page), so switching between values never dead-ends the controls.
-  const [{ data, count, error }, { data: facetRows }] = await Promise.all([
-    query,
-    supabase
-      .from("recipes")
-      .select("method,glass,difficulty,base_spirit,flavor_tags")
-      .eq("is_published", true),
+  const [{ recipes, total, error }, facetRows] = await Promise.all([
+    getRecipes(supabase, {
+      domain: DOMAIN,
+      filters,
+      page,
+      pageSize: PAGE_SIZE,
+    }),
+    getRecipeFacets(supabase, DOMAIN),
   ]);
 
   const facetValues = (key: "method" | "glass" | "base_spirit") =>
     [
-      ...new Set(
-        (facetRows ?? []).map((r) => r[key]).filter((v): v is string => !!v),
-      ),
+      ...new Set(facetRows.map((r) => r[key]).filter((v): v is string => !!v)),
     ].sort();
   const methods = facetValues("method");
   const glasses = facetValues("glass");
   const spirits = facetValues("base_spirit");
   const difficulties = DIFFICULTIES.filter((d) =>
-    (facetRows ?? []).some((r) => r.difficulty === d),
+    facetRows.some((r) => r.difficulty === d),
   );
   const tagOptions = [
-    ...new Set((facetRows ?? []).flatMap((r) => r.flavor_tags)),
+    ...new Set(facetRows.flatMap((r) => r.flavor_tags)),
   ].sort();
 
-  const recipes: Recipe[] = data ?? [];
-  const total = count ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const filtered = !!(
     filters.q ||
@@ -165,7 +123,7 @@ export default async function RecipesPage({
 
       {error && (
         <p className="text-red-600 dark:text-red-400">
-          Couldn’t load recipes: {error.message}
+          Couldn’t load recipes: {error}
         </p>
       )}
       {!error && total === 0 && !filtered && (

@@ -10,26 +10,12 @@ import {
   type IngredientRow,
 } from "../../../components/recipe-pantry-status";
 import { ShareButton } from "../../../components/share-button";
+import {
+  getPublishedRecipeSlugs,
+  getRecipeBySlug,
+} from "../../../lib/recipes/queries";
 import { siteUrl } from "../../../lib/site-url";
 import { createStaticClient } from "../../../lib/supabase/static";
-import type { Tables } from "../../../types/database";
-
-type RecipeHeader = Pick<
-  Tables<"recipes">,
-  | "id"
-  | "slug"
-  | "name"
-  | "description"
-  | "method"
-  | "glass"
-  | "garnish"
-  | "instructions"
-  | "image_url"
-  | "source"
-  | "strength"
-  | "difficulty"
-  | "flavor_tags"
->;
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -50,29 +36,18 @@ export async function generateStaticParams() {
   const supabase = createStaticClient();
   // Env-less build (e.g. CI): skip prerendering; slugs render on demand.
   if (!supabase) return [];
-  const { data, error } = await supabase
-    .from("recipes")
-    .select("slug")
-    .eq("is_published", true);
-  if (error) throw new Error(`Couldn’t list recipe slugs: ${error.message}`);
-  return (data ?? []).map(({ slug }) => ({ slug }));
+  // Every domain: this one route serves the whole catalog (plan §9.4).
+  const slugs = await getPublishedRecipeSlugs(supabase, "all");
+  return slugs.map(({ slug }) => ({ slug }));
 }
 
 // Deduped across generateMetadata and the page render. Uses the cookie-free
 // client — recipe data is world-readable, and touching cookies() here would
 // make the route dynamic.
-const getRecipe = cache(async (slug: string): Promise<RecipeHeader | null> => {
+const getRecipe = cache(async (slug: string) => {
   const supabase = createStaticClient();
   if (!supabase) throw new Error("Supabase environment is not configured");
-  const { data, error } = await supabase
-    .from("recipes")
-    .select(
-      "id,slug,name,description,method,glass,garnish,instructions,image_url,source,strength,difficulty,flavor_tags",
-    )
-    .eq("slug", slug)
-    .maybeSingle();
-  if (error) throw new Error(`Couldn’t load this recipe: ${error.message}`);
-  return data;
+  return getRecipeBySlug(supabase, slug);
 });
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

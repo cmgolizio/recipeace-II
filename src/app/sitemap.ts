@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 
+import { getPublishedRecipeSlugs } from "../lib/recipes/queries";
 import { siteUrl } from "../lib/site-url";
 import { createStaticClient } from "../lib/supabase/static";
 
@@ -19,22 +20,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabase = createStaticClient();
   if (!supabase) return staticRoutes;
 
-  const [recipeRows, ingredientRows] = await Promise.all([
-    supabase
-      .from("recipes")
-      .select("slug,updated_at")
-      .eq("is_published", true)
-      .order("slug"),
+  // Both domains: every published recipe has a public URL under /recipes.
+  const [recipes, ingredientRows] = await Promise.all([
+    getPublishedRecipeSlugs(supabase, "all"),
     supabase.from("ingredients").select("slug").order("slug"),
   ]);
-  const failure = recipeRows.error ?? ingredientRows.error;
-  if (failure) {
-    throw new Error(`Couldn’t build the sitemap: ${failure.message}`);
+  if (ingredientRows.error) {
+    throw new Error(`Couldn’t build the sitemap: ${ingredientRows.error.message}`);
   }
 
   return [
     ...staticRoutes,
-    ...(recipeRows.data ?? []).map((recipe) => ({
+    ...recipes.map((recipe) => ({
       url: new URL(`/recipes/${recipe.slug}`, siteUrl).toString(),
       lastModified: new Date(recipe.updated_at),
     })),

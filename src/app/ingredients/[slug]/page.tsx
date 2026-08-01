@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 
 import { RecipeCard } from "../../../components/recipe-card";
+import type { RecipeDomain } from "../../../lib/recipes/domain";
 import { createStaticClient } from "../../../lib/supabase/static";
 import type { Database } from "../../../types/database";
 
@@ -15,6 +16,7 @@ type UsedIn = {
   id: number;
   slug: string;
   name: string;
+  domain: RecipeDomain;
   method: string | null;
   glass: string | null;
   image_url: string | null;
@@ -58,7 +60,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = `${ingredient.name} — In House Mixers`;
   const description =
     recipes.length > 0
-      ? `${recipes.length} cocktail${recipes.length > 1 ? "s" : ""} made with ${ingredient.name}, plus what you can use instead.`
+      ? `${recipes.length} recipe${recipes.length > 1 ? "s" : ""} made with ${ingredient.name}, plus what you can use instead.`
       : `${ingredient.name} — a ${categoryLabel(ingredient.category)} in the In House Mixers ingredient index.`;
   return {
     title,
@@ -124,7 +126,7 @@ export default async function IngredientPage({ params }: Props) {
         ) : (
           recipes.length === 0 && (
             <p className="text-muted">
-              No cocktails in the catalog call for this yet.
+              Nothing in the catalog calls for this yet.
             </p>
           )
         )}

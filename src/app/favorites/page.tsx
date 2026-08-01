@@ -11,27 +11,21 @@ import { RecipeCard } from "../../components/recipe-card";
 import { RecipeCardSkeleton } from "../../components/skeleton";
 import { useFavorites, useFavoritesReady } from "../../lib/favorites/store";
 import { usePantryReady, useUser } from "../../lib/pantry/store";
+import {
+  getRecipesByIds,
+  type RecipePreview,
+} from "../../lib/recipes/queries";
 import { createClient } from "../../lib/supabase/client";
-import type { Tables } from "../../types/database";
 
-type Recipe = Pick<
-  Tables<"recipes">,
-  | "id"
-  | "slug"
-  | "name"
-  | "description"
-  | "method"
-  | "glass"
-  | "image_url"
-  | "strength"
-  | "difficulty"
-  | "flavor_tags"
->;
+// Favorites span both domains — one table, filtered through the recipe join
+// (docs/expansion-plan.md §8.10). The Bar/Kitchen split of this list arrives
+// with the shared-systems phase.
+const DOMAIN = "all" as const;
 
 // Keyed to the favorites it was computed for, so loading/error/results are
 // derived during render rather than set synchronously in the effect.
 type Outcome =
-  | { key: string; recipes: Recipe[] }
+  | { key: string; recipes: RecipePreview[] }
   | { key: string; error: string };
 
 export default function FavoritesPage() {
@@ -48,17 +42,14 @@ export default function FavoritesPage() {
     let ignore = false;
     const ids = key.split(",").map(Number);
     (async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from("recipes")
-        .select(
-          "id,slug,name,description,method,glass,image_url,strength,difficulty,flavor_tags",
-        )
-        .in("id", ids)
-        .order("name");
+      const { recipes, error } = await getRecipesByIds(
+        createClient(),
+        ids,
+        DOMAIN,
+      );
       if (ignore) return;
-      if (error) setOutcome({ key, error: error.message });
-      else setOutcome({ key, recipes: data ?? [] });
+      if (error) setOutcome({ key, error });
+      else setOutcome({ key, recipes });
     })();
     return () => {
       ignore = true;

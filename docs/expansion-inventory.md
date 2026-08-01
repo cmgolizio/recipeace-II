@@ -690,5 +690,56 @@ in one table, and the pipeline's explicit stamp.
 Validation: lint, `tsc --noEmit`, `next build`, and `vitest run` (7 files,
 43 tests) all pass.
 
-**Next up: Phase 2** — make recipe queries domain-aware. The entry points are
-enumerated in §3.8; start there.
+**Correction (found in phase 2):** the phase-1 commit did _not_ actually update
+`supabase/seed_test_recipes.sql`. With `domain` NOT NULL and no default, the
+fixture insert failed, so every PGlite-backed suite failed to build its
+database — all 6 DB test files errored. Fixed in `da5dd7f`; the 43-test
+baseline is real from that commit onward.
+
+### Phase 2 — Domain-aware recipe queries · complete
+
+Two new modules under `src/lib/recipes/`:
+
+- `domain.ts` — `RecipeDomain`, `DomainFilter` (`"cocktail" | "food" | "all"`),
+  `parseDomainFilter`, and the Bar/Kitchen surface labels. One place where the
+  application says "domain".
+- `queries.ts` — every recipe read the app performs, each taking an **explicit**
+  domain: `getRecipes` (paged + filtered catalog), `getRecipeFacets`,
+  `getRecipesByIds` (favorites), `getPublishedRecipeSlugs` (sitemap,
+  `generateStaticParams`), `getRecipeBySlug` (detail). `"all"` is spelled out
+  rather than defaulted, so a new surface cannot forget to decide. Card columns
+  live in one constant, and `RecipePreview` now carries `domain` (plan §10.3).
+
+Call sites updated: `/recipes` (cocktail), `/recipes/[slug]` (all — one route
+serves both domains), `/favorites` (all, ready for the phase-12 split),
+`sitemap.ts` (all).
+
+`supabase/migrations/20260801120100_domain_aware_recipe_queries.sql`:
+
+- `ingredient_detail` gains an **optional** `p_domain` (drop + recreate: adding
+  a parameter changes the function's identity). Null keeps today's
+  both-domain behaviour, and every recipe object in the `recipes` jsonb now
+  carries its own `domain` so a caller can group without a second round trip.
+  The shared ingredient page stays cross-domain by design (plan §9.5); its copy
+  no longer says "cocktails".
+- `related_recipes` is scoped to the subject recipe's own domain. Sharing lime
+  juice does not make a sorbet "more like" a daiquiri. Body-only change, so
+  `create or replace` was enough.
+
+Deliberately **not** changed: `match_recipes` / `match_recipes_detail`. Those
+are phase 3, and their signatures change together.
+
+Tests: `tests/recipe-queries.test.ts` (10 tests) drives the query layer through
+a recording PostgREST stub and asserts the domain predicate is part of the
+request — the thing that proves filtering is not happening in the browser.
+`tests/domain-queries.test.ts` (7 tests) covers the SQL: single-domain listings,
+all-domain listings, pagination inside a domain, the ingredient page in both
+modes, and that "more like this" never crosses domains. `tests/db.ts` gains
+`seedFoodFixture` — three food recipes built only from ingredients `seed.sql`
+already has, one of which (`rum-lime-sorbet`) has the daiquiri's exact required
+ingredient set so domain separation is the only thing under test.
+
+Validation: lint, `tsc --noEmit`, `next build` (17 routes), `vitest run`
+(9 files, 59 tests) all pass.
+
+**Next up: Phase 3** — generalize matching by domain.
