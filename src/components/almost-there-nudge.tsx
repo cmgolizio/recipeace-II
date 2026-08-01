@@ -31,6 +31,8 @@ export function AlmostThereNudge() {
       const { data, error } = await supabase.rpc("match_recipes_detail", {
         pantry: [...pantry],
         max_missing: 1,
+        // A bar nudge counts bottles, so it counts cocktails.
+        p_domain: "cocktail",
       });
       if (ignore) return;
       const count = error

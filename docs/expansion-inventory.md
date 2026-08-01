@@ -742,4 +742,58 @@ ingredient set so domain separation is the only thing under test.
 Validation: lint, `tsc --noEmit`, `next build` (17 routes), `vitest run`
 (9 files, 59 tests) all pass.
 
-**Next up: Phase 3** — generalize matching by domain.
+### Phase 3 — One matcher, two domains · complete
+
+`supabase/migrations/20260801120200_match_recipes_domain.sql` drops and
+recreates both matcher functions (return types and parameter lists change, so
+`create or replace` is not available) with a third argument,
+`p_domain public.recipe_domain default null`.
+
+**No matching rule changed.** The ancestor walk, staple union, recursive
+derivation expansion, one-hop bidirectional substitution reach, scoring and
+ordering are carried over verbatim from `20260702120100`. The only new SQL is
+`and (p_domain is null or r.domain = p_domain)` in the `required` CTE.
+
+That claim was verified rather than asserted: `match_recipes(pantry, 2)` was
+run over five representative pantries — `{gin, sweet vermouth}`,
+`{white rum, lime juice, simple syrup}`, `{bourbon, lemon juice}`, `{campari}`,
+`{cachaça, lime, simple syrup}` — against the schema with and without this
+migration. Every row, count, missing-ingredient array and ordering is
+identical. Three of those orderings are now frozen as `COCKTAIL_BASELINE` in
+`tests/matcher.test.ts`, the ranking regression lock §9 asked for.
+
+`match_recipes_detail` also changes its projection: `method` and `glass` are
+replaced by `domain` and a `metadata` jsonb object, built per domain
+(`{method, glass}` with nulls stripped for cocktails, `{}` for food until
+phase 5 gives food something to show). This is invariant 14 — a food match card
+is not handed five null drink fields — and it means the next domain's card
+fields arrive without another signature change. `/matches` reads
+`metadata.method` / `metadata.glass`; the rendered card is unchanged.
+
+**Staple policy, decided and documented** (plan §11.4, open decision 2). The
+staple set stays global, unconditional and tiny: `water`, `ice`, `crushed ice`,
+`sugar`, `salt`. No food staples are added — flour, pepper and neutral oil are
+deliberately *not* staples — because `is_staple` has no domain and adding one
+would silently change cocktail results. The policy is written into the
+migration header, exercised by a food-staple test, and Phase 11 surfaces it in
+the Kitchen match UI. Per-user configuration stays post-MVP (§43.1).
+
+Application call sites now name their domain: `/matches` and
+`almost-there-nudge.tsx` both pass `p_domain: "cocktail"` — they are Bar
+surfaces, and `/kitchen/matches` will pass `"food"` against the same function.
+
+Index: `recipes_domain_idx` is replaced by `recipes_domain_published_idx
+(domain, is_published)` — the pair the matcher and the catalog both filter on,
+and a usable prefix index for domain-only lookups.
+
+Tests: `tests/matcher.test.ts` grows from 7 to 13. New coverage — the cocktail
+ranking baseline, food-never-returns-cocktails (using `rum-lime-sorbet`, whose
+required ingredients are exactly the daiquiri's), one pantry ingredient
+satisfying either domain through the same derivation, optional food
+ingredients not raising `missing_count`, cross-domain staple behaviour, and
+`match_recipes_detail` parity within a domain.
+
+Validation: lint, `tsc --noEmit`, `next build` (17 routes), `vitest run`
+(9 files, 65 tests) all pass.
+
+**Next up: Phase 4** — Bar and Kitchen application structure.

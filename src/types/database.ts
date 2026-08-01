@@ -361,7 +361,9 @@ export type Database = {
       match_recipes: {
         Args: {
           pantry: number[];
-          max_missing?: number;
+          max_missing?: number | null;
+          /** null (the default) matches against every domain. */
+          p_domain?: Database["public"]["Enums"]["recipe_domain"] | null;
         };
         Returns: {
           recipe_id: number;
@@ -389,7 +391,9 @@ export type Database = {
       match_recipes_detail: {
         Args: {
           pantry: number[];
-          max_missing?: number;
+          max_missing?: number | null;
+          /** null (the default) matches against every domain. */
+          p_domain?: Database["public"]["Enums"]["recipe_domain"] | null;
         };
         Returns: {
           recipe_id: number;
@@ -400,8 +404,8 @@ export type Database = {
           missing_ingredients: string[];
           slug: string;
           name: string;
-          method: string | null;
-          glass: string | null;
+          domain: Database["public"]["Enums"]["recipe_domain"];
+          metadata: Json;
           ingredients: Json;
         }[];
       };

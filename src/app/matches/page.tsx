@@ -25,6 +25,13 @@ type MatchIngredient = {
   is_optional: boolean;
 };
 
+/** The cocktail shape of the RPC's `metadata` object; keys may be absent. */
+type CocktailMatchMetadata = { method?: string; glass?: string };
+
+// The Bar's matches. Kitchen matching is a separate route over the same
+// matcher (docs/expansion-plan.md §36).
+const DOMAIN = "cocktail" as const;
+
 // Keyed to the pantry + filter it was computed for, so loading/error/results
 // are derived during render rather than set synchronously in the effect.
 type Outcome =
@@ -115,6 +122,7 @@ function MatchCard({ match: m }: { match: Match }) {
   const unit = useUnit();
   const missing = new Set(m.missing_ingredients);
   const ingredients = m.ingredients as unknown as MatchIngredient[];
+  const metadata = m.metadata as unknown as CocktailMatchMetadata;
   return (
     <li>
       <RecipeCard
@@ -122,8 +130,8 @@ function MatchCard({ match: m }: { match: Match }) {
           id: m.recipe_id,
           slug: m.slug,
           name: m.name,
-          method: m.method,
-          glass: m.glass,
+          method: metadata.method ?? null,
+          glass: metadata.glass ?? null,
         }}
         titleAs="h3"
         badge={
@@ -215,6 +223,7 @@ function MatchesContent() {
       const { data, error } = await supabase.rpc("match_recipes_detail", {
         pantry: [...pantry],
         max_missing: maxMissing,
+        p_domain: DOMAIN,
       });
       if (ignore) return;
       if (error) setOutcome({ key, error: error.message });
