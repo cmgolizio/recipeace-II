@@ -15,7 +15,7 @@
 
 | Area          | Change                                                                                      |
 | ------------- | ------------------------------------------------------------------------------------------- |
-| Schema        | 8 migrations, `20260801120000` → `20260806120000`                                           |
+| Schema        | 9 migrations, `20260801120000` → `20260806120000` (the first may already be applied — see §9) |
 | Data          | `supabase/seed.sql` (regenerated: 4 ingredients re-categorised) and new `supabase/seed_food.sql` |
 | Routes        | `/bar`, `/bar/recipes`, `/bar/matches`, `/kitchen`, `/kitchen/recipes`, `/kitchen/matches`, `/search` |
 | Redirects     | `/recipes` → `/bar/recipes`, `/matches` → `/bar/matches` (307)                               |
@@ -188,3 +188,96 @@ where r.domain = 'cocktail'
 
 `supabase/seed_test_recipes.sql` also writes those columns and would need
 updating in the same change.
+
+---
+
+## 9. Runbook: applying this to a hosted project
+
+The repository has no linked Supabase CLI, so migrations go in through the SQL
+Editor by hand. `main` is also several commits behind this branch, so **what a
+given project still needs depends on the project, not on the branch.**
+
+### 9.1 Ask the database what it has
+
+Run `supabase/migration-status.sql` in the SQL Editor. It is read-only and
+returns one row per migration with an `applied` flag. Apply every file marked
+`false`, in the `step` order it gives.
+
+### 9.2 Apply them
+
+Open each file under `supabase/migrations/`, paste, **Run**. One file per Run.
+
+> **This ordering is not optional.** `20260803120000` adds enum values, and
+> Postgres forbids *using* a new enum value in the transaction that adds it.
+> Each SQL Editor Run is one transaction, so as long as that file is its own
+> Run — and the two seeds below are separate Runs after it — you are fine.
+> Pasting it together with `seed.sql` fails with
+> `unsafe use of new value "egg" of enum type ingredient_category`.
+
+### 9.3 Re-apply the ingredient seed
+
+Paste `supabase/seed.sql`, Run. It upserts on ingredient name, so ids and
+slugs are preserved and nothing is deleted. The only change to existing rows
+is four categories: `whole egg` and `egg white` → `egg`, `fresh mint` and
+`fresh basil` → `herb`. **Must come after `20260803120000`** — those two
+category values do not exist before it.
+
+### 9.4 Apply the food catalog
+
+Paste `supabase/seed_food.sql`, Run. It adds 44 ingredients, 20 aliases and 13
+published food recipes, and it refuses to run if any of its slugs already
+belongs to a recipe in another domain. Idempotent: running it twice changes
+nothing.
+
+**Do not run `supabase/seed_test_recipes.sql` against a project with real
+recipes** — it is local development data (10 stub cocktails).
+
+### 9.5 Nothing to run in the terminal
+
+The generated SQL is committed, so no pipeline run is required to ship this.
+The pipelines are only needed when the *source* changes:
+
+| You changed                 | Then run                                     |
+| --------------------------- | -------------------------------------------- |
+| `src/data/cocktail-seed.ts` | `npm run generate:seed`, then paste `supabase/seed.sql` |
+| `src/data/food-seed.ts`     | `npm run pipeline:food`, then paste `supabase/seed_food.sql` |
+| nothing                     | nothing                                      |
+
+`npm run pipeline` (cocktail generation) and `npm run pipeline:enrich` are
+unchanged in how they are invoked, and both now write to
+`cocktail_recipe_details`. `npm run pipeline:images` reads the
+`cocktail_recipes` view, so it only ever fetches images for drinks — food
+recipes render the branded initial tile until an image path for them exists.
+
+### 9.6 Deploy
+
+No new environment variables. Deploy the branch as usual.
+
+The service worker's `VERSION` is bumped to `v2`, so returning visitors drop
+every `v1` cache on their next load — no action needed, but it is why the
+first load after deploy re-fetches the shell.
+
+### 9.7 Verify the data landed
+
+```sql
+-- 13 food recipes, each with a detail row and a licence.
+select count(*) as food_recipes,
+       count(*) filter (where d.recipe_id is not null) as with_details,
+       count(*) filter (where r.license is not null) as with_licence
+from public.recipes r
+left join public.food_recipe_details d on d.recipe_id = r.id
+where r.domain = 'food';
+
+-- Every cocktail carries its drink metadata in the new table.
+select count(*) as cocktails,
+       count(d.recipe_id) as with_details
+from public.recipes r
+left join public.cocktail_recipe_details d on d.recipe_id = r.id
+where r.domain = 'cocktail';
+
+-- Search reaches both domains.
+select domain, count(*) from public.search_recipes('lime') group by domain;
+```
+
+Expect 13/13/13, cocktails = with_details, and both domains in the last one.
+Then walk §4.
