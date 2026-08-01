@@ -99,8 +99,8 @@ test("staples count as exact coverage in match_recipes", async () => {
   // No seeded recipe requires a staple, so use a fixture: a recipe needing
   // gin plus sugar (a staple). Owning only gin must fully cover it.
   await db.exec(`
-    insert into public.recipes (slug, name, is_published)
-    values ('test-staple-fixture', 'Staple Fixture', true);
+    insert into public.recipes (slug, name, domain, is_published)
+    values ('test-staple-fixture', 'Staple Fixture', 'cocktail', true);
     insert into public.recipe_ingredients (recipe_id, ingredient_id, display_order)
     select r.id, i.id, i.ord
     from public.recipes r,

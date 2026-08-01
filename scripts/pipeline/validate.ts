@@ -1,5 +1,13 @@
 // Pure validation + ingredient resolution for the generation pipeline.
 // No I/O here, so this is unit-testable on its own.
+//
+// This is the cocktail adapter: everything it produces is stamped
+// domain = 'cocktail'. A food adapter supplies its own validator and stamps
+// 'food' (docs/expansion-plan.md §16.2, §16.3).
+
+import type { Enums } from "../../src/types/database.ts";
+
+export type RecipeDomain = Enums<"recipe_domain">;
 
 export type GeneratedIngredient = {
   name: string;
@@ -68,6 +76,7 @@ export type ResolvedIngredient = {
 };
 
 export type ResolvedRecipe = RecipeMetadata & {
+  domain: RecipeDomain;
   slug: string;
   name: string;
   description: string | null;
@@ -201,6 +210,7 @@ export function validateRecipe(
     status: "ok",
     dropped,
     recipe: {
+      domain: "cocktail",
       slug,
       name,
       description: str(gen.description),
