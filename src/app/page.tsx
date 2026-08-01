@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { AlmostThereNudge } from "../components/almost-there-nudge";
 import { AuthMessage } from "../components/auth-message";
 import { HomeHero } from "../components/home-hero";
@@ -11,6 +13,17 @@ export default function Home() {
     <div className="space-y-8">
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight">Your pantry</h1>
+        <p className="text-muted">
+          One list of what you own. It answers both the{" "}
+          <Link href="/bar" className="underline hover:text-foreground">
+            Bar
+          </Link>{" "}
+          and the{" "}
+          <Link href="/kitchen" className="underline hover:text-foreground">
+            Kitchen
+          </Link>{" "}
+          — adding an ingredient here counts towards a drink and towards dinner.
+        </p>
         <AuthMessage />
       </div>
       <HomeHero />

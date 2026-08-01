@@ -7,7 +7,11 @@ import { Suspense, useEffect, useState } from "react";
 import { usePantry, usePantryReady } from "../lib/pantry/store";
 import type { RecipeDomain } from "../lib/recipes/domain";
 import { matchPills } from "../lib/recipes/domain";
-import { addToShopping, useShopping } from "../lib/shopping/store";
+import {
+  addToShopping,
+  useShopping,
+  type ShoppingSource,
+} from "../lib/shopping/store";
 import { createClient } from "../lib/supabase/client";
 import { formatQuantity } from "../lib/units/format";
 import { useUnit } from "../lib/units/store";
@@ -103,7 +107,13 @@ function buyNext(matches: Match[]): { name: string; unlocks: number } | null {
   return best !== null && best.unlocks >= 2 ? best : null;
 }
 
-function AddMissingButton({ names }: { names: string[] }) {
+function AddMissingButton({
+  names,
+  from,
+}: {
+  names: string[];
+  from: ShoppingSource;
+}) {
   const shopping = useShopping();
   const remaining = names.filter((n) => !shopping.includes(n));
   if (remaining.length === 0) {
@@ -120,7 +130,7 @@ function AddMissingButton({ names }: { names: string[] }) {
         // The card is a Link — add without navigating.
         e.preventDefault();
         e.stopPropagation();
-        for (const n of remaining) addToShopping(n);
+        for (const n of remaining) addToShopping(n, from);
         toast(
           remaining.length === 1
             ? `Added ${remaining[0]} to your shopping list`
@@ -184,7 +194,10 @@ function MatchCard({ match: m }: { match: Match }) {
           })}
         </ul>
         {m.missing_count > 0 && (
-          <AddMissingButton names={m.missing_ingredients} />
+          <AddMissingButton
+            names={m.missing_ingredients}
+            from={{ slug: m.slug, name: m.name, domain: m.domain }}
+          />
         )}
       </RecipeCard>
     </li>

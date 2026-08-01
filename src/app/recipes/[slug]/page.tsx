@@ -24,6 +24,13 @@ import { createStaticClient } from "../../../lib/supabase/static";
 
 type Props = { params: Promise<{ slug: string }> };
 
+/** Minutes as an ISO 8601 duration, which is what schema.org's times want. */
+function isoDuration(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return `PT${hours > 0 ? `${hours}H` : ""}${rest > 0 || hours === 0 ? `${rest}M` : ""}`;
+}
+
 /** "2 oz white rum, muddled" — the line schema.org's recipeIngredient wants. */
 function ingredientLine(ri: IngredientRow): string {
   const line = [ri.amount != null ? String(ri.amount) : null, ri.unit, ri.name]
@@ -59,7 +66,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const recipe = await getRecipe(slug);
   if (!recipe) return {};
-  const title = `${recipe.name} — In House Mixers`;
+  const title = `${recipe.name} — ${DOMAIN_SURFACE[recipe.domain]} — In House Mixers`;
   const description = recipe.description ?? undefined;
   const images = recipe.image_url ? [recipe.image_url] : undefined;
   return {
@@ -160,6 +167,19 @@ export default async function RecipeDetailPage({ params }: Props) {
       : food?.servings != null
         ? { recipeYield: `${food.servings} servings` }
         : {}),
+    // Only fields the database actually holds — §20 forbids unsupported
+    // structured-data claims.
+    ...(food?.prep_minutes != null
+      ? { prepTime: isoDuration(food.prep_minutes) }
+      : {}),
+    ...(food?.cook_minutes != null
+      ? { cookTime: isoDuration(food.cook_minutes) }
+      : {}),
+    ...(food?.total_minutes != null
+      ? { totalTime: isoDuration(food.total_minutes) }
+      : {}),
+    ...(food?.course ? { recipeCategory: food.course } : {}),
+    ...(food?.cuisine ? { recipeCuisine: food.cuisine } : {}),
   };
 
   return (
@@ -216,7 +236,15 @@ export default async function RecipeDetailPage({ params }: Props) {
         )}
       </header>
 
-      <RecipePantryStatus recipeId={recipe.id} ingredients={ingredients} />
+      <RecipePantryStatus
+        recipeId={recipe.id}
+        recipe={{
+          slug: recipe.slug,
+          name: recipe.name,
+          domain: recipe.domain,
+        }}
+        ingredients={ingredients}
+      />
 
       {/* The island renders the garnish ingredients when the recipe has any;
           this free-text note is the fallback for recipes that don't. */}
@@ -245,7 +273,23 @@ export default async function RecipeDetailPage({ params }: Props) {
       )}
 
       {recipe.source && (
-        <p className="text-sm text-muted">Source: {recipe.source}</p>
+        <p className="text-sm text-muted">
+          Source:{" "}
+          {recipe.source_url ? (
+            <a
+              href={recipe.source_url}
+              rel="noreferrer"
+              className="underline hover:text-foreground"
+            >
+              {recipe.source}
+            </a>
+          ) : (
+            recipe.source
+          )}
+          {recipe.license && recipe.license !== recipe.source && (
+            <> · {recipe.license}</>
+          )}
+        </p>
       )}
 
       {related.length > 0 && (

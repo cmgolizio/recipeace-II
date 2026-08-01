@@ -136,10 +136,10 @@ export function IngredientBrowse() {
                         onClick={() => {
                           if (inBar) {
                             removeFromPantry(it.id);
-                            toast(`Removed ${it.name} from your bar`);
+                            toast(`Removed ${it.name} from your pantry`);
                           } else {
                             addToPantry(it.id);
-                            toast(`Added ${it.name} to your bar`);
+                            toast(`Added ${it.name} to your pantry`);
                           }
                         }}
                         aria-pressed={inBar}

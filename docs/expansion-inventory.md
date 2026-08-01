@@ -1216,5 +1216,53 @@ on the shopping list.
 Validation: lint, `tsc --noEmit`, `next build` (23 routes), `vitest run`
 (15 files, 134 tests) all pass.
 
-**Next up: Phase 12** — integrate the shared pantry, favorites and shopping
-list.
+### Phases 12 and 13 — Shared systems, and one recipe detail · complete
+
+**Pantry.** Already one pantry, one table, no domain — §4 classified it
+"correct as-is" and nothing changed it. What was missing was saying so: `/`
+now opens with "One list of what you own. It answers both the Bar and the
+Kitchen — adding an ingredient here counts towards a drink and towards
+dinner", linking to both. The "your bar" phrasing across the pantry toasts,
+the recipe-detail island, the auth message, the login page and the manifest is
+now "your pantry" (§20 of §5's list, largely closed ahead of phase 15).
+
+**Favorites.** One table, one query, and a segmented All / Bar / Kitchen filter
+that only appears once a user has saved from both. The list is fetched whole
+and split in the component: it is one set of saved recipes viewed three ways,
+not three lists. Empty state per tab.
+
+**Shopping list.** The structural gap §4 flagged — names in localStorage, "no
+ids, no recipe link, no domain" — is closed. Items are now
+`{name, from?: {slug, name, domain}}` under `recipeace.shopping.v2`, and a
+pre-expansion `v1` list is migrated on first read and the old key removed, so
+nobody loses a list. Both surfaces that add ingredients (match cards and the
+recipe detail island) pass provenance, so the page can show "for Lentil Soup"
+and offer a **By recipe** grouping alongside the flat list. Duplicates are
+still collapsed, and the *first* recipe that sent you shopping keeps the
+credit. Manually added items are untouched and simply have no source.
+
+`shoppingItems()` is exported so the mutators load stored state before writing —
+previously an add that ran before any component subscribed would have written
+over the saved list.
+
+**Recipe detail** (phase 13) was already one route with one loader; what
+remained was the domain-specific rendering, and it is now complete: the
+subtitle, pill row and metadata come from the recipe's own domain through the
+discriminated union (a food recipe has no `cocktail` member to read by
+accident), the garnish section is cocktail-only, the back link returns to the
+right catalog, and the title carries its surface ("Daiquiri — Bar — …").
+Provenance renders as a linked source plus licence. Structured data gained
+`prepTime`, `cookTime`, `totalTime`, `recipeCategory` and `recipeCuisine` for
+food, each emitted **only when the database actually holds it** (§20 forbids
+unsupported claims), and `recipeYield` is no longer the hardcoded
+"1 cocktail" — §5's item 13.
+
+Tests: `tests/shopping-list.test.ts` (6) — provenance recorded, one list
+serving both domains, no duplicates and first-source-wins, v1 migration
+including removal of the old key, remove/clear leaving nothing behind, and
+malformed storage ignored rather than thrown.
+
+Validation: lint, `tsc --noEmit`, `next build`, `vitest run` (16 files,
+140 tests) all pass.
+
+**Next up: Phase 14** — expand search, filters and discovery.

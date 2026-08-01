@@ -70,10 +70,10 @@ export function IngredientSearch() {
   function select(r: SearchResult) {
     if (pantry.includes(r.id)) {
       removeFromPantry(r.id);
-      toast(`Removed ${r.name} from your bar`);
+      toast(`Removed ${r.name} from your pantry`);
     } else {
       addToPantry(r.id);
-      toast(`Added ${r.name} to your bar`);
+      toast(`Added ${r.name} to your pantry`);
       // Clear so the user can immediately type the next ingredient.
       setQuery("");
       setActiveIndex(-1);

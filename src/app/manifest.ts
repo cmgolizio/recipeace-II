@@ -8,7 +8,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "In House Mixers",
     short_name: "In House Mixers",
     description:
-      "Build your bar and instantly see which cocktails you can make from what you have on hand.",
+      "Add what you have. Discover what you can make — cocktails at the Bar, food in the Kitchen, from one shared pantry.",
     start_url: "/",
     display: "standalone",
     background_color: "#fafaf9",

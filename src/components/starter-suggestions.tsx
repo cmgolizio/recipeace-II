@@ -61,7 +61,7 @@ export function StarterSuggestions() {
               type="button"
               onClick={() => {
                 addToPantry(s.id);
-                toast(`Added ${s.name} to your bar`);
+                toast(`Added ${s.name} to your pantry`);
               }}
               className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-sm hover:bg-black/4 dark:hover:bg-white/6"
             >

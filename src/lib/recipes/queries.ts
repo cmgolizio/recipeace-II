@@ -312,6 +312,8 @@ type RecipeDetailShared = Pick<
   | "instructions"
   | "image_url"
   | "source"
+  | "source_url"
+  | "license"
   | "difficulty"
 >;
 
@@ -338,7 +340,7 @@ export async function getRecipeBySlug(
   const { data: recipe, error } = await client
     .from("recipes")
     .select(
-      "id,slug,name,description,domain,instructions,image_url,source,difficulty",
+      "id,slug,name,description,domain,instructions,image_url,source,source_url,license,difficulty",
     )
     .eq("slug", slug)
     .maybeSingle();
