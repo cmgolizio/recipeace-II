@@ -8,7 +8,7 @@ export default function LoginPage() {
           Log in or sign up
         </h1>
         <p className="text-sm text-muted">
-          Save your bar to your account. Anything you’ve already added carries
+          Save your pantry to your account. Anything you’ve already added carries
           over automatically.
         </p>
       </div>

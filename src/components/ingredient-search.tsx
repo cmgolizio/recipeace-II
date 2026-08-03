@@ -70,10 +70,10 @@ export function IngredientSearch() {
   function select(r: SearchResult) {
     if (pantry.includes(r.id)) {
       removeFromPantry(r.id);
-      toast(`Removed ${r.name} from your bar`);
+      toast(`Removed ${r.name} from your pantry`);
     } else {
       addToPantry(r.id);
-      toast(`Added ${r.name} to your bar`);
+      toast(`Added ${r.name} to your pantry`);
       // Clear so the user can immediately type the next ingredient.
       setQuery("");
       setActiveIndex(-1);
@@ -187,7 +187,7 @@ export function IngredientSearch() {
                     <span className="opacity-50"> · “{r.matched_alias}”</span>
                   )}
                   <span className="ml-2 text-xs uppercase tracking-wide opacity-40">
-                    {r.category.replace("_", " ")}
+                    {r.category.replaceAll("_", " ")}
                   </span>
                 </span>
                 <span

@@ -59,7 +59,7 @@ export function PantryPanel() {
             type="button"
             onClick={() => {
               clearPantry();
-              toast("Cleared your bar");
+              toast("Cleared your pantry");
             }}
             className="text-sm text-muted underline hover:text-foreground"
           >
@@ -85,7 +85,7 @@ export function PantryPanel() {
                   type="button"
                   onClick={() => {
                     removeFromPantry(it.id);
-                    toast(`Removed ${it.name} from your bar`);
+                    toast(`Removed ${it.name} from your pantry`);
                   }}
                   title="Remove from bar"
                   className="group inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-sm hover:border-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
@@ -105,7 +105,7 @@ export function PantryPanel() {
               ))}
           </ul>
           <Link
-            href="/matches"
+            href="/bar/matches"
             className="mt-4 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90"
           >
             See what I can make →

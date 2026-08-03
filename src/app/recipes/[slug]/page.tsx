@@ -10,28 +10,27 @@ import {
   type IngredientRow,
 } from "../../../components/recipe-pantry-status";
 import { ShareButton } from "../../../components/share-button";
+import {
+  DOMAIN_ROUTES,
+  DOMAIN_SURFACE,
+  formatMinutes,
+} from "../../../lib/recipes/domain";
+import {
+  getPublishedRecipeSlugs,
+  getRecipeBySlug,
+} from "../../../lib/recipes/queries";
+import { pageTitle } from "../../../lib/site";
 import { siteUrl } from "../../../lib/site-url";
 import { createStaticClient } from "../../../lib/supabase/static";
-import type { Tables } from "../../../types/database";
-
-type RecipeHeader = Pick<
-  Tables<"recipes">,
-  | "id"
-  | "slug"
-  | "name"
-  | "description"
-  | "method"
-  | "glass"
-  | "garnish"
-  | "instructions"
-  | "image_url"
-  | "source"
-  | "strength"
-  | "difficulty"
-  | "flavor_tags"
->;
 
 type Props = { params: Promise<{ slug: string }> };
+
+/** Minutes as an ISO 8601 duration, which is what schema.org's times want. */
+function isoDuration(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return `PT${hours > 0 ? `${hours}H` : ""}${rest > 0 || hours === 0 ? `${rest}M` : ""}`;
+}
 
 /** "2 oz white rum, muddled" — the line schema.org's recipeIngredient wants. */
 function ingredientLine(ri: IngredientRow): string {
@@ -50,36 +49,25 @@ export async function generateStaticParams() {
   const supabase = createStaticClient();
   // Env-less build (e.g. CI): skip prerendering; slugs render on demand.
   if (!supabase) return [];
-  const { data, error } = await supabase
-    .from("recipes")
-    .select("slug")
-    .eq("is_published", true);
-  if (error) throw new Error(`Couldn’t list recipe slugs: ${error.message}`);
-  return (data ?? []).map(({ slug }) => ({ slug }));
+  // Every domain: this one route serves the whole catalog (plan §9.4).
+  const slugs = await getPublishedRecipeSlugs(supabase, "all");
+  return slugs.map(({ slug }) => ({ slug }));
 }
 
 // Deduped across generateMetadata and the page render. Uses the cookie-free
 // client — recipe data is world-readable, and touching cookies() here would
 // make the route dynamic.
-const getRecipe = cache(async (slug: string): Promise<RecipeHeader | null> => {
+const getRecipe = cache(async (slug: string) => {
   const supabase = createStaticClient();
   if (!supabase) throw new Error("Supabase environment is not configured");
-  const { data, error } = await supabase
-    .from("recipes")
-    .select(
-      "id,slug,name,description,method,glass,garnish,instructions,image_url,source,strength,difficulty,flavor_tags",
-    )
-    .eq("slug", slug)
-    .maybeSingle();
-  if (error) throw new Error(`Couldn’t load this recipe: ${error.message}`);
-  return data;
+  return getRecipeBySlug(supabase, slug);
 });
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const recipe = await getRecipe(slug);
   if (!recipe) return {};
-  const title = `${recipe.name} — In House Mixers`;
+  const title = pageTitle(`${recipe.name} — ${DOMAIN_SURFACE[recipe.domain]}`);
   const description = recipe.description ?? undefined;
   const images = recipe.image_url ? [recipe.image_url] : undefined;
   return {
@@ -107,7 +95,7 @@ export default async function RecipeDetailPage({ params }: Props) {
     supabase
       .from("recipe_ingredients")
       .select(
-        "ingredient_id,amount,unit,preparation,is_optional,is_garnish,display_order,ingredients(name,slug)",
+        "ingredient_id,amount,unit,preparation,is_optional,is_garnish,display_order,section,ingredients(name,slug)",
       )
       .eq("recipe_id", recipe.id),
     // "More like this" is supplementary: an error here leaves the row out
@@ -131,6 +119,7 @@ export default async function RecipeDetailPage({ params }: Props) {
       is_optional: r.is_optional,
       is_garnish: r.is_garnish,
       display_order: r.display_order,
+      section: r.section,
       name: r.ingredients?.name ?? "—",
       slug: r.ingredients?.slug ?? null,
     }))
@@ -139,6 +128,27 @@ export default async function RecipeDetailPage({ params }: Props) {
         a.display_order - b.display_order || a.name.localeCompare(b.name),
     );
   const related = relatedRows ?? [];
+
+  // Its own domain's metadata, and only that. The union in getRecipeBySlug
+  // means a food recipe has no `cocktail` member to read by accident.
+  const cocktail = recipe.domain === "cocktail" ? recipe.cocktail : null;
+  const food = recipe.domain === "food" ? recipe.food : null;
+  const subtitle = (
+    cocktail ? [cocktail.method, cocktail.glass] : [food?.course, food?.cuisine]
+  ).filter((v): v is string => !!v);
+  const pills = (
+    cocktail
+      ? [
+          recipe.difficulty,
+          cocktail.strength != null ? `~${cocktail.strength}% ABV` : null,
+          ...cocktail.flavor_tags,
+        ]
+      : [
+          recipe.difficulty,
+          food?.total_minutes != null ? formatMinutes(food.total_minutes) : null,
+          food?.servings != null ? `serves ${food.servings}` : null,
+        ]
+  ).filter((v): v is string => !!v);
 
   // Structured data for search engines. Built from the server-rendered rows,
   // so it always matches the page as delivered — not the client pantry
@@ -153,17 +163,36 @@ export default async function RecipeDetailPage({ params }: Props) {
     ...(recipe.instructions.length > 0
       ? { recipeInstructions: recipe.instructions }
       : {}),
-    recipeYield: "1 cocktail",
+    ...(cocktail
+      ? { recipeYield: "1 cocktail" }
+      : food?.servings != null
+        ? { recipeYield: `${food.servings} servings` }
+        : {}),
+    // Only fields the database actually holds — §20 forbids unsupported
+    // structured-data claims.
+    ...(food?.prep_minutes != null
+      ? { prepTime: isoDuration(food.prep_minutes) }
+      : {}),
+    ...(food?.cook_minutes != null
+      ? { cookTime: isoDuration(food.cook_minutes) }
+      : {}),
+    ...(food?.total_minutes != null
+      ? { totalTime: isoDuration(food.total_minutes) }
+      : {}),
+    ...(food?.course ? { recipeCategory: food.course } : {}),
+    ...(food?.cuisine ? { recipeCuisine: food.cuisine } : {}),
   };
 
   return (
     <article className="space-y-6">
       <div className="flex items-center justify-between">
+        {/* Back to the catalog this recipe belongs to — the detail route is
+            shared, the browsing surfaces are not. */}
         <Link
-          href="/recipes"
+          href={DOMAIN_ROUTES[recipe.domain].recipes}
           className="text-sm text-muted underline hover:text-foreground"
         >
-          ← All recipes
+          ← All {DOMAIN_SURFACE[recipe.domain].toLowerCase()} recipes
         </Link>
         <ShareButton
           title={recipe.name}
@@ -186,29 +215,21 @@ export default async function RecipeDetailPage({ params }: Props) {
 
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">{recipe.name}</h1>
-        {(recipe.method || recipe.glass) && (
+        {subtitle.length > 0 && (
           <p className="text-xs uppercase tracking-wide opacity-50">
-            {[recipe.method, recipe.glass].filter(Boolean).join(" · ")}
+            {subtitle.join(" · ")}
           </p>
         )}
-        {(recipe.difficulty ||
-          recipe.strength != null ||
-          recipe.flavor_tags.length > 0) && (
+        {pills.length > 0 && (
           <div className="flex flex-wrap gap-1.5 pt-2">
-            {[
-              recipe.difficulty,
-              recipe.strength != null ? `~${recipe.strength}% ABV` : null,
-              ...recipe.flavor_tags,
-            ]
-              .filter((v): v is string => !!v)
-              .map((pill) => (
-                <span
-                  key={pill}
-                  className="rounded-full border border-border bg-surface px-2 py-0.5 text-xs text-muted"
-                >
-                  {pill}
-                </span>
-              ))}
+            {pills.map((pill) => (
+              <span
+                key={pill}
+                className="rounded-full border border-border bg-surface px-2 py-0.5 text-xs text-muted"
+              >
+                {pill}
+              </span>
+            ))}
           </div>
         )}
         {recipe.description && (
@@ -216,16 +237,24 @@ export default async function RecipeDetailPage({ params }: Props) {
         )}
       </header>
 
-      <RecipePantryStatus recipeId={recipe.id} ingredients={ingredients} />
+      <RecipePantryStatus
+        recipeId={recipe.id}
+        recipe={{
+          slug: recipe.slug,
+          name: recipe.name,
+          domain: recipe.domain,
+        }}
+        ingredients={ingredients}
+      />
 
       {/* The island renders the garnish ingredients when the recipe has any;
           this free-text note is the fallback for recipes that don't. */}
-      {recipe.garnish && !ingredients.some((ri) => ri.is_garnish) && (
+      {cocktail?.garnish && !ingredients.some((ri) => ri.is_garnish) && (
         <section>
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
             Garnish
           </h2>
-          <p className="mt-1 opacity-90">{recipe.garnish}</p>
+          <p className="mt-1 opacity-90">{cocktail.garnish}</p>
         </section>
       )}
 
@@ -245,7 +274,23 @@ export default async function RecipeDetailPage({ params }: Props) {
       )}
 
       {recipe.source && (
-        <p className="text-sm text-muted">Source: {recipe.source}</p>
+        <p className="text-sm text-muted">
+          Source:{" "}
+          {recipe.source_url ? (
+            <a
+              href={recipe.source_url}
+              rel="noreferrer"
+              className="underline hover:text-foreground"
+            >
+              {recipe.source}
+            </a>
+          ) : (
+            recipe.source
+          )}
+          {recipe.license && recipe.license !== recipe.source && (
+            <> · {recipe.license}</>
+          )}
+        </p>
       )}
 
       {related.length > 0 && (
@@ -261,8 +306,9 @@ export default async function RecipeDetailPage({ params }: Props) {
                     id: r.recipe_id,
                     slug: r.slug,
                     name: r.name,
-                    method: r.method,
-                    glass: r.glass,
+                    pills: [r.method, r.glass].filter(
+                      (v): v is string => !!v,
+                    ),
                     image_url: r.image_url,
                   }}
                   titleAs="h3"

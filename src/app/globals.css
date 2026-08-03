@@ -81,3 +81,21 @@ body {
     transform: none;
   }
 }
+
+/*
+ * Reduced motion (docs/expansion-plan.md §18). The card lift and the toast
+ * entrance are the only motion in the app; honour the system preference
+ * rather than leaving it to each component to remember. Transitions are
+ * shortened rather than removed, so state changes stay perceptible.
+ */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

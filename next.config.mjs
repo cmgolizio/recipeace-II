@@ -13,6 +13,16 @@ const isLocalSupabase =
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactCompiler: true,
+  // The cocktail catalog and matches moved under /bar when the Kitchen was
+  // introduced (docs/expansion-plan.md §29). Temporary (307) rather than
+  // permanent while the expansion is in flight, so the move stays reversible;
+  // /recipes/[slug] is unaffected — recipe details stay on one shared route.
+  async redirects() {
+    return [
+      { source: "/recipes", destination: "/bar/recipes", permanent: false },
+      { source: "/matches", destination: "/bar/matches", permanent: false },
+    ];
+  },
   images: {
     remotePatterns: supabaseUrl
       ? [new URL("/storage/v1/object/public/**", supabaseUrl)]

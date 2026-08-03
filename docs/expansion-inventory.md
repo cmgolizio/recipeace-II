@@ -1,13 +1,16 @@
-# Expansion Inventory — Phase 0 Baseline
+# Expansion Inventory and Phase Log
 
 > **File:** `docs/expansion-inventory.md`
-> **Phase:** 0 — Establish baseline and expansion inventory (see `docs/expansion-plan.md` §25)
-> **Status:** complete. No application code, schema, or data was changed in this phase.
+> **Started as:** phase 0 — baseline and inventory (see `docs/expansion-plan.md` §25)
+> **Now:** the running record of the whole expansion, phases 0–17.
 >
-> This document records the state of the repository _before_ the food expansion
-> begins. It is the reference every later phase checks its assumptions against.
-> When a later phase changes something described here, update the relevant
-> section rather than letting this drift.
+> §§1–11 describe the repository as it was _before_ the expansion, updated in
+> place where a later phase changed something. §12 is the phase log: what each
+> phase actually did, and why, including where it departed from the plan. §13
+> checks the result against the plan's definition of MVP completion.
+>
+> Companions: `docs/expansion-plan.md` (the plan, with §50 recording the
+> as-built architecture) and `docs/expansion-rollout.md` (deploy and rollback).
 
 ---
 
@@ -223,21 +226,28 @@ mirrors the same expansion per-ingredient and additionally reports
 
 ### 3.7 Route map
 
+_Updated in phase 4: the cocktail catalog and matches moved under `/bar`._
+
 | Route                                                                      | Rendering                    | Data source                                                                          |
 | -------------------------------------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------ |
 | `/`                                                                        | static; client islands       | `search_ingredients`, `popular_ingredients`, `ingredients`, `match_recipes_detail`   |
-| `/recipes`                                                                 | **dynamic server**           | `recipes` table, offset pagination (24/page) + a second unpaginated facet query      |
+| `/bar`                                                                     | dynamic server               | `recipes` count for the cocktail domain                                              |
+| `/bar/recipes` (was `/recipes`)                                            | **dynamic server**           | `recipes` table, offset pagination (24/page) + a second unpaginated facet query      |
+| `/bar/matches` (was `/matches`)                                            | **client component**         | `match_recipes_detail`, no pagination                                                |
+| `/kitchen`                                                                 | static placeholder           | none yet                                                                             |
 | `/recipes/[slug]`                                                          | **SSG**, `revalidate = 3600` | `recipes`, `recipe_ingredients`, `related_recipes`; pantry status in a client island |
-| `/matches`                                                                 | **client component**         | `match_recipes_detail`, no pagination                                                |
 | `/ingredients/[slug]`                                                      | **SSG**, `revalidate = 3600` | `ingredient_detail`                                                                  |
 | `/favorites`                                                               | client component             | `favorite_recipes` store + `recipes` by id                                           |
 | `/shopping`                                                                | client component             | localStorage only                                                                    |
 | `/login`, `/auth/reset`, `/auth/callback`                                  | auth                         | Supabase Auth                                                                        |
 | `/sitemap.xml`, `/robots.txt`, `/manifest.webmanifest`, `/opengraph-image` | metadata                     | `recipes`, `ingredients`                                                             |
 
-Navigation (`src/components/site-header.tsx`): `my bar` · `recipes` ·
-`matches` · `favorites` · `shopping`, with a pantry-count badge, theme toggle,
-and a mobile overflow menu.
+`/recipes` and `/matches` are 307 redirects to their `/bar` equivalents
+(`next.config.mjs`), query strings preserved.
+
+Navigation (`src/components/site-header.tsx`): a Bar/Kitchen domain switcher,
+then `pantry` · `favorites` · `shopping`, with a pantry-count badge, theme
+toggle, and a mobile overflow menu.
 
 ### 3.8 Query entry points
 
@@ -614,18 +624,24 @@ Ordered by the phase that needs them.
 Two things could not be resolved by inspection and need a product answer before
 the phases that depend on them.
 
-**1. Product name.** The plan calls the product _RecipeAce_; the repository is
-`recipeace-II`; the localStorage keys are `recipeace.*`; but every piece of
-user-facing copy, the `<title>`, the manifest, the OG image and the logo say
-**In House Mixers**. Phases 4 and 15 rewrite that copy, so the target name
-needs deciding first. Nothing before Phase 4 depends on it.
+**1. Product name — STILL OPEN, and the owner's to decide.** The plan calls
+the product _RecipeAce_; the repository is `recipeace-II`; the localStorage
+keys are `recipeace.*`; but every piece of user-facing copy, the `<title>`,
+the manifest, the OG image and the logo say **In House Mixers**.
 
-**2. Cross-domain staple policy.** Staples are currently global, unconditional,
-and invisible in the UI (§5.10). Plan §11.4 lists four options and recommends
-"a small, explicit staple policy, made visible". Phase 3 has to pick one. The
-narrowest change that satisfies the plan is to keep the existing global set,
-add no food staples beyond `salt`/`sugar`/`water` (already present), and surface
-the assumption in the Kitchen match UI in Phase 11.
+Phase 15 mistook the plan's naming for a decision and renamed the product;
+that was reverted. The site is **In House Mixers** and the name is expected to
+change again, so the outcome is that it is no longer a decision the code cares
+about: `SITE_NAME` in `src/lib/site.ts` is the only place it appears, and
+changing it is one line plus the README heading.
+
+**2. Cross-domain staple policy — RESOLVED in phase 3.** Staples are global, unconditional,
+and were invisible in the UI (§5.10). Plan §11.4 lists four options and
+recommends "a small, explicit staple policy, made visible". Taken: the
+existing five (`water`, `ice`, `crushed ice`, `sugar`, `salt`) unchanged, no
+food staples added, and the assumption stated under both matches pages by
+`components/staple-note.tsx`, which reads the list from the database so the
+note cannot drift from the policy.
 
 ---
 
@@ -690,5 +706,724 @@ in one table, and the pipeline's explicit stamp.
 Validation: lint, `tsc --noEmit`, `next build`, and `vitest run` (7 files,
 43 tests) all pass.
 
-**Next up: Phase 2** — make recipe queries domain-aware. The entry points are
-enumerated in §3.8; start there.
+**Correction (found in phase 2):** the phase-1 commit did _not_ actually update
+`supabase/seed_test_recipes.sql`. With `domain` NOT NULL and no default, the
+fixture insert failed, so every PGlite-backed suite failed to build its
+database — all 6 DB test files errored. Fixed in `da5dd7f`; the 43-test
+baseline is real from that commit onward.
+
+### Phase 2 — Domain-aware recipe queries · complete
+
+Two new modules under `src/lib/recipes/`:
+
+- `domain.ts` — `RecipeDomain`, `DomainFilter` (`"cocktail" | "food" | "all"`),
+  `parseDomainFilter`, and the Bar/Kitchen surface labels. One place where the
+  application says "domain".
+- `queries.ts` — every recipe read the app performs, each taking an **explicit**
+  domain: `getRecipes` (paged + filtered catalog), `getRecipeFacets`,
+  `getRecipesByIds` (favorites), `getPublishedRecipeSlugs` (sitemap,
+  `generateStaticParams`), `getRecipeBySlug` (detail). `"all"` is spelled out
+  rather than defaulted, so a new surface cannot forget to decide. Card columns
+  live in one constant, and `RecipePreview` now carries `domain` (plan §10.3).
+
+Call sites updated: `/recipes` (cocktail), `/recipes/[slug]` (all — one route
+serves both domains), `/favorites` (all, ready for the phase-12 split),
+`sitemap.ts` (all).
+
+`supabase/migrations/20260801120100_domain_aware_recipe_queries.sql`:
+
+- `ingredient_detail` gains an **optional** `p_domain` (drop + recreate: adding
+  a parameter changes the function's identity). Null keeps today's
+  both-domain behaviour, and every recipe object in the `recipes` jsonb now
+  carries its own `domain` so a caller can group without a second round trip.
+  The shared ingredient page stays cross-domain by design (plan §9.5); its copy
+  no longer says "cocktails".
+- `related_recipes` is scoped to the subject recipe's own domain. Sharing lime
+  juice does not make a sorbet "more like" a daiquiri. Body-only change, so
+  `create or replace` was enough.
+
+Deliberately **not** changed: `match_recipes` / `match_recipes_detail`. Those
+are phase 3, and their signatures change together.
+
+Tests: `tests/recipe-queries.test.ts` (10 tests) drives the query layer through
+a recording PostgREST stub and asserts the domain predicate is part of the
+request — the thing that proves filtering is not happening in the browser.
+`tests/domain-queries.test.ts` (7 tests) covers the SQL: single-domain listings,
+all-domain listings, pagination inside a domain, the ingredient page in both
+modes, and that "more like this" never crosses domains. `tests/db.ts` gains
+`seedFoodFixture` — three food recipes built only from ingredients `seed.sql`
+already has, one of which (`rum-lime-sorbet`) has the daiquiri's exact required
+ingredient set so domain separation is the only thing under test.
+
+Validation: lint, `tsc --noEmit`, `next build` (17 routes), `vitest run`
+(9 files, 59 tests) all pass.
+
+### Phase 3 — One matcher, two domains · complete
+
+`supabase/migrations/20260801120200_match_recipes_domain.sql` drops and
+recreates both matcher functions (return types and parameter lists change, so
+`create or replace` is not available) with a third argument,
+`p_domain public.recipe_domain default null`.
+
+**No matching rule changed.** The ancestor walk, staple union, recursive
+derivation expansion, one-hop bidirectional substitution reach, scoring and
+ordering are carried over verbatim from `20260702120100`. The only new SQL is
+`and (p_domain is null or r.domain = p_domain)` in the `required` CTE.
+
+That claim was verified rather than asserted: `match_recipes(pantry, 2)` was
+run over five representative pantries — `{gin, sweet vermouth}`,
+`{white rum, lime juice, simple syrup}`, `{bourbon, lemon juice}`, `{campari}`,
+`{cachaça, lime, simple syrup}` — against the schema with and without this
+migration. Every row, count, missing-ingredient array and ordering is
+identical. Three of those orderings are now frozen as `COCKTAIL_BASELINE` in
+`tests/matcher.test.ts`, the ranking regression lock §9 asked for.
+
+`match_recipes_detail` also changes its projection: `method` and `glass` are
+replaced by `domain` and a `metadata` jsonb object, built per domain
+(`{method, glass}` with nulls stripped for cocktails, `{}` for food until
+phase 5 gives food something to show). This is invariant 14 — a food match card
+is not handed five null drink fields — and it means the next domain's card
+fields arrive without another signature change. `/matches` reads
+`metadata.method` / `metadata.glass`; the rendered card is unchanged.
+
+**Staple policy, decided and documented** (plan §11.4, open decision 2). The
+staple set stays global, unconditional and tiny: `water`, `ice`, `crushed ice`,
+`sugar`, `salt`. No food staples are added — flour, pepper and neutral oil are
+deliberately _not_ staples — because `is_staple` has no domain and adding one
+would silently change cocktail results. The policy is written into the
+migration header, exercised by a food-staple test, and Phase 11 surfaces it in
+the Kitchen match UI. Per-user configuration stays post-MVP (§43.1).
+
+Application call sites now name their domain: `/matches` and
+`almost-there-nudge.tsx` both pass `p_domain: "cocktail"` — they are Bar
+surfaces, and `/kitchen/matches` will pass `"food"` against the same function.
+
+Index: `recipes_domain_idx` is replaced by `recipes_domain_published_idx
+(domain, is_published)` — the pair the matcher and the catalog both filter on,
+and a usable prefix index for domain-only lookups.
+
+Tests: `tests/matcher.test.ts` grows from 7 to 13. New coverage — the cocktail
+ranking baseline, food-never-returns-cocktails (using `rum-lime-sorbet`, whose
+required ingredients are exactly the daiquiri's), one pantry ingredient
+satisfying either domain through the same derivation, optional food
+ingredients not raising `missing_count`, cross-domain staple behaviour, and
+`match_recipes_detail` parity within a domain.
+
+Validation: lint, `tsc --noEmit`, `next build` (17 routes), `vitest run`
+(9 files, 65 tests) all pass.
+
+### Phase 4 — Bar and Kitchen structure · complete
+
+**Route convention** (now `DOMAIN_ROUTES` in `src/lib/recipes/domain.ts`, so
+the mapping is declared once): each domain owns a subtree — `/bar`,
+`/bar/recipes`, `/bar/matches`; `/kitchen`, `/kitchen/recipes`,
+`/kitchen/matches` — and everything shared stays outside them: the pantry at
+`/`, recipe details at `/recipes/[slug]`, `/favorites`, `/shopping`,
+`/ingredients/[slug]`.
+
+Moves (`git mv`, so history follows): `/recipes` → `/bar/recipes` (with its
+loading skeleton), `/matches` → `/bar/matches`. Both old paths are **307**
+redirects in `next.config.mjs` — temporary rather than permanent while the
+expansion is in flight, and verified against a production build to preserve
+the query string (`/matches?missing=1` → `/bar/matches?missing=1`).
+`/recipes/[slug]` is untouched: one shared detail route, per §9.4.
+
+New pages: `/bar` (overview — live cocktail count, entry points to matches and
+the catalog, and a line saying the pantry is shared) and `/kitchen` (honest
+placeholder — no food recipes exist yet, and it says so rather than linking to
+routes that aren't built; §29's completion criteria explicitly ask for this).
+`/bar/matches` is a client component, so its metadata lives in a sibling
+`layout.tsx`.
+
+`DomainSwitcher` (`src/components/domain-switcher.tsx`) sits in the header on
+every viewport. Bar and Kitchen are two _places_, so it is a labelled `<nav>`
+of links with `aria-current` on the active one — not a button group (§18). The
+header's other links are secondary: `pantry` · `favorites` · `shopping`, with
+the mobile overflow menu now carrying `pantry` too.
+
+Copy: only the lines that described the product as drinks-only. Root metadata
+description, the home `<h1>` ("Build your bar" → "Your pantry"), the first-run
+hero (now the plan's "Add what you have. Discover what you can make."), the
+matches empty state, the ingredient page's back link, the pantry badge
+tooltip. The remaining "your bar" toasts and the `In House Mixers` brand
+itself are phase 15's audit.
+
+Internal links repointed: `recipes-filter`, `pantry-panel`,
+`almost-there-nudge`, `/shopping`, `/favorites`, `sitemap.ts`, and the recipe
+detail back-link — which now reads its own recipe's domain and returns to that
+domain's catalog.
+
+Validation: lint, `tsc --noEmit`, `next build` (19 routes), `vitest run`
+(9 files, 65 tests) all pass; redirects checked against `next start`.
+
+### Phase 5 — Shared recipe, domain-specific details · complete
+
+**The field-by-field verdict** (§3.1's table, resolved):
+
+| Field                                                                                              | Verdict         | Where it lives now                         |
+| -------------------------------------------------------------------------------------------------- | --------------- | ------------------------------------------ |
+| id, slug, name, description, instructions, source, is_published, image_url, created_at, updated_at | shared          | `recipes`                                  |
+| domain                                                                                             | shared          | `recipes` (the one place it is persisted)  |
+| difficulty                                                                                         | **shared**      | `recipes` — easy/medium/advanced fits both |
+| method, glass, garnish, strength, base_spirit, flavor_tags                                         | cocktail-only   | `cocktail_recipe_details`                  |
+| prep/cook/total minutes, servings, course, cuisine                                                 | food-only (new) | `food_recipe_details`                      |
+
+`20260802120000_recipe_detail_tables.sql` creates both detail tables (PK on
+`recipe_id`, so at most one row per recipe; `on delete cascade`, so no orphans;
+check constraints on strength, times and servings), enables RLS with the same
+published-recipe rule `recipe_ingredients` uses, backfills every cocktail —
+including all-null rows, so "a cocktail has exactly one details row" is a real
+invariant — and asserts the backfill missed nothing.
+
+Neither detail table has a `domain` column. §3 forbids it, so the pairing is
+enforced by the writers and asserted by a test that joins each detail table
+back to `recipes` and expects no mismatches. No cross-table trigger (§8.3).
+
+The old cocktail columns on `recipes` are **kept, marked DEPRECATED in
+`comment on column`, and no longer read or written**. Dropping them is phase
+17's cleanup, per §23's additive-first rule.
+
+**Catalog views.** A catalog page filters, sorts and paginates across shared
+_and_ domain fields in one query, which PostgREST cannot do across an embedded
+resource (you cannot order parent rows by an embedded column). So
+`cocktail_recipes` and `food_recipes` are `security_invoker` views that flatten
+each detail table onto the shared fields. Storage stays normalised; the query
+layer stays one implementation; RLS stays the base tables'.
+
+**Query layer** (`src/lib/recipes/queries.ts`): `getRecipes({domain, …})` now
+reads that domain's view, and `RecipePreview` carries `pills` — the domain's
+short card metadata, already resolved — instead of `method`/`glass`.
+`RecipeCard` takes `pills` and renders them; deciding what they are belongs to
+the domain (§14.2's "prefer composition"). `getRecipeBySlug` returns a
+discriminated union (`{domain: "cocktail", cocktail} | {domain: "food", food}`)
+so the detail page cannot read the wrong domain's metadata by accident.
+`getRecipesByIds` reads each domain's view and merges, keeping every row
+domain-filtered in the database. Facets are domain-shaped by nature, so
+`getRecipeFacets` became `getCocktailFacets`; the Kitchen gets its own in
+phase 10.
+
+One deliberate seam: `catalogQuery()` casts the builder to a small structural
+type. The two views have different columns, so supabase-js infers a different
+builder for each; without it the shared filter/sort/page logic would have to be
+written out twice.
+
+**Functions** (`20260802120100_functions_read_recipe_details.sql`, all
+`create or replace` — no signature changes): `match_recipes_detail` builds its
+`metadata` object from the detail tables and now fills the food branch
+(`total_minutes`, `servings`, `course`); `related_recipes` reads `base_spirit`
+and the card's method/glass from `cocktail_recipe_details`; `ingredient_detail`
+returns a domain-shaped `metadata` object per recipe instead of bare
+`method`/`glass`, since its list spans both domains.
+
+**Pipeline**: `ResolvedRecipe` splits into shared fields plus a nested
+`cocktail` object (difficulty stays shared); `ingestRecipe` upserts `recipes`
+then `cocktail_recipe_details`; `updateRecipeMetadata` writes difficulty to
+`recipes` and the drink fields to the detail table;
+`loadRecipesMissingMetadata` is scoped to the cocktail domain (the enrichment
+prompt is a bartender's); `loadRecipesMissingImages` reads the cocktail view.
+
+Tests: `tests/recipe-details.test.ts` (9) covers the backfill count and
+content, one-row-per-recipe, cascade delete, orphan rejection, the check
+constraints, the cross-domain invariant, both views, and food metadata
+arriving on a match card. `tests/recipe-queries.test.ts` grew to 12, including
+"drink facets are never applied to a food query".
+
+Validation: lint, `tsc --noEmit`, `next build` (19 routes), `vitest run`
+(10 files, 77 tests) all pass.
+
+### Phase 6 — Ingredient taxonomy · complete
+
+**Decision: extend the enum, don't replace it.** The plan offers a lookup table
+as an option (§8.6); an enum remains the simplest model that meets the actual
+requirement. The taxonomy is a fixed product vocabulary rather than user data,
+and no surface needs per-category metadata — the pantry browser already holds
+the display order, and labels are the value with underscores replaced. Cost of
+the choice, recorded so it can be revisited: adding a category needs a
+migration. The moment a category has to carry data of its own — a shopping-list
+aisle, an icon, a translated label — the lookup table becomes the right call.
+
+`20260803120000_food_ingredient_categories.sql` adds 15 values: `meat`,
+`seafood`, `egg`, `grain`, `pasta`, `bread`, `legume`, `canned_good`,
+`oil_and_fat`, `herb`, `spice`, `condiment`, `sauce`, `baking`, `sweetener`.
+The plan's other suggestions were already covered — Produce and Dairy exist,
+Alcohol is the spirit/liqueur/wine/fortified_wine/bitters split, Beverages are
+`mixer`/`juice`. Migration risk 3 is handled by the migration only _adding_
+values; the first rows using them arrive with the phase 9 seed.
+
+Taxonomy rules, now written into the migration header:
+
+1. One catalog, no domain on ingredients — lime juice is one row.
+2. `category` = what kind of thing this is (display and grouping only; the
+   matcher never reads it).
+3. `is_staple` = whether matching assumes you own it. **Independent** of
+   category: flour is `baking` and is _not_ a staple. This resolves §4's open
+   item — the `staple` category and the `is_staple` boolean answer different
+   questions, and the five existing rows keep both.
+4. `parent_id` is the is-a hierarchy; categories are flat and play no part.
+5. One category per ingredient until a surface needs more.
+
+Risk 9 in §8 (`popular_ingredients` / `related_recipes` hardcode
+`category <> 'garnish'`) turned out not to bite: extending rather than
+replacing the enum keeps `garnish` a valid value, so both predicates still mean
+what they meant. A test asserts it rather than leaving it to inspection.
+
+Application: the `Category` union in `src/data/cocktail-seed.ts` (the seed's
+source of truth) and the enum in `src/types/database.ts` gained the same 15
+values; `CATEGORY_ORDER` in `ingredient-browse.tsx` now lists Bar shelves,
+then Kitchen shelves, then shared, and category labels use `replaceAll` so
+`oil_and_fat` renders as "oil and fat".
+
+Tests: `tests/ingredient-taxonomy.test.ts` (6) — every food category exists,
+the cocktail vocabulary is untouched, unknown categories are still rejected,
+seeded ingredients kept id/slug/category, a new food ingredient lands in the
+one shared catalog and is findable through `search_ingredients`, and garnishes
+stay excluded from `popular_ingredients`.
+
+Validation: lint, `tsc --noEmit`, `next build`, `vitest run` (11 files,
+83 tests) all pass.
+
+### Phase 7 — Food-ready ingredient lines · complete
+
+`20260804120000_recipe_ingredients_food_ready.sql` does three things, each
+forced by how food recipes are actually written:
+
+1. **Drops `unique (recipe_id, ingredient_id)`** — §5's item 5, "the single
+   hardest blocker". "2 tablespoons olive oil, divided", butter in the dough
+   and butter for the pan, salt in two stages: all of those were impossible,
+   and the cocktail validator silently dropped the second occurrence.
+2. **Adds `section`** — the heading a line sits under. Null is the main list,
+   which is every cocktail, so nothing about drinks moved.
+3. **Adds `unique (recipe_id, display_order)`** — with `ingredient_id` no
+   longer unique per recipe, the line's position is its natural key. That gives
+   seeds and upserts a conflict target (both were updated) and makes ordering
+   unambiguous.
+
+Dropping the constraint means the two functions that _count_ ingredients had to
+stop counting a repeated one twice — both body-only changes:
+
+- `match_recipes`'s `required` CTE groups by `(recipe_id, ingredient_id)` and
+  keeps `min(display_order)`, so a recipe requires an ingredient once however
+  many lines mention it, and `missing_ingredients` keeps its written order.
+- `recipe_pantry_status` collapses repeated lines the same way, taking the
+  first line's quantity and treating an ingredient as optional only when
+  _every_ line mentioning it is optional. The detail page renders its own
+  lines and looks status up by ingredient id, so this is what keeps the
+  "missing N ingredients" banner honest.
+
+The cocktail ranking baseline in `tests/matcher.test.ts` still passes
+unchanged, which is the proof that no drink moved.
+
+**Units** (§32): `src/lib/units/vocabulary.ts` holds the controlled set —
+volume (`tsp`, `tbsp`, `cup`, `oz`, `ml`, `l`, `dash`, `splash`, `drop`,
+`barspoon`), weight (`g`, `kg`, `lb`), pieces (`each`, `pinch`, `clove`,
+`slice`, `can`, `sprig`, `leaves`) — with `normalizeUnit` folding written
+spellings ("Tablespoons" → `tbsp`, "large" → `each`) and `isKnownUnit` for
+validators. The column stays `text`: an unanticipated unit ("handful") is
+better recorded than dropped, which is the plan's "intentional fallback". One
+wart, deliberately documented in the module: **`oz` means fluid ounce** here,
+because that is what the bar has always meant and `format.ts` converts on that
+basis — so food weights use `g`/`kg`/`lb`, never `oz`.
+
+Rendering: `IngredientRow` carries `section`; the detail page selects it; the
+pantry-status island groups lines by section in first-appearance order (an
+unnamed group renders exactly as before) and keys rows by `display_order`
+rather than `ingredient_id`, which repeated ingredients would have collided on.
+The cocktail validator normalises units, sets `section: null`, and **keeps** its
+de-duplication — a drink listing the same bottle twice is a model slip, not a
+"divided" line. That is now adapter policy rather than a schema constraint.
+
+Tests: `tests/recipe-ingredient-lines.test.ts` (9) — repeated lines, required
+counted once, status reported once, optional lines, a "to taste" line with no
+amount or unit, section grouping and order, the new position constraint,
+cocktail lines byte-identical, and unit folding including the fallback.
+
+Validation: lint, `tsc --noEmit`, `next build`, `vitest run` (12 files,
+92 tests) all pass.
+
+### Phase 8 — Food ingestion adapter · complete
+
+**Structure.** The pipeline now has the core/domains split §16 asks for, with
+the existing files moved rather than rewritten:
+
+```
+scripts/pipeline/
+  run.ts, db.ts, enrich.ts, images.ts, image.ts   unchanged behaviour
+  ingest-food.ts                                   food CLI
+  core/  types.ts · slug.ts · report.ts
+  domains/
+    cocktail/  generate.ts · validate.ts          (git mv, history intact)
+    food/      source.ts · validate.ts · ingest.ts
+```
+
+`core/types.ts` holds the shape every adapter produces: a `ResolvedRecipe`
+discriminated on domain, carrying shared fields, its own domain's details,
+`provenance` and `is_published`. The cocktail adapter stamps
+`{source: "ai-generated"}` and `is_published: true` — exactly what `db.ts`
+hardcoded before — so drinks ingestion is unchanged.
+
+**Decision: the food adapter emits SQL rather than writing through the admin
+client.** Food content is curated and reviewed (Decision 12), which makes it
+reference data, and this repository already has a shape for reference data: a
+typed source in `src/data` compiled to an idempotent SQL file
+(`scripts/generate-seed-sql.ts` → `supabase/seed.sql`). Emitting SQL keeps the
+entire path runnable and _testable_ with no Supabase project — the tests apply
+the generated file to PGlite and re-apply it to prove idempotence — and
+idempotency comes from the same on-conflict clauses the existing seeds use.
+`ingestRecipe` now refuses a non-cocktail recipe rather than silently writing
+one badly.
+
+**Input** (`domains/food/source.ts`): a `FoodCatalog` of the canonical
+ingredients the recipes need, the aliases mapping real-world names onto them,
+and the recipes — plain data, reviewable in a diff. `parseCatalog` fails a
+malformed file at file level rather than a hundred times over.
+
+**Validation** (`domains/food/validate.ts`, pure — §16.4): name, slug,
+ordered instructions, source name _and_ licence (§15 requires both), plausible
+servings, non-negative times with `total` derived from prep + cook and rejected
+if it is less than its parts, positive amounts, units folded to the vocabulary,
+at least two required ingredients, and every ingredient resolving to the shared
+taxonomy. Unresolved ingredients reject the recipe and are reported by name.
+Warnings — off-vocabulary units, an amount with no unit, an ingredient the
+instructions never mention — never block. Repeated ingredients are **kept**
+(that is the whole point of phase 7); the drinks adapter still collapses them.
+
+**Domain and publication**: every food recipe is stamped `domain: "food"` and
+lands `is_published: false` unless the catalog explicitly says `publish: true`
+(§34, invariant 16).
+
+**Report** (`core/report.ts`, §16.5): proposed recipes with their normalized
+lines, newly proposed canonical ingredients, alias mappings, unresolved
+ingredients, duplicate candidates, warnings, rejections with reasons, and the
+expected database operations. `isClean` gates the write — a run with anything
+unresolved, duplicated or invalid writes nothing and exits non-zero.
+
+**Duplicate detection** (§16.6, and §8 migration risk 5): slug collisions
+within the batch and against supplied existing slugs, plus normalized-name
+near-duplicates. The risk the inventory flagged — a food recipe silently
+overwriting a cocktail through the `on conflict (slug)` upsert — is closed by a
+guard the emitter puts _before_ the transaction: it raises with the offending
+slugs, so nothing is written. A test proves the seeded Daiquiri survives an
+attempt to overwrite it.
+
+CLI: `npm run pipeline:food -- --dry-run` (report only), `npm run pipeline:food`
+(writes `supabase/seed_food.sql`), `--catalog x.json`, `--out path.sql`.
+
+Schema: `20260805120000_recipe_source_provenance.sql` adds `source_url` and
+`license` to `recipes` and documents what `source` means now.
+
+Tests: `tests/food-pipeline.test.ts` (20) — acceptance and domain stamping,
+opt-in publication, metadata carry-through, unit folding, sections, repeated
+ingredients, unresolved reporting, catalog-introduced ingredients, seven
+rejection cases, warnings, all three duplicate paths, report content,
+malformed-catalog handling, generated SQL applied twice with an identical
+snapshot, and the cross-domain slug guard.
+
+Validation: lint, `tsc --noEmit`, `next build`, `vitest run` (13 files,
+112 tests) all pass; `npm run pipeline:food -- --dry-run` runs clean against
+the (still empty) catalog.
+
+### Phase 9 — The first curated food catalog · complete
+
+`src/data/food-seed.ts` — 13 recipes, 44 new canonical ingredients, 20 aliases
+— compiled by `npm run pipeline:food` to `supabase/seed_food.sql` (43 KB,
+idempotent, applied after `supabase/seed.sql`).
+
+**Content and licence.** Every recipe is **original**: written for this app,
+describing ordinary technique in its own words. Nothing is transcribed from a
+cookbook or a website — §15's line is that ingredient lists carry little
+protection but headnotes and instruction wording do. `source` and `license` are
+both `"original"`, and the validator rejects a recipe that states neither.
+
+**The 13**, chosen to cover §15.3's spread and to exercise the system rather
+than to be large: soft scrambled eggs on toast · overnight oats · banana
+pancakes · grilled cheese · cucumber tomato salad · lemon vinaigrette · garlic
+butter spaghetti · spaghetti with tomato sauce · chicken fried rice · lentil
+soup · sheet-pan chicken and potatoes · black bean tacos · chocolate chip
+cookies. Nine are vegetarian; times run 5–60 minutes; difficulty spans easy and
+medium.
+
+They deliberately exercise: shared cocktail ingredients (lemon juice, lime
+juice, fresh mint, fresh basil, milk, whole egg, sugar, salt, strawberry,
+cucumber, hot sauce), repeated lines ("butter, divided" twice in one recipe),
+sections ("For the sauce" / "To serve"), optional lines, weight _and_ volume
+_and_ count units, and every food category the taxonomy gained in phase 6.
+
+**"To taste" lines are optional.** Salt and pepper to taste is an adjustment,
+not a requirement, and an unowned pinch of pepper must not hide a dinner
+(§11.3). They still render — they are just not counted against a match.
+
+**Four categories re-filed.** Now that the vocabulary exists, `whole egg` and
+`egg white` moved from `dairy` to `egg`, and `fresh mint` / `fresh basil` from
+`produce` to `herb`, in `src/data/cocktail-seed.ts`. Ids and slugs are
+untouched (the seed upserts on name), and the taxonomy test asserts it.
+
+**No substitutions or derivations**, deliberately. Food substitutions are
+context-sensitive (§8.8) and this matcher treats them as universal and
+bidirectional, so shipping none beats shipping wrong ones; food derivations are
+mostly effortful transformations the matcher would wrongly treat as free
+(§8.9). Both are post-MVP.
+
+Tests: `tests/food-catalog.test.ts` (11) applies the _generated_ SQL to a real
+database — the shipped catalog still validates (so the SQL cannot go stale
+unnoticed), every recipe has a detail row and provenance, no dangling
+ingredient references, shared ingredients are shared rather than duplicated,
+aliases resolve, a stocked kitchen pantry produces real matches, optional lines
+never block one, one pantry answers both domains, sections and repeated lines
+survive the round trip, and **the Bar's rankings are unchanged**.
+`tests/db.ts` gains `seedFoodCatalog` — loaded only by suites that are about
+food, so the cocktail suites keep asserting against their small fixture set.
+
+Validation: lint, `tsc --noEmit`, `next build`, `vitest run` (14 files,
+123 tests) all pass; `npm run pipeline:food -- --dry-run` reports 13 accepted,
+0 rejected, nothing unresolved.
+
+### Phases 10 and 11 — Kitchen browsing and matching · complete
+
+`/kitchen` is now a real overview (live recipe count, entry points to matches
+and the catalog) that still degrades honestly to "still being stocked" when the
+catalog is empty. `/kitchen/recipes` and `/kitchen/matches` are built.
+
+**Browsing** (`/kitchen/recipes`): a server component with the same shape as
+the Bar catalog — server-side fetch, 24 per page, offset pagination, empty and
+error states — over `getRecipes({domain: "food"})`. Its filters are food's
+(§13.3): course, cuisine, total time (15/30/60 minutes) and difficulty, plus
+name search and a "quickest first" sort. `FoodFilter` is its own client
+component rather than a branch inside `RecipesFilter`, because the two facet
+sets have nothing in common (§14.2). Both catalogs now share
+`components/pagination.tsx`, which is the part that genuinely is identical.
+
+**Matching** (`/kitchen/matches`): `components/matches-view.tsx` is the Bar
+matches page, extracted and parameterised by a small `MatchesCopy` object —
+domain, heading, route, empty-state wording, and the noun for "unlock N more
+\_\_\_". The matcher call, the ranking, the ready/missing-1/missing-2 sections,
+the buy-next suggestion, "Surprise me" and the add-to-shopping-list action are
+all literally the same code for both domains (Decision 9). Each route file is a
+dozen lines of copy.
+
+Card pills come from `matchPills(domain, metadata)` in
+`lib/recipes/domain.ts`, which reads the domain-shaped `metadata` object the
+RPC already returns — method and glass for a drink, course and total time for a
+dish. `formatMinutes` moved there too, so the three surfaces that render a
+duration share one implementation.
+
+**The staple policy is now visible** (§11.4, and the second of §10's open
+decisions). `components/staple-note.tsx` renders "Matches assume you have
+crushed ice, ice, salt, sugar, water — those never count as missing" under both
+matches pages, reading the list _from the database_ rather than repeating it in
+markup, so the note cannot drift from the policy.
+
+Tests: `tests/kitchen.test.ts` (11). The catalog view is food-only; each of the
+four filters narrows it; quickest-first really sorts by total time; the facet
+lists span the catalog. A PGlite-backed stand-in for the Supabase client then
+drives the **real query layer** end to end — cards carry food pills (never a
+glass), a course filter narrows the page, two pages never overlap, and the
+Kitchen's facet columns are food's. Finally the matches side: results are
+food-only and ranked fewest-missing-first, pills are food's, the staple list is
+exactly the documented five, and missing ingredients are named so they can go
+on the shopping list.
+
+Validation: lint, `tsc --noEmit`, `next build` (23 routes), `vitest run`
+(15 files, 134 tests) all pass.
+
+### Phases 12 and 13 — Shared systems, and one recipe detail · complete
+
+**Pantry.** Already one pantry, one table, no domain — §4 classified it
+"correct as-is" and nothing changed it. What was missing was saying so: `/`
+now opens with "One list of what you own. It answers both the Bar and the
+Kitchen — adding an ingredient here counts towards a drink and towards
+dinner", linking to both. The "your bar" phrasing across the pantry toasts,
+the recipe-detail island, the auth message, the login page and the manifest is
+now "your pantry" (§20 of §5's list, largely closed ahead of phase 15).
+
+**Favorites.** One table, one query, and a segmented All / Bar / Kitchen filter
+that only appears once a user has saved from both. The list is fetched whole
+and split in the component: it is one set of saved recipes viewed three ways,
+not three lists. Empty state per tab.
+
+**Shopping list.** The structural gap §4 flagged — names in localStorage, "no
+ids, no recipe link, no domain" — is closed. Items are now
+`{name, from?: {slug, name, domain}}` under `recipeace.shopping.v2`, and a
+pre-expansion `v1` list is migrated on first read and the old key removed, so
+nobody loses a list. Both surfaces that add ingredients (match cards and the
+recipe detail island) pass provenance, so the page can show "for Lentil Soup"
+and offer a **By recipe** grouping alongside the flat list. Duplicates are
+still collapsed, and the _first_ recipe that sent you shopping keeps the
+credit. Manually added items are untouched and simply have no source.
+
+`shoppingItems()` is exported so the mutators load stored state before writing —
+previously an add that ran before any component subscribed would have written
+over the saved list.
+
+**Recipe detail** (phase 13) was already one route with one loader; what
+remained was the domain-specific rendering, and it is now complete: the
+subtitle, pill row and metadata come from the recipe's own domain through the
+discriminated union (a food recipe has no `cocktail` member to read by
+accident), the garnish section is cocktail-only, the back link returns to the
+right catalog, and the title carries its surface ("Daiquiri — Bar — …").
+Provenance renders as a linked source plus licence. Structured data gained
+`prepTime`, `cookTime`, `totalTime`, `recipeCategory` and `recipeCuisine` for
+food, each emitted **only when the database actually holds it** (§20 forbids
+unsupported claims), and `recipeYield` is no longer the hardcoded
+"1 cocktail" — §5's item 13.
+
+Tests: `tests/shopping-list.test.ts` (6) — provenance recorded, one list
+serving both domains, no duplicates and first-source-wins, v1 migration
+including removal of the old key, remove/clear leaving nothing behind, and
+malformed storage ignored rather than thrown.
+
+Validation: lint, `tsc --noEmit`, `next build`, `vitest run` (16 files,
+140 tests) all pass.
+
+### Phases 14 and 15 — Search, discovery, and the unified product · complete
+
+**Search** (`/search`, `20260806120000_search_recipes.sql`). One function over
+the whole catalog, narrowable by domain: a recipe matches on its own name or
+description, or on the name **or alias** of an ingredient it calls for — so
+"lime" finds the daiquiri and the tacos, "dijon" finds the vinaigrette through
+its ingredient list, and "scallions" finds the fried rice through the alias
+table. Ranking is deliberately explainable (name > description > ingredient,
+then alphabetical) and it reuses the existing trigram indexes rather than
+introducing a search service (§12). The page is a Server Component: the term
+and the All / Bar / Kitchen scope live in the URL, so the query never runs in
+the browser, and a no-results state in one domain offers to widen the search.
+
+**Analytics** (`src/lib/analytics.ts`, §17). Three custom events on top of
+Vercel's page views — `domain_switched`, `search_submitted`,
+`shopping_ingredients_added` — each carrying `domain` as a **property** rather
+than being split into per-domain event names. No platform, no queue: if the
+script isn't there the call is a no-op, and a failure can never break a user
+action.
+
+**The product name.** §10's first open decision is **still open**, and is the
+owner's to make. I first read the plan's own naming (its title, §49, and the
+repository name `recipeace-II`) as a decision and renamed the product to
+"RecipeAce"; the owner corrected that — the site is **In House Mixers**, and
+the name is expected to change again.
+
+So the name is unchanged, and the useful work is that it is now in one place:
+`SITE_NAME` in `src/lib/site.ts`, with `pageTitle()` beside it. Root metadata,
+every page title, the manifest, the Open Graph image and the header wordmark
+read it from there; changing the name is that one line plus the README
+heading. Deliberately _not_ covered: the `recipeace.*` localStorage keys
+(renaming them would discard every anonymous pantry and shopping list), the
+`ihm-*` service-worker cache names, and the repository name — none is
+user-facing.
+
+**The mark** was a martini glass. It is now a fork and a glass side by side —
+the Kitchen and the Bar in one mark — in `icon.svg`, the header, and the OG
+image. Same stroke weight, same palette, same geometry language: §40 asks for
+polish, not a redesign. This one is independent of the name, and reverting it
+is three paths in three files (rollout §6).
+
+**Copy** finishes what phase 12 started: the service worker's route list and
+version (bumped to `v2`, since the shell, routes and brand all moved), the
+manifest description, and the README — which now opens on the two surfaces,
+documents the shared-core architecture, the food adapter, the staple policy
+and the food seed workflow.
+
+Tests: `tests/search.test.ts` (8) — both domains in one search, domain
+narrowing, ingredient hits, alias hits, rank ordering, domain-shaped card
+metadata, unpublished recipes never surfacing, and an empty term returning
+nothing rather than everything.
+
+Validation: lint, `tsc --noEmit`, `next build` (24 routes), `vitest run`
+(17 files, 148 tests) all pass.
+
+### Phase 16 — Review · complete
+
+**Security.** `tests/rls.test.ts` (9) stops asserting RLS and starts
+exercising it: the Supabase table grants are reproduced, then every query runs
+`set role anon`. An unpublished recipe is invisible, and so are its detail row
+and its ingredient lines; the catalog views inherit the base tables' policies
+(which is what `security_invoker = on` buys); search and matching never return
+it; another user's pantry, favorites and profile return nothing; and the
+content tables reject writes from the API roles. Every new function is
+`security invoker` with `set search_path = ''` and is granted only to
+`anon, authenticated`. The caveat is written into the test file: PGlite is not
+the Supabase platform, so this proves the policies are written and enforced,
+not that the deployed project is configured correctly — that check is in the
+rollout.
+
+**Performance**, measured rather than assumed, against the shipped data
+(23 recipes, 204 ingredients, 71 aliases, 149 ingredient lines), 20 runs each:
+
+| Query                          | Mean   |
+| ------------------------------ | ------ |
+| `match_recipes` (both domains) | 3.9 ms |
+| `match_recipes_detail` (food)  | 3.5 ms |
+| `search_recipes`               | 1.9 ms |
+| catalog page (24 rows)         | 1.5 ms |
+| facet scan                     | 1.0 ms |
+
+The known limits — unpaginated matches, the per-request facet scan,
+`generateStaticParams` prerendering everything, no index on `description` or
+on the food facets — are all real and none of them bites at this size. Each is
+listed in `docs/expansion-rollout.md` §7 **with the catalog size that makes it
+start to matter**, rather than being fixed speculatively.
+
+**Accessibility.** The domain switcher is a labelled `<nav>` of links with
+`aria-current` (not a button group — they are places); every filter control
+has an `aria-label`; segmented controls use `role="group"` with
+`aria-pressed`; headings run h1 → h2 → h3 on every new page; match status is
+never colour alone (✓ / ↺ / ✗ plus text); card images are decorative with the
+name in the title. Added: a global `prefers-reduced-motion` rule — the card
+lift and the toast entrance were the only motion, and honouring the preference
+centrally beats each component remembering. Known imperfection, recorded not
+hidden: recipe cards are `<a>` elements containing buttons (favourite,
+add-to-list). That predates the expansion; restructuring the card is in the
+rollout's limits table.
+
+**Regression.** The whole cocktail surface is covered by tests that predate
+the expansion plus the ranking baseline added in phase 3, and all of it still
+passes: derivations, substitutions, staples, zero-overlap exclusion,
+`max_missing`, detail parity, related-recipe ranking, ingredient pages,
+popular ingredients, metadata round-trips, unit formatting. Phase 9 adds an
+explicit "the Bar is untouched by the food catalog" test.
+
+### Phase 17 — Rollout · documented, not executed
+
+`docs/expansion-rollout.md` is the procedure: what ships, the migration order
+with a **reversibility verdict for each of the eight**, the deploy sequence,
+a smoke-test checklist that starts with cocktail behaviour, what to monitor,
+the rollback levers (coarsest first — `update recipes set is_published = false
+where domain = 'food'` empties the Kitchen with no deploy), how to find a
+half-applied import, the known limits with their triggers, and the deferred
+cleanup of the deprecated columns with the verification query to run first.
+
+**Not executed, and cannot be from here:** this repository has no `.env*` and
+no linked Supabase CLI, so no migration has been run against a live project.
+Everything was verified against the real migration files in PGlite. The
+document says so at the top rather than implying otherwise.
+
+`docs/expansion-plan.md` gains §50, the as-built architecture: what was built,
+the eight decisions taken during implementation that differ from what the plan
+proposed (each with its reason), and what is deferred.
+
+---
+
+## 13. Where the expansion landed
+
+Against §48's definition of MVP completion:
+
+| Criterion                                                    | Status                                                      |
+| ------------------------------------------------------------ | ----------------------------------------------------------- |
+| Visible Bar and Kitchen experiences                          | yes — `/bar`, `/kitchen`, switcher in the header            |
+| Existing cocktail functionality still works                  | yes — full suite green, ranking baseline frozen             |
+| Recipes have a valid domain                                  | yes — NOT NULL, no default, enum-constrained                |
+| Domain only on recipes                                       | yes — asserted by test, not just by convention              |
+| One Supabase project / ingredient catalog / pantry / matcher | yes                                                         |
+| Browse food recipes                                          | yes — `/kitchen/recipes`, four facets, pagination           |
+| View food recipe details                                     | yes — one route, domain-composed                            |
+| See food recipes you can make                                | yes — `/kitchen/matches`                                    |
+| See missing food ingredients                                 | yes — named, and addable to the shared list                 |
+| Favorite food recipes                                        | yes — one table, All/Bar/Kitchen filter                     |
+| Add missing food ingredients to the shared list              | yes — with recipe provenance                                |
+| Reviewed ingredients and instructions                        | yes — 13 original recipes, licensed, validated              |
+| Validated, idempotent food ingestion                         | yes — refuses to write anything unless the catalog is clean |
+| Kitchen routes responsive and accessible                     | yes — same patterns as the Bar, reviewed in phase 16        |
+| Bar routes stable                                            | yes — redirects verified against a production build         |
+| Database security reviewed                                   | yes — exercised as `anon` in `tests/rls.test.ts`            |
+| Rollout and rollback documented                              | yes — `docs/expansion-rollout.md`                           |
+
+Final validation: `npm run lint`, `npx tsc --noEmit`, `npm run build`
+(22 routes) and `npm test` (18 files, 157 tests) all pass.

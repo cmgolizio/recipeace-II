@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 
 import { RecipeCard } from "../../../components/recipe-card";
+import { matchPills, type RecipeDomain } from "../../../lib/recipes/domain";
+import { SITE_NAME, pageTitle } from "../../../lib/site";
 import { createStaticClient } from "../../../lib/supabase/static";
 import type { Database } from "../../../types/database";
 
@@ -15,10 +17,12 @@ type UsedIn = {
   id: number;
   slug: string;
   name: string;
-  method: string | null;
-  glass: string | null;
+  domain: RecipeDomain;
+  /** Domain-shaped card metadata; keys vary by domain, values are never null. */
+  metadata: Record<string, string | number>;
   image_url: string | null;
 };
+
 type RelatedIngredient = { name: string; slug: string; note?: string | null };
 
 type Props = { params: Promise<{ slug: string }> };
@@ -48,18 +52,18 @@ const getIngredient = cache(async (slug: string): Promise<Detail | null> => {
 });
 
 const categoryLabel = (category: Detail["category"]) =>
-  category.replace("_", " ");
+  category.replaceAll("_", " ");
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const ingredient = await getIngredient(slug);
   if (!ingredient) return {};
   const recipes = ingredient.recipes as unknown as UsedIn[];
-  const title = `${ingredient.name} — In House Mixers`;
+  const title = pageTitle(ingredient.name);
   const description =
     recipes.length > 0
-      ? `${recipes.length} cocktail${recipes.length > 1 ? "s" : ""} made with ${ingredient.name}, plus what you can use instead.`
-      : `${ingredient.name} — a ${categoryLabel(ingredient.category)} in the In House Mixers ingredient index.`;
+      ? `${recipes.length} recipe${recipes.length > 1 ? "s" : ""} made with ${ingredient.name}, plus what you can use instead.`
+      : `${ingredient.name} — a ${categoryLabel(ingredient.category)} in the ${SITE_NAME} ingredient index.`;
   return {
     title,
     description,
@@ -97,7 +101,7 @@ export default async function IngredientPage({ params }: Props) {
           href="/"
           className="text-sm text-muted underline hover:text-foreground"
         >
-          ← Build your bar
+          ← Your pantry
         </Link>
       </div>
 
@@ -124,7 +128,7 @@ export default async function IngredientPage({ params }: Props) {
         ) : (
           recipes.length === 0 && (
             <p className="text-muted">
-              No cocktails in the catalog call for this yet.
+              Nothing in the catalog calls for this yet.
             </p>
           )
         )}
@@ -138,7 +142,13 @@ export default async function IngredientPage({ params }: Props) {
           <ul className="mt-3 grid gap-3 sm:grid-cols-2">
             {recipes.map((recipe) => (
               <li key={recipe.id}>
-                <RecipeCard recipe={recipe} titleAs="h3" />
+                <RecipeCard
+                  recipe={{
+                    ...recipe,
+                    pills: matchPills(recipe.domain, recipe.metadata),
+                  }}
+                  titleAs="h3"
+                />
               </li>
             ))}
           </ul>

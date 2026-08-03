@@ -3246,3 +3246,89 @@ The matching engine is universal.
 The interface changes according to context.
 
 The architecture remains simple enough to build incrementally, test reliably, and maintain as the catalog grows.
+
+---
+
+# 50. As-Built Architecture
+
+> Added on completion of phases 1–17, per §42 task 16 ("update this document
+> with final architecture"). Where the built system differs from what earlier
+> sections proposed, the difference and its reason are recorded here. Phase by
+> phase detail lives in `docs/expansion-inventory.md`; the rollout procedure
+> lives in `docs/expansion-rollout.md`.
+
+## 50.1 What was built
+
+One Next.js application, one Supabase project, one `public` schema.
+
+Domain is persisted in exactly one place — `recipes.domain`, a `recipe_domain`
+enum, NOT NULL with **no default** — and every other table derives it by
+joining. The detail tables carry no domain column, as §3 requires.
+
+```
+recipes                      shared fields + domain + difficulty
+  ├─ cocktail_recipe_details method, glass, garnish, strength, base_spirit, flavor_tags
+  ├─ food_recipe_details     prep/cook/total minutes, servings, course, cuisine
+  ├─ recipe_ingredients      quantity, unit, preparation, optional, section, order
+  └─ favorite_recipes        user_id → recipe_id
+
+cocktail_recipes / food_recipes   security_invoker views: each domain's
+                                  details flattened onto the shared fields
+```
+
+Routes: `/bar`, `/bar/recipes`, `/bar/matches`; `/kitchen`,
+`/kitchen/recipes`, `/kitchen/matches`; and outside both, the shared surfaces —
+`/` (pantry), `/recipes/[slug]`, `/ingredients/[slug]`, `/favorites`,
+`/shopping`, `/search`. `/recipes` and `/matches` are 307 redirects.
+
+One matcher: `match_recipes(pantry, max_missing, p_domain)` and its
+`_detail` companion. The domain argument filters candidates and changes
+nothing else — proven by running five representative pantries against the
+schema with and without the change and diffing the results.
+
+## 50.2 Decisions taken during implementation
+
+1. **The ingredient taxonomy stayed an enum** (§8.6 offered a lookup table).
+   Fifteen food values were added. The taxonomy is a fixed product vocabulary,
+   not user data, and nothing needs per-category metadata yet. Revisit when a
+   category must carry data of its own — a shopping-list aisle, an icon, a
+   translated label.
+2. **Catalog views**, which §8 did not anticipate. A catalog page filters,
+   sorts and paginates across shared _and_ domain fields in one query, and
+   PostgREST cannot order parent rows by an embedded column. The views keep
+   storage normalised and the query layer single.
+3. **The food adapter emits SQL** rather than writing through the admin client
+   (§16 assumed database writes). Curated content is reference data, and this
+   repository already compiles reference data from a typed source to an
+   idempotent SQL file. It also makes the whole path testable with no Supabase
+   project — the tests apply the generated file and re-apply it.
+4. **"To taste" seasoning is optional.** §11.3 requires optional ingredients
+   not to make a recipe look unavailable; an unowned pinch of pepper hiding a
+   dinner is exactly that failure.
+5. **The staple policy is the pre-existing five** — water, ice, crushed ice,
+   sugar, salt — unchanged, cross-domain, and now stated in the interface
+   under both matches pages. No food staples were added, because `is_staple`
+   has no domain and adding one would silently change cocktail results.
+6. **No food substitutions or derivations shipped.** This matcher treats
+   substitutions as universal and bidirectional and derivations as free; both
+   assumptions are wrong for food (§8.8, §8.9). Post-MVP.
+7. **The product name stayed "In House Mixers" and §10's first open question
+   is still open.** This document's own naming — its title, §49, and the
+   repository name — was read as a decision during implementation and the
+   product was briefly renamed; the owner corrected it. The name is expected
+   to change again, so it now lives in exactly one place, `SITE_NAME` in
+   `src/lib/site.ts`, and changing it is one line. **Note for future
+   sessions: this plan calls the product "RecipeAce" throughout, and that is
+   not the site's name.** The mark, separately, is now a fork and a glass
+   rather than a martini glass.
+8. **Deprecated columns were kept.** `recipes.method`, `glass`, `garnish`,
+   `strength`, `base_spirit` and `flavor_tags` are unread, unwritten, and
+   commented as deprecated. Dropping them is scheduled after a stability
+   period (rollout §8), per §23.
+
+## 50.3 What is deferred
+
+Everything in §43, plus: shopping-list account sync, equipment, quantity-aware
+matching, dietary filters (no trustworthy metadata exists yet, and §11.8
+forbids guessing), and the performance work in rollout §7 — each with a stated
+trigger rather than a date.

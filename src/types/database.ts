@@ -42,6 +42,82 @@ export type Database = {
           },
         ];
       };
+      cocktail_recipe_details: {
+        Row: {
+          recipe_id: number;
+          method: string | null;
+          glass: string | null;
+          garnish: string | null;
+          strength: number | null;
+          base_spirit: string | null;
+          flavor_tags: string[];
+        };
+        Insert: {
+          recipe_id: number;
+          method?: string | null;
+          glass?: string | null;
+          garnish?: string | null;
+          strength?: number | null;
+          base_spirit?: string | null;
+          flavor_tags?: string[];
+        };
+        Update: {
+          recipe_id?: number;
+          method?: string | null;
+          glass?: string | null;
+          garnish?: string | null;
+          strength?: number | null;
+          base_spirit?: string | null;
+          flavor_tags?: string[];
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cocktail_recipe_details_recipe_id_fkey";
+            columns: ["recipe_id"];
+            isOneToOne: true;
+            referencedRelation: "recipes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      food_recipe_details: {
+        Row: {
+          recipe_id: number;
+          prep_minutes: number | null;
+          cook_minutes: number | null;
+          total_minutes: number | null;
+          servings: number | null;
+          course: string | null;
+          cuisine: string | null;
+        };
+        Insert: {
+          recipe_id: number;
+          prep_minutes?: number | null;
+          cook_minutes?: number | null;
+          total_minutes?: number | null;
+          servings?: number | null;
+          course?: string | null;
+          cuisine?: string | null;
+        };
+        Update: {
+          recipe_id?: number;
+          prep_minutes?: number | null;
+          cook_minutes?: number | null;
+          total_minutes?: number | null;
+          servings?: number | null;
+          course?: string | null;
+          cuisine?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "food_recipe_details_recipe_id_fkey";
+            columns: ["recipe_id"];
+            isOneToOne: true;
+            referencedRelation: "recipes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       ingredient_aliases: {
         Row: {
           id: number;
@@ -246,6 +322,7 @@ export type Database = {
           is_garnish: boolean;
           display_order: number;
           raw_text: string | null;
+          section: string | null;
         };
         Insert: {
           id?: number;
@@ -258,6 +335,7 @@ export type Database = {
           is_garnish?: boolean;
           display_order?: number;
           raw_text?: string | null;
+          section?: string | null;
         };
         Update: {
           id?: number;
@@ -270,6 +348,7 @@ export type Database = {
           is_garnish?: boolean;
           display_order?: number;
           raw_text?: string | null;
+          section?: string | null;
         };
         Relationships: [
           {
@@ -301,6 +380,8 @@ export type Database = {
           image_url: string | null;
           instructions: string[];
           source: string | null;
+          source_url: string | null;
+          license: string | null;
           is_published: boolean;
           created_at: string;
           updated_at: string;
@@ -323,6 +404,8 @@ export type Database = {
           image_url?: string | null;
           instructions?: string[];
           source?: string | null;
+          source_url?: string | null;
+          license?: string | null;
           is_published?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -343,6 +426,8 @@ export type Database = {
           image_url?: string | null;
           instructions?: string[];
           source?: string | null;
+          source_url?: string | null;
+          license?: string | null;
           is_published?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -355,13 +440,62 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      // Read-only catalog views: each domain's detail table flattened onto the
+      // shared recipe fields (20260802120000_recipe_detail_tables.sql).
+      cocktail_recipes: {
+        Row: {
+          id: number;
+          slug: string;
+          name: string;
+          description: string | null;
+          domain: Database["public"]["Enums"]["recipe_domain"];
+          instructions: string[];
+          source: string | null;
+          is_published: boolean;
+          image_url: string | null;
+          created_at: string;
+          updated_at: string;
+          difficulty: Database["public"]["Enums"]["recipe_difficulty"] | null;
+          method: string | null;
+          glass: string | null;
+          garnish: string | null;
+          strength: number | null;
+          base_spirit: string | null;
+          flavor_tags: string[];
+        };
+        Relationships: [];
+      };
+      food_recipes: {
+        Row: {
+          id: number;
+          slug: string;
+          name: string;
+          description: string | null;
+          domain: Database["public"]["Enums"]["recipe_domain"];
+          instructions: string[];
+          source: string | null;
+          is_published: boolean;
+          image_url: string | null;
+          created_at: string;
+          updated_at: string;
+          difficulty: Database["public"]["Enums"]["recipe_difficulty"] | null;
+          prep_minutes: number | null;
+          cook_minutes: number | null;
+          total_minutes: number | null;
+          servings: number | null;
+          course: string | null;
+          cuisine: string | null;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
       match_recipes: {
         Args: {
           pantry: number[];
-          max_missing?: number;
+          max_missing?: number | null;
+          /** null (the default) matches against every domain. */
+          p_domain?: Database["public"]["Enums"]["recipe_domain"] | null;
         };
         Returns: {
           recipe_id: number;
@@ -389,7 +523,9 @@ export type Database = {
       match_recipes_detail: {
         Args: {
           pantry: number[];
-          max_missing?: number;
+          max_missing?: number | null;
+          /** null (the default) matches against every domain. */
+          p_domain?: Database["public"]["Enums"]["recipe_domain"] | null;
         };
         Returns: {
           recipe_id: number;
@@ -400,8 +536,8 @@ export type Database = {
           missing_ingredients: string[];
           slug: string;
           name: string;
-          method: string | null;
-          glass: string | null;
+          domain: Database["public"]["Enums"]["recipe_domain"];
+          metadata: Json;
           ingredients: Json;
         }[];
       };
@@ -449,6 +585,23 @@ export type Database = {
           shared_count: number;
         }[];
       };
+      search_recipes: {
+        Args: {
+          q: string;
+          p_domain?: Database["public"]["Enums"]["recipe_domain"] | null;
+          max_results?: number;
+        };
+        Returns: {
+          recipe_id: number;
+          slug: string;
+          name: string;
+          domain: Database["public"]["Enums"]["recipe_domain"];
+          image_url: string | null;
+          metadata: Json;
+          matched: string;
+          rank: number;
+        }[];
+      };
       slugify: {
         Args: {
           value: string;
@@ -458,6 +611,8 @@ export type Database = {
       ingredient_detail: {
         Args: {
           p_slug: string;
+          /** null (the default) lists recipes from every domain. */
+          p_domain?: Database["public"]["Enums"]["recipe_domain"] | null;
         };
         Returns: {
           id: number;
@@ -485,7 +640,22 @@ export type Database = {
         | "produce"
         | "garnish"
         | "other"
-        | "staple";
+        | "staple"
+        | "meat"
+        | "seafood"
+        | "egg"
+        | "grain"
+        | "pasta"
+        | "bread"
+        | "legume"
+        | "canned_good"
+        | "oil_and_fat"
+        | "herb"
+        | "spice"
+        | "condiment"
+        | "sauce"
+        | "baking"
+        | "sweetener";
       recipe_difficulty: "easy" | "medium" | "advanced";
       recipe_domain: "cocktail" | "food";
     };
@@ -497,9 +667,10 @@ export type Database = {
 
 // ── Convenience helpers (single `public` schema) ────────────────────────────
 type PublicSchema = Database["public"];
+type TablesAndViews = PublicSchema["Tables"] & PublicSchema["Views"];
 
-export type Tables<T extends keyof PublicSchema["Tables"]> =
-  PublicSchema["Tables"][T]["Row"];
+export type Tables<T extends keyof TablesAndViews> =
+  TablesAndViews[T]["Row"];
 export type TablesInsert<T extends keyof PublicSchema["Tables"]> =
   PublicSchema["Tables"][T]["Insert"];
 export type TablesUpdate<T extends keyof PublicSchema["Tables"]> =

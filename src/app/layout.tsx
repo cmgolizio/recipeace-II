@@ -7,6 +7,7 @@ import "./globals.css";
 import { RegisterServiceWorker } from "../components/register-service-worker";
 import { SiteHeader } from "../components/site-header";
 import { Toaster } from "../components/toast/toaster";
+import { SITE_NAME } from "../lib/site";
 import { siteUrl } from "../lib/site-url";
 
 const geistSans = Geist({
@@ -21,9 +22,9 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "In House Mixers — what can I make?",
+  title: `${SITE_NAME} — what can I make?`,
   description:
-    "Build your bar and instantly see which cocktails you can make from what you have on hand.",
+    "Add what you have. Discover what you can make — cocktails at the Bar, food in the Kitchen, from one shared pantry.",
 };
 
 // Runs synchronously during HTML parsing, before first paint, so an explicit

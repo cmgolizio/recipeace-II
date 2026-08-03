@@ -4,7 +4,11 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { usePantry } from "../lib/pantry/store";
-import { addToShopping, useShopping } from "../lib/shopping/store";
+import {
+  addToShopping,
+  useShopping,
+  type ShoppingSource,
+} from "../lib/shopping/store";
 import { createClient } from "../lib/supabase/client";
 import { formatQuantity, type Unit } from "../lib/units/format";
 import { useUnit } from "../lib/units/store";
@@ -23,9 +27,28 @@ export type IngredientRow = {
   is_optional: boolean;
   is_garnish: boolean;
   display_order: number;
+  /** Heading this line sits under; null is the main list. */
+  section: string | null;
   name: string;
   slug: string | null;
 };
+
+/**
+ * Split lines into their sections, in first-appearance order. Food recipes
+ * group under "For the sauce" / "For the topping"; every cocktail is one
+ * unnamed group, which renders exactly as it always has.
+ */
+function bySection(
+  rows: IngredientRow[],
+): { section: string | null; rows: IngredientRow[] }[] {
+  const groups: { section: string | null; rows: IngredientRow[] }[] = [];
+  for (const row of rows) {
+    const group = groups.find((g) => g.section === row.section);
+    if (group) group.rows.push(row);
+    else groups.push({ section: row.section, rows: [row] });
+  }
+  return groups;
+}
 
 type StatusRow =
   Database["public"]["Functions"]["recipe_pantry_status"]["Returns"][number];
@@ -40,7 +63,7 @@ function StatusBadge({ row }: { row: StatusRow }) {
   if (row.status === "have") {
     return (
       <span className="shrink-0 text-xs font-medium text-green-700 dark:text-green-400">
-        {row.derived_from ? `✓ via ${row.derived_from}` : "✓ in your bar"}
+        {row.derived_from ? `✓ via ${row.derived_from}` : "✓ in your pantry"}
       </span>
     );
   }
@@ -58,7 +81,13 @@ function StatusBadge({ row }: { row: StatusRow }) {
   );
 }
 
-function AddToListButton({ name }: { name: string }) {
+function AddToListButton({
+  name,
+  from,
+}: {
+  name: string;
+  from: ShoppingSource;
+}) {
   const shopping = useShopping();
   if (shopping.includes(name)) {
     return (
@@ -73,7 +102,7 @@ function AddToListButton({ name }: { name: string }) {
       aria-label={`Add ${name} to shopping list`}
       title="Add to shopping list"
       onClick={() => {
-        addToShopping(name);
+        addToShopping(name, from);
         toast(`Added ${name} to your shopping list`);
       }}
       className="rounded-md border border-border px-1.5 py-0.5 text-xs font-medium hover:bg-black/4 dark:hover:bg-white/6"
@@ -89,11 +118,13 @@ function IngredientItem({
   status,
   unit,
   scale,
+  recipe,
 }: {
   row: IngredientRow;
   status: StatusRow | undefined;
   unit: Unit;
   scale: number;
+  recipe: ShoppingSource;
 }) {
   const quantity = formatQuantity(row.amount, row.unit, unit, scale);
   return (
@@ -119,7 +150,9 @@ function IngredientItem({
       {status && (
         <span className="flex shrink-0 items-center gap-2">
           <StatusBadge row={status} />
-          {status.status === "missing" && <AddToListButton name={row.name} />}
+          {status.status === "missing" && (
+            <AddToListButton name={row.name} from={recipe} />
+          )}
         </span>
       )}
     </li>
@@ -194,9 +227,12 @@ function ServingScaler({
  */
 export function RecipePantryStatus({
   recipeId,
+  recipe,
   ingredients,
 }: {
   recipeId: number;
+  /** The recipe these lines belong to, for shopping-list provenance. */
+  recipe: ShoppingSource;
   ingredients: IngredientRow[];
 }) {
   const pantry = usePantry();
@@ -262,13 +298,13 @@ export function RecipePantryStatus({
           {missingRequired === 0
             ? substitutes > 0
               ? `You can make this — with ${substitutes} substitution${substitutes > 1 ? "s" : ""}.`
-              : "You can make this with what’s in your bar."
+              : "You can make this with what’s in your pantry."
             : `Missing ${missingRequired} ingredient${missingRequired > 1 ? "s" : ""}.`}
         </p>
       )}
       {statusError !== null && (
         <p className="text-sm text-red-600 dark:text-red-400">
-          Couldn’t check this against your bar: {statusError}
+          Couldn’t check this against your pantry: {statusError}
         </p>
       )}
 
@@ -282,21 +318,31 @@ export function RecipePantryStatus({
             <UnitToggle />
           </div>
         </div>
-        <ul className="mt-2 divide-y divide-black/5 dark:divide-white/10">
-          {poured.map((ri) => (
-            <IngredientItem
-              key={ri.ingredient_id}
-              row={ri}
-              status={statusById.get(ri.ingredient_id)}
-              unit={unit}
-              scale={scale}
-            />
-          ))}
-        </ul>
+        {bySection(poured).map((group) => (
+          <div key={group.section ?? ""}>
+            {group.section && (
+              <h3 className="mt-3 text-xs font-semibold uppercase tracking-wide text-muted">
+                {group.section}
+              </h3>
+            )}
+            <ul className="mt-2 divide-y divide-black/5 dark:divide-white/10">
+              {group.rows.map((ri) => (
+                <IngredientItem
+                  key={ri.display_order}
+                  row={ri}
+                  status={statusById.get(ri.ingredient_id)}
+                  unit={unit}
+                  scale={scale}
+                  recipe={recipe}
+                />
+              ))}
+            </ul>
+          </div>
+        ))}
         {!hasPantry && (
           <p className="mt-3 text-sm text-muted">
             <Link href="/" className="underline">
-              Add ingredients to your bar
+              Add ingredients to your pantry
             </Link>{" "}
             to see what you have and what you’re missing.
           </p>
@@ -311,11 +357,12 @@ export function RecipePantryStatus({
           <ul className="mt-2 divide-y divide-black/5 dark:divide-white/10">
             {garnishes.map((ri) => (
               <IngredientItem
-                key={ri.ingredient_id}
+                key={ri.display_order}
                 row={ri}
                 status={statusById.get(ri.ingredient_id)}
                 unit={unit}
                 scale={scale}
+                recipe={recipe}
               />
             ))}
           </ul>

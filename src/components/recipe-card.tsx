@@ -9,20 +9,23 @@ import { FavoriteHeart, FavoriteHeartOverlay } from "./favorite-heart";
  * optional because the matches query doesn't select them: `undefined` means
  * "this surface doesn't do images" (no media block at all), while `null`
  * means "fetched, but the recipe has none" (branded fallback tile).
+ *
+ * `pills` is whatever short metadata the recipe's own domain contributes —
+ * method and glass for a drink, course and time for a dish. The card renders
+ * them; deciding what they are belongs to the domain, not here (plan §14.2).
  */
 export type RecipeCardRecipe = {
   id: number;
   slug: string;
   name: string;
-  method: string | null;
-  glass: string | null;
+  pills?: string[];
   description?: string | null;
   image_url?: string | null;
 };
 
 /**
  * The one canonical recipe card: a linked shell with image (photo or branded
- * fallback), favorite heart, name, method/glass pills, and description.
+ * fallback), favorite heart, name, domain pills, and description.
  * Surface-specific body content (the matches page's ingredient chips) is
  * passed as children; `badge` renders on the right of the title row (the
  * matches status pill). `titleAs` lets the matches page keep h3 under its h2
@@ -40,7 +43,7 @@ export function RecipeCard({
   children?: ReactNode;
 }) {
   const hasMedia = recipe.image_url !== undefined;
-  const pills = [recipe.method, recipe.glass].filter((v): v is string => !!v);
+  const pills = recipe.pills ?? [];
   return (
     <Link
       href={`/recipes/${recipe.slug}`}

@@ -10,7 +10,7 @@ export type RecipeFilters = {
   difficulty: string;
   spirit: string;
   tags: string[];
-  sort: "name" | "newest" | "strength";
+  sort: string;
 };
 
 const selectClass =
@@ -72,7 +72,7 @@ export function RecipesFilter({
     if (sort && sort !== "name") params.set("sort", sort);
     // Changing any control always restarts from page 1 (no page param).
     const qs = params.toString();
-    router.replace(qs ? `/recipes?${qs}` : "/recipes");
+    router.replace(qs ? `/bar/recipes?${qs}` : "/bar/recipes");
   }
 
   function handleQueryChange() {

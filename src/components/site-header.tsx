@@ -11,6 +11,8 @@ import {
   useUser,
 } from "../lib/pantry/store";
 import { useShopping } from "../lib/shopping/store";
+import { SITE_NAME } from "../lib/site";
+import { DomainSwitcher } from "./domain-switcher";
 import { ThemeToggle } from "./theme-toggle";
 
 function NavLink({
@@ -108,23 +110,29 @@ export function SiteHeader() {
             className="h-5 w-5 text-accent"
             fill="none"
             stroke="currentColor"
-            strokeWidth={40}
+            strokeWidth={36}
             strokeLinecap="round"
             strokeLinejoin="round"
             aria-hidden
           >
-            <path d="M116 132h280L256 290z" />
-            <path d="M256 290v104" />
-            <path d="M172 394h168" />
+            {/* Fork and glass: the Kitchen and the Bar, one mark. */}
+            <path d="M120 116v84M170 116v84M220 116v84" />
+            <path d="M120 200h100" />
+            <path d="M170 200v196" />
+            <path d="M292 140h136l-68 92z" />
+            <path d="M360 232v128" />
+            <path d="M316 396h88" />
           </svg>
-          <span className="hidden min-[480px]:inline">In House Mixers</span>
+          <span className="hidden min-[480px]:inline">{SITE_NAME}</span>
         </Link>
         <nav className="flex items-center gap-3 text-sm sm:gap-4">
-          <NavLink href="/" exact>
-            my bar
+          <DomainSwitcher />
+          <NavLink href="/search" className="hidden sm:inline">
+            search
           </NavLink>
-          <NavLink href="/recipes">recipes</NavLink>
-          <NavLink href="/matches">matches</NavLink>
+          <NavLink href="/" exact className="hidden sm:inline">
+            pantry
+          </NavLink>
           {user && (
             <NavLink href="/favorites" className="hidden sm:inline">
               favorites
@@ -137,7 +145,11 @@ export function SiteHeader() {
           )}
           <span
             className="rounded-full bg-accent px-2.5 py-0.5 text-xs tabular-nums text-accent-foreground"
-            title={ready ? `${pantry.length} in your bar` : "Loading your bar"}
+            title={
+              ready
+                ? `${pantry.length} in your pantry`
+                : "Loading your pantry"
+            }
           >
             {ready ? pantry.length : "–"}
           </span>
@@ -187,6 +199,12 @@ export function SiteHeader() {
             </button>
             {menuOpen && (
               <div className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-border bg-surface p-1.5 shadow-lg">
+                <MenuLink href="/search" onNavigate={() => setMenuOpen(false)}>
+                  search
+                </MenuLink>
+                <MenuLink href="/" onNavigate={() => setMenuOpen(false)}>
+                  pantry
+                </MenuLink>
                 {user ? (
                   <>
                     <MenuLink

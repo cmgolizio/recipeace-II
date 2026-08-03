@@ -18,8 +18,8 @@ import {
   updateRecipeMetadata,
   type RecipeForEnrich,
 } from "./db.ts";
-import { METADATA_PROPERTIES, type Provider } from "./generate.ts";
-import { sanitizeMetadata, type GeneratedMetadata } from "./validate.ts";
+import { METADATA_PROPERTIES, type Provider } from "./domains/cocktail/generate.ts";
+import { sanitizeMetadata, type GeneratedMetadata } from "./domains/cocktail/validate.ts";
 
 const SYSTEM = `You are an expert bartender annotating a cocktail database. \
 Given a cocktail's name and ingredient list, estimate its metadata accurately: \

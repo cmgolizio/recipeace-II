@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 
+import { getPublishedRecipeSlugs } from "../lib/recipes/queries";
 import { siteUrl } from "../lib/site-url";
 import { createStaticClient } from "../lib/supabase/static";
 
@@ -8,33 +9,35 @@ import { createStaticClient } from "../lib/supabase/static";
 export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // Public routes only — /favorites and /auth/* are user-specific.
+  // Public routes only — /favorites and /auth/* are user-specific. The
+  // pre-expansion /recipes and /matches now redirect, so they are not listed.
   const staticRoutes: MetadataRoute.Sitemap = [
     "/",
-    "/recipes",
-    "/matches",
+    "/bar",
+    "/bar/recipes",
+    "/bar/matches",
+    "/kitchen",
+    "/kitchen/recipes",
+    "/kitchen/matches",
+    "/search",
     "/login",
   ].map((path) => ({ url: new URL(path, siteUrl).toString() }));
 
   const supabase = createStaticClient();
   if (!supabase) return staticRoutes;
 
-  const [recipeRows, ingredientRows] = await Promise.all([
-    supabase
-      .from("recipes")
-      .select("slug,updated_at")
-      .eq("is_published", true)
-      .order("slug"),
+  // Both domains: every published recipe has a public URL under /recipes.
+  const [recipes, ingredientRows] = await Promise.all([
+    getPublishedRecipeSlugs(supabase, "all"),
     supabase.from("ingredients").select("slug").order("slug"),
   ]);
-  const failure = recipeRows.error ?? ingredientRows.error;
-  if (failure) {
-    throw new Error(`Couldn’t build the sitemap: ${failure.message}`);
+  if (ingredientRows.error) {
+    throw new Error(`Couldn’t build the sitemap: ${ingredientRows.error.message}`);
   }
 
   return [
     ...staticRoutes,
-    ...(recipeRows.data ?? []).map((recipe) => ({
+    ...recipes.map((recipe) => ({
       url: new URL(`/recipes/${recipe.slug}`, siteUrl).toString(),
       lastModified: new Date(recipe.updated_at),
     })),

@@ -14,7 +14,8 @@ type Ingredient = Pick<
   "id" | "name" | "slug" | "category" | "is_staple"
 >;
 
-// Fixed display order. Staples are excluded from the browser entirely — they
+// Fixed display order: the Bar's shelves, then the Kitchen's, then what both
+// use. Staples are excluded from the browser entirely (is_staple below) — they
 // count as always on hand, so there is nothing to add.
 const CATEGORY_ORDER: Ingredient["category"][] = [
   "spirit",
@@ -25,9 +26,24 @@ const CATEGORY_ORDER: Ingredient["category"][] = [
   "mixer",
   "juice",
   "syrup",
-  "dairy",
-  "produce",
   "garnish",
+  "produce",
+  "herb",
+  "spice",
+  "meat",
+  "seafood",
+  "egg",
+  "dairy",
+  "oil_and_fat",
+  "grain",
+  "pasta",
+  "bread",
+  "legume",
+  "canned_good",
+  "sauce",
+  "condiment",
+  "sweetener",
+  "baking",
   "other",
 ];
 
@@ -102,7 +118,7 @@ export function IngredientBrowse() {
               className="rounded-lg border border-border bg-surface"
             >
               <summary className="cursor-pointer select-none px-4 py-2.5 text-sm font-medium capitalize">
-                {category.replace("_", " ")}{" "}
+                {category.replaceAll("_", " ")}{" "}
                 <span className="opacity-50">({items.length})</span>
               </summary>
               <ul className="flex flex-wrap gap-2 px-4 pb-3">
@@ -120,10 +136,10 @@ export function IngredientBrowse() {
                         onClick={() => {
                           if (inBar) {
                             removeFromPantry(it.id);
-                            toast(`Removed ${it.name} from your bar`);
+                            toast(`Removed ${it.name} from your pantry`);
                           } else {
                             addToPantry(it.id);
-                            toast(`Added ${it.name} to your bar`);
+                            toast(`Added ${it.name} to your pantry`);
                           }
                         }}
                         aria-pressed={inBar}

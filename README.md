@@ -1,35 +1,63 @@
 # In House Mixers
 
-A cocktail pantry-matching app. Build your bar (the ingredients you own) and
-instantly see which cocktails you can make, what you're closest to making, and
-what single bottle would unlock the most new recipes.
+A pantry-matching app for food and drink. Add what you have and see what you
+can make, what you're closest to making, and what one ingredient would unlock
+the most.
+
+One pantry answers two surfaces:
+
+- **The Bar** (`/bar`) — cocktails, filtered by method, glass, base spirit and
+  flavour.
+- **The Kitchen** (`/kitchen`) — food, filtered by course, cuisine, total time
+  and difficulty.
 
 Built with Next.js 16 (App Router) and Supabase (Postgres + Auth + Storage).
 
+The product name lives in `src/lib/site.ts` and nowhere else — page titles,
+the manifest, the Open Graph image and the header wordmark all read it from
+there.
+
 ## Architecture
+
+Bar and Kitchen are interface contexts over shared data, not separate systems.
+One Supabase project, one ingredient catalog, one pantry, one matcher, one
+favorites table, one shopping list. A recipe's domain is persisted in exactly
+one place — `recipes.domain` — and everything else derives it by joining.
+Metadata that belongs to only one domain lives in `cocktail_recipe_details` or
+`food_recipe_details`; the catalog views `cocktail_recipes` and `food_recipes`
+flatten each back onto the shared fields for browsing.
 
 The AI never runs in the request path.
 
-- **Offline pipeline** (`scripts/pipeline/`): an LLM generates recipes, which
-  are validated against the canonical ingredient taxonomy and written to
-  Postgres with canonical ingredient IDs. Run occasionally by a maintainer
-  with the Supabase secret key.
-- **Live app**: deterministic SQL only. Matching is done by two Postgres
-  functions (`match_recipes`, `recipe_pantry_status`) called over the
-  Supabase API. No AI, no per-request inference cost, reproducible results.
+- **Offline pipeline** (`scripts/pipeline/`): a shared lifecycle with a domain
+  adapter at each end. `domains/cocktail/` generates drinks with an LLM and
+  writes them with the Supabase secret key; `domains/food/` validates the
+  curated catalog in `src/data/food-seed.ts` and compiles it to idempotent SQL.
+  Both stamp their domain explicitly.
+- **Live app**: deterministic SQL only. Matching is Postgres functions
+  (`match_recipes`, `match_recipes_detail`, `recipe_pantry_status`,
+  `search_recipes`) called over the Supabase API. No AI, no per-request
+  inference cost, reproducible results.
 
 Reference data (ingredients, recipes) is world-readable via RLS; user data
 (pantry, favorites, profiles) is owner-only.
 
+The expansion from cocktails-only to both domains is documented phase by phase
+in `docs/expansion-plan.md` and `docs/expansion-inventory.md`.
+
 ## The matcher
 
-Given a pantry (array of ingredient IDs), the matcher classifies each required
-ingredient of each published recipe:
+One matcher serves both domains: `match_recipes(pantry, max_missing, domain)`
+filters candidates by domain and changes nothing else. Given a pantry (array of
+ingredient IDs), it classifies each required ingredient of each published
+recipe:
 
 - **Ancestor hierarchy** — `ingredients.parent_id` forms an is-a tree; owning
   bourbon satisfies a recipe calling for whiskey.
-- **Staples** — ingredients flagged `is_staple` (water, ice, salt…) are
-  assumed always on hand.
+- **Staples** — ingredients flagged `is_staple` (water, ice, crushed ice,
+  sugar, salt) are assumed always on hand, in both domains. The set is
+  deliberately tiny — flour and pepper are _not_ staples — and the matches
+  pages say what it is.
 - **Derivations** — `ingredient_derivations` records what an ingredient
   physically yields: owning an orange counts as exactly having orange peel and
   orange juice (recursive, one-way — a peel doesn't grant a whole orange).
@@ -60,8 +88,10 @@ npm run dev
 ```
 
 `supabase/seed.sql` is generated from `src/data/cocktail-seed.ts` via
-`npm run generate:seed` — edit the TypeScript, not the SQL. For a handful of
-test recipes without running the pipeline, execute
+`npm run generate:seed`, and `supabase/seed_food.sql` from
+`src/data/food-seed.ts` via `npm run pipeline:food` — edit the TypeScript, not
+the SQL. Apply both after the migrations. For a handful of test cocktails
+without running the generation pipeline, execute
 `supabase/seed_test_recipes.sql` against the local database.
 
 Environment variables (`.env.local`):
@@ -87,7 +117,15 @@ npm run pipeline -- --count 12 --dry-run  # generate and validate only
 npm run pipeline -- --provider openai     # or PIPELINE_PROVIDER=openai
 npm run pipeline:images                   # backfill images for recipes missing one (idempotent)
 npm run pipeline:enrich                   # backfill strength/difficulty/tags/base spirit (idempotent)
+
+npm run pipeline:food -- --dry-run        # validate the curated food catalog and report
+npm run pipeline:food                     # write supabase/seed_food.sql
 ```
+
+The food adapter validates before it writes anything: unresolved ingredients,
+duplicate slugs, missing licences, implausible times or servings all fail the
+run and print why. Food recipes land unpublished unless the catalog explicitly
+publishes them.
 
 ## Offline & installability
 
@@ -96,14 +134,16 @@ service worker (`public/sw.js`, registered in production only by
 `src/components/register-service-worker.tsx`). The worker precaches the app
 shell and serves recipe detail pages stale-while-revalidate, so a previously
 visited recipe opens offline. Pantry-, auth- and query-dependent routes
-(`/matches`, `/favorites`, `/shopping`, `/login`, `/auth/*`, the filtered
-catalog) are deliberately never cached. Bump `VERSION` in `public/sw.js` to
+(`/bar/matches`, `/kitchen/matches`, `/favorites`, `/shopping`, `/search`,
+`/login`, `/auth/*`, the filtered catalogs) are deliberately never cached. Bump `VERSION` in `public/sw.js` to
 invalidate every cache on the next deploy.
 
 ## Analytics & monitoring
 
 Page views go to Vercel Analytics (`<Analytics/>` in the root layout — no
-configuration beyond deploying on Vercel). Errors go to Sentry: client, server
+configuration beyond deploying on Vercel), plus a handful of custom events via
+`src/lib/analytics.ts`, each tagged with the domain it happened in rather than
+split into per-domain event names. Errors go to Sentry: client, server
 and edge runtimes are initialized from `sentry.*.config.ts` and
 `src/instrumentation*.ts`, and the root `error.tsx` boundary reports what it
 catches. Both are inert without the env vars above.

@@ -14,7 +14,7 @@ export function AuthMessage() {
 
   return user ? (
     <p className="text-muted">
-      Add the ingredients you have on hand, they will be saved in your bar.
+      Add the ingredients you have on hand, they will be saved in your pantry.
     </p>
   ) : (
     <p className="text-muted">
