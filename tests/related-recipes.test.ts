@@ -74,16 +74,22 @@ test("max_results caps the row count", async () => {
 test("a matching base_spirit outranks an equal-scoring recipe without one", async () => {
   // Both tie at one shared ingredient with the Negroni; giving Manhattan the
   // subject's base spirit has to lift it above the alphabetically-first tie.
+  // The tiebreak reads cocktail_recipe_details, not the deprecated column on
+  // recipes, so the fixture has to write where the function looks.
   await db.exec(`
-    update public.recipes set base_spirit = 'gin' where slug in ('negroni', 'manhattan');
+    update public.cocktail_recipe_details d set base_spirit = 'gin'
+    from public.recipes r
+    where r.id = d.recipe_id and r.slug in ('negroni', 'manhattan');
   `);
   try {
     const related = await relatedTo("negroni");
     expect(related.map((r) => r.slug)).toEqual(["manhattan", "gin-and-tonic"]);
   } finally {
-    await db.exec(
-      "update public.recipes set base_spirit = null where slug in ('negroni', 'manhattan')",
-    );
+    await db.exec(`
+      update public.cocktail_recipe_details d set base_spirit = null
+      from public.recipes r
+      where r.id = d.recipe_id and r.slug in ('negroni', 'manhattan');
+    `);
   }
 });
 

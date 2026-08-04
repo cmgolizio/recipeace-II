@@ -112,7 +112,7 @@ export default function FavoritesPage() {
           title="No favorites yet"
           body="Tap “Save to favorites” on any recipe to keep it here."
           action={
-            <Link href="/bar/recipes" className={emptyStateActionClass}>
+            <Link href="/search" className={emptyStateActionClass}>
               Browse recipes
             </Link>
           }

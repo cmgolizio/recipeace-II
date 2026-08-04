@@ -11,7 +11,7 @@ export default function RecipeNotFound() {
       icon="glass"
       title="Recipe not found"
       titleAs="h1"
-      body="There’s no cocktail here — it may have been renamed or removed."
+      body="There’s no recipe here — it may have been renamed or removed."
       action={
         <Link href="/recipes" className={emptyStateActionClass}>
           Browse all recipes

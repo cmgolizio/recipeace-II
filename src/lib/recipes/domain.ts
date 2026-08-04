@@ -73,6 +73,23 @@ export function matchPills(domain: RecipeDomain, metadata: unknown): string[] {
     );
 }
 
+/** What the user's own stock is called on each side. */
+export const DOMAIN_SHELF: Record<RecipeDomain, string> = {
+  cocktail: "Your bar",
+  food: "Your kitchen",
+};
+
+/** The matches CTA, per domain. */
+export const DOMAIN_MATCH_CTA: Record<RecipeDomain, string> = {
+  cocktail: "See what I can make →",
+  food: "See what I can cook →",
+};
+
+/** The other side. Two domains, so this is total. */
+export function otherDomain(domain: RecipeDomain): RecipeDomain {
+  return domain === "cocktail" ? "food" : "cocktail";
+}
+
 /** "45 min", "1 hr 15 min". */
 export function formatMinutes(minutes: number): string {
   if (minutes < 60) return `${minutes} min`;

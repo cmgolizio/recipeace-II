@@ -31,7 +31,9 @@ export default function Home() {
       <StarterSuggestions />
       <IngredientBrowse />
       <PantryPanel />
-      <AlmostThereNudge />
+      {/* Interim: the shared pantry can only nudge for one side here, and the
+          Bar is the side with a catalog deep enough to be useful. */}
+      <AlmostThereNudge domain="cocktail" />
     </div>
   );
 }

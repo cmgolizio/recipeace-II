@@ -123,10 +123,10 @@ export function IngredientBrowse() {
               </summary>
               <ul className="flex flex-wrap gap-2 px-4 pb-3">
                 {items.map((it) => {
-                  const inBar = pantry.includes(it.id);
-                  // Split chip: tapping the name toggles the bar, the trailing
+                  const inPantry = pantry.includes(it.id);
+                  // Split chip: tapping the name toggles the pantry, the trailing
                   // arrow opens the ingredient's page.
-                  const tone = inBar
+                  const tone = inPantry
                     ? "border-green-600/40 bg-green-50 text-green-700 dark:border-green-400/40 dark:bg-green-950/30 dark:text-green-400"
                     : "border-border hover:bg-black/4 dark:hover:bg-white/6";
                   return (
@@ -134,7 +134,7 @@ export function IngredientBrowse() {
                       <button
                         type="button"
                         onClick={() => {
-                          if (inBar) {
+                          if (inPantry) {
                             removeFromPantry(it.id);
                             toast(`Removed ${it.name} from your pantry`);
                           } else {
@@ -142,10 +142,10 @@ export function IngredientBrowse() {
                             toast(`Added ${it.name} to your pantry`);
                           }
                         }}
-                        aria-pressed={inBar}
+                        aria-pressed={inPantry}
                         className={`inline-flex items-center gap-1.5 rounded-l-full border py-1 pl-3 pr-2 text-sm ${tone}`}
                       >
-                        {inBar && <span aria-hidden="true">✓</span>}
+                        {inPantry && <span aria-hidden="true">✓</span>}
                         {it.name}
                       </button>
                       <Link

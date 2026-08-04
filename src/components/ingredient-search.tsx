@@ -132,7 +132,7 @@ export function IngredientSearch() {
           setActiveIndex(-1);
         }}
         onKeyDown={onKeyDown}
-        placeholder="Search ingredients. Try typing “bourbon”, “midori”, or “lim”"
+        placeholder="Search ingredients — try “bourbon”, “chicken thighs”, or “lim”"
         aria-label="Search ingredients"
         role="combobox"
         aria-expanded={panelOpen}
@@ -197,7 +197,7 @@ export function IngredientSearch() {
                       : "shrink-0 text-sm font-medium text-muted"
                   }
                 >
-                  {inPantry ? "✓ In bar" : "+ Add"}
+                  {inPantry ? "✓ In pantry" : "+ Add"}
                 </span>
               </div>
             );
