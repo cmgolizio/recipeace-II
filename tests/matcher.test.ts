@@ -160,8 +160,11 @@ type DetailRow = {
   recipe_id: number;
   slug: string;
   name: string;
-  method: string | null;
-  glass: string | null;
+  domain: string;
+  // Card fields are domain-shaped from 20260801120200 onward: one `metadata`
+  // object carrying only the keys its domain has (method/glass for a drink,
+  // time/servings/course for a dish), never the other domain's.
+  metadata: Record<string, string | number>;
   missing_count: number;
   missing_ingredients: string[];
   ingredients: {
@@ -180,7 +183,7 @@ test("match_recipes_detail returns match_recipes rows in the same order, with ca
     [pantry],
   );
   const { rows: detail } = await db.query<DetailRow>(
-    `select recipe_id::int as recipe_id, slug, name, method, glass,
+    `select recipe_id::int as recipe_id, slug, name, domain, metadata,
             missing_count, missing_ingredients, ingredients
      from public.match_recipes_detail($1::bigint[], null)`,
     [pantry],
@@ -191,8 +194,8 @@ test("match_recipes_detail returns match_recipes rows in the same order, with ca
   const negroni = detail.find((r) => r.slug === "negroni");
   expect(negroni).toBeDefined();
   expect(negroni!.name).toBe("Negroni");
-  expect(negroni!.method).toBe("stirred");
-  expect(negroni!.glass).toBe("rocks");
+  expect(negroni!.domain).toBe("cocktail");
+  expect(negroni!.metadata).toEqual({ method: "stirred", glass: "rocks" });
   expect(negroni!.missing_ingredients).toEqual(["gin", "sweet vermouth"]);
 });
 

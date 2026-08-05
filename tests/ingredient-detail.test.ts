@@ -13,7 +13,13 @@ type Detail = {
   slug: string;
   category: string;
   is_staple: boolean;
-  recipes: { slug: string; name: string; image_url: string | null }[];
+  recipes: {
+    slug: string;
+    name: string;
+    domain: string;
+    image_url: string | null;
+    metadata: Record<string, string | number>;
+  }[];
   substitutes: { name: string; slug: string; note: string | null }[];
   derives: { name: string; slug: string }[];
 };
@@ -81,13 +87,15 @@ test("returns the ingredient with the published recipes that use it", async () =
     "margarita",
     "mojito",
   ]);
-  // The card fields the /ingredients page renders through RecipeCard.
+  // The card fields the /ingredients page renders through RecipeCard. The
+  // listing spans both domains, so each recipe carries its domain and a
+  // domain-shaped `metadata` object rather than bare method/glass keys.
   expect(limeJuice?.recipes[1]).toEqual({
     id: expect.any(Number),
     slug: "daiquiri",
     name: "Daiquiri",
-    method: "shaken",
-    glass: "coupe",
+    domain: "cocktail",
+    metadata: { method: "shaken", glass: "coupe" },
     image_url: null,
   });
 });

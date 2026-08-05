@@ -98,6 +98,10 @@ export function SiteHeader() {
     router.refresh();
   }
 
+  const pantryLabel = ready
+    ? `${pantry.length} ingredient${pantry.length === 1 ? "" : "s"} in your pantry`
+    : "Loading your pantry";
+
   return (
     <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur">
       <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3">
@@ -145,11 +149,10 @@ export function SiteHeader() {
           )}
           <span
             className="rounded-full bg-accent px-2.5 py-0.5 text-xs tabular-nums text-accent-foreground"
-            title={
-              ready
-                ? `${pantry.length} in your pantry`
-                : "Loading your pantry"
-            }
+            // `title` alone is not an accessible name on a span: a screen
+            // reader would announce the bare number with no context.
+            aria-label={pantryLabel}
+            title={pantryLabel}
           >
             {ready ? pantry.length : "–"}
           </span>

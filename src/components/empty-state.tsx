@@ -25,6 +25,27 @@ const ICONS = {
       <path d="M4 17.5h.01" />
     </svg>
   ),
+  // A pot for the Kitchen, to the glass's Bar — the same pairing the header
+  // logo makes.
+  pot: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="size-6">
+      <path d="M4.5 9h15v6a4 4 0 0 1-4 4h-7a4 4 0 0 1-4-4z" />
+      <path d="M4.5 11h-2" />
+      <path d="M19.5 11h2" />
+      <path d="M9 6V4.5" />
+      <path d="M15 6V4.5" />
+    </svg>
+  ),
+  // A basket: the shared pantry, neither side's shelf.
+  pantry: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="size-6">
+      <path d="M3 9h18l-1.6 9.3a2 2 0 0 1-2 1.7H6.6a2 2 0 0 1-2-1.7z" />
+      <path d="M8.5 4.5 7 9" />
+      <path d="M15.5 4.5 17 9" />
+      <path d="M10 12.5v4" />
+      <path d="M14 12.5v4" />
+    </svg>
+  ),
 };
 
 /**

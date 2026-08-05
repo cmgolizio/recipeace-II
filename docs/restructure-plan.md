@@ -34,13 +34,13 @@ drifted.
 
 ### 0.1 Status
 
-| Phase | Name | Status |
-|---|---|---|
-| 1 | De-cocktail the shared surfaces | TODO |
-| 2 | The pantry lens | TODO |
-| 3 | Move the work into the domains | TODO |
-| 4 | Domain-scope the remaining queries | TODO |
-| 5 | Close-out: audit, accessibility, docs | TODO |
+| Phase | Name                                  | Status |
+| ----- | ------------------------------------- | ------ |
+| 1     | De-cocktail the shared surfaces       | DONE   |
+| 2     | The pantry lens                       | TODO   |
+| 3     | Move the work into the domains        | TODO   |
+| 4     | Domain-scope the remaining queries    | TODO   |
+| 5     | Close-out: audit, accessibility, docs | TODO   |
 
 ### 0.2 Session prompt template
 
@@ -78,7 +78,7 @@ identify pre-existing ones.
 
 - Next.js 16 (App Router) + React 19 + TypeScript + Supabase + Tailwind v4.
   Tests are Vitest (`tests/`, `vitest.config.mjs`, `include:
-  ["tests/**/*.test.ts"]`, no jsdom environment). CI at
+["tests/**/*.test.ts"]`, no jsdom environment). CI at
   `.github/workflows/ci.yml`.
 - **`package.json` has four scripts that matter: `lint`, `test`, `build`,
   `dev`. There is no `typecheck` script — typecheck with `npx tsc --noEmit`,
@@ -122,7 +122,11 @@ otherwise.
 - The `/bar` and `/kitchen` route subtrees as a concept.
 - `src/components/matches-view.tsx` and its `MatchesCopy` parameterization.
 - `src/components/domain-switcher.tsx` — already links (not toggles), already
-  carries `aria-current`, already tracks `domain_switched`.
+  carries `aria-current`, already tracks `domain_switched`. It also carries the
+  sub-surface across a switch (`/kitchen/matches` → `/bar/matches`, not
+  `/bar`); that was fixed outside this plan on 2026-08-04, because landing on
+  the hub meant the other side's matcher never ran. Keep that when phase 3.4
+  adds the last-domain write.
 - Domain-aware SQL: `match_recipes(p_domain)`, `match_recipes_detail(p_domain)`,
   `search_recipes(p_domain)`, `getRecipes({ domain })`. **No phase in this plan
   modifies the matcher.**
@@ -177,7 +181,7 @@ link. The combined pantry moves to `/pantry`.
 **D3 — The lens shows the other side, collapsed — it never hides it.**
 On `/bar`: "Your bar (24)" expanded, then "Also in your pantry · 18 kitchen
 items" collapsed, with a note that they count toward dinner. This preserves the
-shared-pantry story *while* giving hard visual separation. Hiding the other
+shared-pantry story _while_ giving hard visual separation. Hiding the other
 domain would make the pantry feel split and lose the differentiator.
 
 **D4 — Ingredient search groups, never filters.**
@@ -189,7 +193,7 @@ out is a bug, not a feature.
 Lives in `src/lib/pantry/lens.ts`. Deriving real usage from
 `recipe_ingredients ⋈ recipes.domain` is strictly more accurate but at 13 food
 recipes would render an almost-empty Kitchen shelf. The static map is better
-*now* precisely because the food catalog is thin. **Revisit trigger: the food
+_now_ precisely because the food catalog is thin. **Revisit trigger: the food
 catalog passes ~100 published recipes.** The deferred design is preserved in
 Appendix B so nobody re-derives it.
 
@@ -238,7 +242,7 @@ greyscale screenshot. The accent is orientation, not information.
   in a component.
 - **Read before you write.** Open the file and read it fully before editing.
   This plan describes intent; the file describes reality.
-- Comment style in this repo is explanatory prose about *why*. Match it. Do not
+- Comment style in this repo is explanatory prose about _why_. Match it. Do not
   add `// set the heading` noise.
 - **Verification commands, in full, for every phase:**
 
@@ -258,6 +262,7 @@ supposed to be shared. No new architecture. Valuable on its own even if the
 plan stops here.
 
 ### Preconditions
+
 - Working tree clean.
 - `src/components/pantry-panel.tsx`, `ingredient-search.tsx`,
   `almost-there-nudge.tsx` exist and match §1.3.
@@ -287,10 +292,11 @@ export function otherDomain(domain: RecipeDomain): RecipeDomain {
 ```
 
 **1.2 — `src/components/pantry-panel.tsx`: accept an optional domain.**
+
 - Signature becomes
   `export function PantryPanel({ domain }: { domain?: RecipeDomain })`.
 - Heading: ``domain ? `${DOMAIN_SHELF[domain]} (${pantry.length})` : `Your
-  pantry (${pantry.length})` ``.
+pantry (${pantry.length})` ``.
 - Empty state: `src/components/empty-state.tsx` currently exposes exactly
   `glass | heart | list`. Map `cocktail` → `glass`; `food` → a new
   food-appropriate key; `undefined` → a new neutral `pantry` key. **Both new
@@ -308,13 +314,15 @@ export function otherDomain(domain: RecipeDomain): RecipeDomain {
 - Leave the toast strings alone — they already say "your pantry".
 
 **1.3 — `src/components/ingredient-search.tsx`.**
+
 - Result badge `"✓ In bar"` → `"✓ In pantry"`.
 - Placeholder → `Search ingredients — try "bourbon", "chicken thighs", or
-  "lim"`. (Phase 2 makes this domain-aware; this is the interim.)
+"lim"`. (Phase 2 makes this domain-aware; this is the interim.)
 - Nothing else. Do not touch the debounce, the `resultCache`, or the combobox
   keyboard handling.
 
 **1.4 — `src/components/almost-there-nudge.tsx`: require a domain.**
+
 - Signature becomes `({ domain }: { domain: RecipeDomain })` — **required**,
   not optional. A nudge with no domain is meaningless.
 - Pass `p_domain: domain` to the RPC.
@@ -347,18 +355,19 @@ is out of scope.
 
 ### Acceptance criteria
 
-- [ ] `PantryPanel` renders correct heading, empty state, and CTA for
+- [x] `PantryPanel` renders correct heading, empty state, and CTA for
       `domain="cocktail"`, `domain="food"`, and `undefined`.
-- [ ] Two new `EmptyState` icons exist, in the established style, and the
+- [x] Two new `EmptyState` icons exist, in the established style, and the
       existing three are unchanged.
-- [ ] `AlmostThereNudge` with `domain="food"` queries `p_domain: "food"`, says
+- [x] `AlmostThereNudge` with `domain="food"` queries `p_domain: "food"`, says
       "dishes", and links `/kitchen/matches?missing=1`.
-- [ ] The header pantry count has an accessible name.
-- [ ] No user-facing string outside `src/app/bar/**` and
+- [x] The header pantry count has an accessible name.
+- [x] No user-facing string outside `src/app/bar/**` and
       `src/lib/recipes/domain.ts` hardcodes bar/cocktail vocabulary. Verify
       with the grep below and justify every remaining hit.
-- [ ] Existing tests pass **unchanged** — Phase 1 adds no tests and breaks
-      none.
+- [x] Existing tests pass **unchanged** — Phase 1 adds no tests and breaks
+      none. (Three pre-existing failures unrelated to this phase were repaired
+      first; see the changelog.)
 
 ### Verification
 
@@ -374,12 +383,12 @@ npm run lint && npx tsc --noEmit && npm test && npm run build
 **Manual matrix.** Load `/` in each of four pantry states and confirm the
 copy and both CTAs are coherent in every one:
 
-| State | Expect |
-|---|---|
-| empty | neutral pantry empty state, no glass icon |
-| cocktail ingredients only | "Your pantry", both match CTAs |
-| food ingredients only | "Your pantry", both match CTAs, no bar-only wording |
-| both | as above; nudge still cocktail-scoped (interim, per 1.5) |
+| State                     | Expect                                                   |
+| ------------------------- | -------------------------------------------------------- |
+| empty                     | neutral pantry empty state, no glass icon                |
+| cocktail ingredients only | "Your pantry", both match CTAs                           |
+| food ingredients only     | "Your pantry", both match CTAs, no bar-only wording      |
+| both                      | as above; nudge still cocktail-scoped (interim, per 1.5) |
 
 ---
 
@@ -389,6 +398,7 @@ copy and both CTAs are coherent in every one:
 group ingredient search results.
 
 ### Preconditions
+
 - Phase 1 is `DONE`.
 - `src/lib/recipes/domain.ts` exports `otherDomain`, `DOMAIN_SHELF`, and
   `DOMAIN_MATCH_CTA`.
@@ -499,6 +509,7 @@ where a bartender expects them.
 
 **2.2 — Create `tests/pantry-lens.test.ts`.** Follow the conventions in the
 existing `tests/*.test.ts` files. Cover:
+
 - `splitByLens([bourbon(spirit), lime(produce), chicken(meat)], "cocktail")` →
   `mine: [bourbon, lime]`, `other: [chicken]`.
 - The same input with `"food"` → `mine: [lime, chicken]`, `other: [bourbon]`.
@@ -509,13 +520,14 @@ existing `tests/*.test.ts` files. Cover:
   (It is also the only kind of test this repo can run: there is no jsdom.)
 
 **2.3 — `src/components/pantry-panel.tsx`: split the chips.**
+
 - The `cache` already carries `category`. When `domain` is set, run
   `splitByLens(items, domain)`.
 - Render `mine` as the existing chip list under the existing heading.
 - Render `other`, when non-empty, inside a `<details>` below it:
-  - `<summary>`: ``Also in your pantry · ${other.length} ${DOMAIN_SURFACE[otherDomain(domain)].toLowerCase()} item${other.length === 1 ? "" : "s"}``
+  - `<summary>`: `Also in your pantry · ${other.length} ${DOMAIN_SURFACE[otherDomain(domain)].toLowerCase()} item${other.length === 1 ? "" : "s"}`
   - Body: the same chips, plus one muted line —
-    ``These count toward the ${DOMAIN_SURFACE[otherDomain(domain)]}. One pantry, both sides.``
+    `These count toward the ${DOMAIN_SURFACE[otherDomain(domain)]}. One pantry, both sides.`
 - The count in the heading stays the **shelf** count (`mine.length`), not the
   total. The header badge in `site-header.tsx` remains the true total — that is
   the correct division of labour and should not change.
@@ -524,6 +536,7 @@ existing `tests/*.test.ts` files. Cover:
   unknown until fetched).
 
 **2.4 — `src/components/ingredient-search.tsx`: group results.**
+
 - Add optional `domain?: RecipeDomain` prop.
 - When set, partition `results` with `splitByLens` and render two labelled
   groups inside the listbox: current domain first (label
@@ -532,7 +545,7 @@ existing `tests/*.test.ts` files. Cover:
 - Each row gains a small muted tag: the surface name(s) from
   `categoryDomains(r.category)`, or "Both" when shared. This replaces nothing —
   the existing category text stays.
-- **Critical:** keyboard navigation must run over the *flattened, rendered*
+- **Critical:** keyboard navigation must run over the _flattened, rendered_
   order, not per-group. The current code indexes `results` directly in
   `onKeyDown`, in the `active` clamp, and in `aria-activedescendant`. Compute
   `const ordered = domain ? [...mine, ...other] : results` once, derive both
@@ -562,6 +575,7 @@ existing `tests/*.test.ts` files. Cover:
 ```bash
 npm run lint && npx tsc --noEmit && npm test && npm run build
 ```
+
 Manual: with a pantry containing at least one spirit, one produce item, and one
 meat item, exercise the two group-crossing keyboard cases above.
 
@@ -573,6 +587,7 @@ meat item, exercise the two group-crossing keyboard cases above.
 chooser. `/pantry` holds the combined view. Each domain gets its own accent.
 
 ### Preconditions
+
 - Phase 2 is `DONE`.
 - `src/lib/pantry/lens.ts` exists and is used by `PantryPanel`.
 
@@ -585,6 +600,7 @@ Add `metadata` with `alternates: { canonical: "/pantry" }` matching the
 conventions in `src/app/bar/page.tsx`, title via `pageTitle("Your pantry")`.
 
 **3.2 — `/bar` and `/kitchen` become working surfaces.**
+
 - Delete the two hub link cards from each page.
 - Keep the existing async server-side `getRecipes(..., { pageSize: 1 })` count
   and the header sentence.
@@ -602,6 +618,7 @@ conventions in `src/app/bar/page.tsx`, title via `pageTitle("Your pantry")`.
   added to these pages.
 
 **3.3 — `/` becomes the chooser.** Rewrite `src/app/page.tsx`:
+
 - `<HomeHero />` (unchanged — it already self-hides for a stocked pantry).
 - `<AuthMessage />` stays.
 - A new client component `src/components/domain-summary-cards.tsx`: two cards,
@@ -629,6 +646,7 @@ the Bar →" / "Continue in the Kitchen →" link above the cards.
 > ergonomics with none of the cost.
 
 **3.5 — Per-domain accent.**
+
 - `src/app/globals.css` defines the token set in **four** blocks: `:root`,
   `@media (prefers-color-scheme: dark) :root`, `.dark`, and `.light`. Add
   `--accent-bar`, `--accent-bar-foreground`, `--accent-kitchen`, and
@@ -638,7 +656,7 @@ the Bar →" / "Continue in the Kitchen →" link above the cards.
 - Every pair must hold ≥ 4.5:1 contrast between accent and accent-foreground,
   in both themes. State the measured ratios in the phase report.
 - Add `.domain-bar { --accent: var(--accent-bar); --accent-foreground:
-  var(--accent-bar-foreground); }` and `.domain-kitchen { ... }` after the
+var(--accent-bar-foreground); }` and `.domain-kitchen { ... }` after the
   theme blocks.
 - Create `src/app/bar/layout.tsx` and `src/app/kitchen/layout.tsx` that wrap
   `children` in a `div` carrying the class. **First read
@@ -650,6 +668,7 @@ the Bar →" / "Continue in the Kitchen →" link above the cards.
   the whole mechanism.
 
 **3.6 — Navigation and sitemap.**
+
 - `src/components/site-header.tsx`: the `pantry` link (desktop `NavLink` and
   mobile `MenuLink`) points at `/pantry`, not `/`. Its `exact` prop is no
   longer needed. The logo keeps linking to `/`.
@@ -661,8 +680,8 @@ the Bar →" / "Continue in the Kitchen →" link above the cards.
   - `src/app/bar/page.tsx` and `src/app/kitchen/page.tsx` (deleted in 3.2)
   - `src/app/ingredients/[slug]/page.tsx`
   - `src/app/ingredients/[slug]/not-found.tsx`
-  Re-run the grep in Verification and justify each surviving hit — the logo and
-  any genuine "go home" link are legitimate.
+    Re-run the grep in Verification and justify each surviving hit — the logo and
+    any genuine "go home" link are legitimate.
 
 ### Acceptance criteria
 
@@ -701,6 +720,7 @@ zero-count card rendering as a real zero when data is simply unavailable.
 stop calling four different things "search".
 
 ### Preconditions
+
 - Phase 3 is `DONE`.
 - Supabase CLI is available and the project is linked (needed for type
   regeneration).
@@ -777,6 +797,7 @@ no-domain assertions must still hold, plus a scoped case proving
 proving `popular_ingredients(8)` and `popular_ingredients(8, null)` agree.
 
 **4.4 — `src/components/starter-suggestions.tsx`.**
+
 - Add optional `domain?: RecipeDomain`; pass `p_domain: domain ?? null`.
 - The module-level `starterCache` is a single value and would now serve the
   wrong domain's list. Change it to `Map<string, Starter[]>` keyed by
@@ -838,6 +859,7 @@ npm run lint && npx tsc --noEmit && npm test && npm run build
 This phase writes no features.
 
 ### Preconditions
+
 - Phase 4 is `DONE`.
 
 ### 8.1 Terminology audit
@@ -985,6 +1007,7 @@ Strict rules beat percentage thresholds for a first version: both counts > 0 →
 `unused`.
 
 When it lands, it should:
+
 - Replace `CATEGORY_DOMAINS` as the input to `splitByLens`, keeping that
   function's signature so callers don't change.
 - Optionally extend `search_ingredients` to return the counts and rank by them
@@ -1011,3 +1034,70 @@ Append one entry per completed phase. Newest last.
      Manual inspection:
 -->
 ```
+
+<!-- Phase 1 — 2026-08-04
+     Files touched:
+       src/lib/recipes/domain.ts       (1.1 — DOMAIN_SHELF, DOMAIN_MATCH_CTA,
+                                        otherDomain appended)
+       src/components/empty-state.tsx  (1.2 — new `pot` and `pantry` icons)
+       src/components/pantry-panel.tsx (1.2 — optional domain prop)
+       src/components/ingredient-search.tsx (1.3)
+       src/components/almost-there-nudge.tsx (1.4 — required domain prop)
+       src/app/page.tsx                (1.5)
+       src/app/favorites/page.tsx      (1.6)
+       src/components/ingredient-browse.tsx (1.7 — inBar → inPantry)
+       src/components/site-header.tsx  (1.8 — aria-label on the count)
+       src/app/recipes/[slug]/not-found.tsx (deviation, below)
+       tests/matcher.test.ts, tests/ingredient-detail.test.ts,
+       tests/related-recipes.test.ts   (pre-existing failures, below)
+
+     Deviations from plan (and why):
+       - Preconditions: the working tree was NOT clean-and-green at the start.
+         `npm test` had three failures predating this phase, red in CI since
+         2026-08-01. They were repaired before Phase 1 began, because the
+         phase's own Verification block cannot otherwise pass. All three were
+         stale tests, not product bugs: match_recipes_detail and
+         ingredient_detail return a domain-shaped `metadata` object instead of
+         bare method/glass columns (20260801120200, 20260802120100), and
+         related_recipes reads base_spirit from cocktail_recipe_details rather
+         than the deprecated column on `recipes` (20260802120000). No
+         migration, RPC or component behaviour was changed.
+       - 1.4 pluralises with a local record rather than `DOMAIN_NOUN[domain]`
+         + "s". DOMAIN_NOUN.food is "dish", which does not take a bare "s";
+         deriving it would render "dishs" and fail the phase's own acceptance
+         criterion ("says 'dishes'"). The singular still comes from
+         DOMAIN_NOUN.
+       - 1.4 also folds the domain into the stale-response key and the effect
+         deps. The key exists to stop a response landing against state it
+         wasn't fetched for, and the domain now selects which catalog is
+         counted.
+       - 1.8 uses "N ingredients in your pantry" for both `aria-label` and
+         `title`. The plan quotes that wording for the accessible name and
+         asks that title carry the same string; the old title said "N in your
+         pantry".
+       - One change outside 1.1–1.8: `src/app/recipes/[slug]/not-found.tsx`
+         said "There's no cocktail here" on the *shared* recipe route, so a
+         missing food recipe was told it was a missing cocktail. It is an
+         unjustifiable hit in the acceptance grep, so the string was made
+         domain-neutral. Nothing else on that page was touched.
+
+     Verification results:
+       npm run lint      — pass
+       npx tsc --noEmit  — pass
+       npm test          — pass (7 files, 43 tests)
+       npm run build     — pass, 23 routes (unchanged)
+       Terminology grep  — every remaining hit is a domain-parameterized
+         record (NUDGE_COPY, SHELF_ICON, DOMAIN_ROUTES/DOMAIN_MATCH_CTA reads
+         with both sides at equal weight, favorites TABS), a comment naming
+         both domains, or the cocktail *branch* of the domain-switched
+         /recipes/[slug] page. The one genuine hit was fixed (above). The
+         hits in src/app/recipes/page.tsx are the legacy catalog behind the
+         307 in next.config.mjs — compatibility code that expansion-plan
+         phase 17 removes, explicitly out of scope here (§9).
+
+     Manual inspection:
+       NOT RUN. The pantry matrix needs a live Supabase (ingredient details
+       and match_recipes_detail are fetched client-side) and this environment
+       has no NEXT_PUBLIC_SUPABASE_URL / key. The four-state matrix on `/` and
+       the domain-prop variants of PantryPanel are unverified in a browser.
+-->
