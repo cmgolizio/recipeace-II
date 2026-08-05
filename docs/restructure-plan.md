@@ -122,7 +122,11 @@ otherwise.
 - The `/bar` and `/kitchen` route subtrees as a concept.
 - `src/components/matches-view.tsx` and its `MatchesCopy` parameterization.
 - `src/components/domain-switcher.tsx` — already links (not toggles), already
-  carries `aria-current`, already tracks `domain_switched`.
+  carries `aria-current`, already tracks `domain_switched`. It also carries the
+  sub-surface across a switch (`/kitchen/matches` → `/bar/matches`, not
+  `/bar`); that was fixed outside this plan on 2026-08-04, because landing on
+  the hub meant the other side's matcher never ran. Keep that when phase 3.4
+  adds the last-domain write.
 - Domain-aware SQL: `match_recipes(p_domain)`, `match_recipes_detail(p_domain)`,
   `search_recipes(p_domain)`, `getRecipes({ domain })`. **No phase in this plan
   modifies the matcher.**

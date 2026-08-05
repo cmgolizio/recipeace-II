@@ -10,6 +10,29 @@ import {
   RECIPE_DOMAINS,
 } from "../lib/recipes/domain";
 
+/** The sub-surfaces both domain subtrees have, so a switch can carry across. */
+const SUB_SURFACES = ["matches", "recipes"] as const;
+
+function isUnder(pathname: string, route: string): boolean {
+  return pathname === route || pathname.startsWith(`${route}/`);
+}
+
+/**
+ * Which sub-surface the user is looking at, whichever domain owns it — so
+ * switching sides from the Kitchen's matches lands on the Bar's matches rather
+ * than the Bar's hub. Landing on the hub means the matcher never runs, and the
+ * only way through to the other side's matches is back out via the pantry.
+ * Anywhere outside a domain subtree has no counterpart, so it goes to the home.
+ */
+function currentSurface(pathname: string): "home" | "matches" | "recipes" {
+  for (const domain of RECIPE_DOMAINS) {
+    for (const surface of SUB_SURFACES) {
+      if (isUnder(pathname, DOMAIN_ROUTES[domain][surface])) return surface;
+    }
+  }
+  return "home";
+}
+
 /**
  * Bar ⇄ Kitchen. These are two places in the product, not two states of one
  * control, so they are links inside a labelled <nav> — the active one carries
@@ -18,14 +41,17 @@ import {
  */
 export function DomainSwitcher() {
   const pathname = usePathname();
+  const surface = currentSurface(pathname);
   return (
     <nav
       aria-label="Bar or Kitchen"
       className="inline-flex rounded-lg border border-border p-0.5 text-sm"
     >
       {RECIPE_DOMAINS.map((domain) => {
-        const href = DOMAIN_ROUTES[domain].home;
-        const active = pathname === href || pathname.startsWith(`${href}/`);
+        const href = DOMAIN_ROUTES[domain][surface];
+        // Active is the whole subtree, not the link target: on /bar/matches
+        // the Bar is where you are, whichever page the link points at.
+        const active = isUnder(pathname, DOMAIN_ROUTES[domain].home);
         return (
           <Link
             key={domain}
