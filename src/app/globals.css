@@ -15,6 +15,10 @@
   --border: #e7e5e4;
   --accent: #4339fb;
   --accent-foreground: #ffffff;
+  --accent-bar: #4339fb;
+  --accent-bar-foreground: #ffffff;
+  --accent-kitchen: #a83b0c;
+  --accent-kitchen-foreground: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -26,6 +30,10 @@
     --border: #2a2522;
     --accent: #736bfb;
     --accent-foreground: #1c1917;
+    --accent-bar: #736bfb;
+    --accent-bar-foreground: #0c0a09;
+    --accent-kitchen: #d97b3f;
+    --accent-kitchen-foreground: #0c0a09;
   }
 }
 
@@ -38,6 +46,10 @@
   --border: #2a2522;
   --accent: #736bfb;
   --accent-foreground: #1c1917;
+  --accent-bar: #736bfb;
+  --accent-bar-foreground: #0c0a09;
+  --accent-kitchen: #d97b3f;
+  --accent-kitchen-foreground: #0c0a09;
 }
 
 .light {
@@ -49,6 +61,32 @@
   --border: #e7e5e4;
   --accent: #4339fb;
   --accent-foreground: #ffffff;
+  --accent-bar: #4339fb;
+  --accent-bar-foreground: #ffffff;
+  --accent-kitchen: #a83b0c;
+  --accent-kitchen-foreground: #ffffff;
+}
+
+/*
+ * One accent per domain (restructure-plan.md D6). `@theme inline` below maps
+ * --color-accent to --accent, so rebinding --accent on a wrapper repaints every
+ * bg-accent / text-accent / border-accent inside that subtree and no component
+ * needs to know which side it is on. Colour is orientation only — the heading,
+ * layout and copy carry the identity (D10).
+ *
+ * The Bar keeps the brand indigo; the Kitchen takes a warm terracotta. Both
+ * ink tokens are the darkest neutral in dark mode rather than the global
+ * --accent-foreground (#1c1917), which clears 4.5:1 against these accents by
+ * too small a margin to rely on.
+ */
+.domain-bar {
+  --accent: var(--accent-bar);
+  --accent-foreground: var(--accent-bar-foreground);
+}
+
+.domain-kitchen {
+  --accent: var(--accent-kitchen);
+  --accent-foreground: var(--accent-kitchen-foreground);
 }
 
 @theme inline {

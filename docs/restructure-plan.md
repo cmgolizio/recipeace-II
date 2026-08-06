@@ -38,7 +38,7 @@ drifted.
 | ----- | ------------------------------------- | ------ |
 | 1     | De-cocktail the shared surfaces       | DONE   |
 | 2     | The pantry lens                       | DONE   |
-| 3     | Move the work into the domains        | TODO   |
+| 3     | Move the work into the domains        | DONE   |
 | 4     | Domain-scope the remaining queries    | TODO   |
 | 5     | Close-out: audit, accessibility, docs | TODO   |
 
@@ -691,20 +691,24 @@ var(--accent-bar-foreground); }` and `.domain-kitchen { ... }` after the
 
 ### Acceptance criteria
 
-- [ ] An ingredient added on `/bar` is immediately visible on `/kitchen` and
-      `/pantry` with no reload. (Same store — verify, do not assume.)
-- [ ] `/bar` and `/kitchen` are distinguishable in a **greyscale** screenshot
+- [x] An ingredient added on `/bar` is immediately visible on `/kitchen` and
+      `/pantry` with no reload. (Same store — verify, do not assume.) Verified
+      in a browser: added on `/bar`, then client-side nav to both.
+- [x] `/bar` and `/kitchen` are distinguishable in a **greyscale** screenshot
       through layout and copy, not hue alone (D10).
-- [ ] `/` renders the chooser with live counts for a stocked pantry and the
-      hero for an empty one, with no flash of either during hydration.
-- [ ] `/pantry` reproduces the pre-Phase-3 `/` experience.
-- [ ] Every accent-coloured element inside `/bar/**` uses the bar accent and
+- [x] `/` renders the chooser with live counts for a stocked pantry and the
+      hero for an empty one, with no flash of either during hydration. The
+      server markup carries the cards and nothing pantry-derived — no hero, no
+      counts, no continue link — so there is no wrong state to flash.
+- [x] `/pantry` reproduces the pre-Phase-3 `/` experience, less the starter
+      strip and the nudge, which §3.1 omits and §3.2 relocates.
+- [x] Every accent-coloured element inside `/bar/**` uses the bar accent and
       inside `/kitchen/**` the kitchen accent, in both light and dark, with the
-      contrast ratios recorded.
-- [ ] Matches-page metadata is unchanged — the new layouts compose with the
+      contrast ratios recorded (see the changelog).
+- [x] Matches-page metadata is unchanged — the new layouts compose with the
       existing `matches/layout.tsx` files.
-- [ ] No auto-redirect exists anywhere. Navigating to `/` always renders `/`.
-- [ ] Existing tests pass unchanged.
+- [x] No auto-redirect exists anywhere. Navigating to `/` always renders `/`.
+- [x] Existing tests pass unchanged.
 
 ### Verification
 
@@ -1187,3 +1191,140 @@ Append one entry per completed phase. Newest last.
        index, clamp and aria-activedescendant reads `ordered`. Phase 5 §8.4
        re-audits the combobox across groups.
 -->
+
+<!-- Phase 3 — 2026-08-06
+     Files touched:
+       src/app/globals.css             (3.5 — four domain accent tokens in all
+                                        four theme blocks, .domain-bar and
+                                        .domain-kitchen)
+       src/app/bar/layout.tsx          (3.5 — new)
+       src/app/kitchen/layout.tsx      (3.5 — new)
+       src/lib/domain/last.ts          (3.4 — new)
+       src/components/last-domain.tsx  (3.4 — new; RememberDomain,
+                                        ContinueInDomain)
+       src/components/domain-switcher.tsx (3.4 — writes the last domain)
+       src/components/domain-summary-cards.tsx (3.3 — new)
+       src/lib/recipes/domain.ts       (3.3 — DOMAIN_BLURB, DOMAIN_CONTINUE)
+       src/app/pantry/page.tsx         (3.1 — new; the combined view)
+       src/app/page.tsx                (3.3 — rewritten as the chooser)
+       src/app/bar/page.tsx            (3.2 — working surface)
+       src/app/kitchen/page.tsx        (3.2 — working surface)
+       src/components/site-header.tsx  (3.6 — pantry link → /pantry, both
+                                        layers; `exact` dropped)
+       src/app/sitemap.ts              (3.6 — /pantry added)
+       src/components/matches-view.tsx, src/components/recipe-pantry-status.tsx,
+       src/app/ingredients/[slug]/page.tsx,
+       src/app/ingredients/[slug]/not-found.tsx (3.6 — "/" → "/pantry")
+
+     Deviations from plan (and why):
+       - 3.4, the store shape. The plan asks for "read/write helpers". The read
+         is a useSyncExternalStore store instead, in the shape of
+         lib/units/store.ts: the repo's React-compiler lint rule
+         (react-hooks/set-state-in-effect) rejects reading localStorage into
+         state from an effect, which is the only way plain helpers reach a
+         render. The write is the plain helper the plan describes, with the
+         same defensive try/catch as the other stores.
+       - 3.4 needs two client components the plan does not name, since a server
+         component can neither write on mount nor read localStorage. Both live
+         in one file, src/components/last-domain.tsx: RememberDomain (mounted
+         by the two domain surfaces) and ContinueInDomain (mounted by `/`).
+       - 3.4, DomainSwitcher writes on every click, not only when the side
+         changes. Clicking the side you are already on is still a statement of
+         where you want to be, and `/` should offer that side back.
+       - 3.5, the dark ink. The plan requires ≥ 4.5:1 for every pair *and*
+         keeping the existing indigo as the Bar accent. The existing dark pair
+         is #736bfb on #1c1917 = 4.35:1, so holding both instructions means
+         moving the ink, not the accent: both domain tokens use #0c0a09 in dark
+         (4.92:1 for the Bar, 6.45:1 for the Kitchen). No existing token was
+         changed — outside the two subtrees the global dark pair is still
+         4.35:1, which is pre-existing and left for Phase 5 §8.4 to weigh.
+         Measured ratios, accent vs accent-foreground:
+             Bar     light #4339fb / #ffffff  6.53:1
+             Bar     dark  #736bfb / #0c0a09  4.92:1
+             Kitchen light #a83b0c / #ffffff  6.37:1
+             Kitchen dark  #d97b3f / #0c0a09  6.45:1
+         The two light accents were picked to land within 0.2 of each other so
+         neither side reads heavier than the other (D8).
+       - 3.2, the Kitchen's empty-catalog branch. It used to render *instead of*
+         the hub cards; with those deleted it now renders above the working
+         surface, which renders unconditionally. The catalog link stays at
+         total 0 — the notice above it already says there is no catalog, and
+         `/kitchen/recipes` has its own empty state.
+       - 3.3, new copy for the chooser's heading and intro ("Bar or Kitchen?").
+         "Your pantry" left with the combined view, and the plan specifies the
+         cards and the links but not the page's own words.
+       - 3.2, /bar and /kitchen stay two page files rather than one shared
+         <DomainHome domain>. They are route entry points, and D9 is about
+         components taking a domain prop — every component on them already
+         does.
+       - New records in domain.ts (DOMAIN_BLURB, DOMAIN_CONTINUE) rather than
+         inline strings, per §3's copy invariant.
+       - One change 3.2 does not list: both domain pages' metadata descriptions
+         advertised the hub ("Browse the catalog or see what your pantry
+         unlocks"). The hub is gone and the page's first action is now adding an
+         ingredient, so each description says that instead. Titles and
+         canonicals are untouched.
+
+     Verification results:
+       npm run lint      — pass
+       npx tsc --noEmit  — pass
+       npm test          — pass (8 files, 47 tests; unchanged from Phase 2)
+       npm run build     — pass, 24 routes (was 23; /pantry is the new one, and
+                           static). Every pre-existing route kept its rendering
+                           mode: /bar and /kitchen still dynamic, both matches
+                           pages still prerendered, so the new layouts cost
+                           nothing.
+       rg 'href="/"'     — one hit, the header logo, which is a genuine "go
+                           home". Every "the pantry" link now points at
+                           /pantry.
+       rg 'accent' globals.css — --accent-bar{,-foreground} and
+                           --accent-kitchen{,-foreground} present in :root, the
+                           prefers-color-scheme block, .dark and .light.
+       Built CSS         — every accent utility resolves through var(--accent),
+                           including the alpha forms the nudge uses
+                           (bg-accent/10, border-accent/40), so rebinding on
+                           the wrapper is the whole mechanism as D6 claims.
+       Metadata          — prerendered /bar/matches and /kitchen/matches still
+                           title "Bar matches" / "Kitchen matches" with their
+                           own canonicals; /pantry is "Your pantry" canonical
+                           /pantry.
+
+     Manual inspection:
+       RUN, against a stub. There is still no NEXT_PUBLIC_SUPABASE_URL in this
+       environment, so a local HTTP stub stood in for the Supabase REST API
+       (four ingredients spanning both lenses: bourbon/spirit, lime/produce,
+       chicken thigh/meat, pasta/pasta; one cocktail ready, one a bottle away;
+       no food ready). Everything structural is therefore real and every number
+       below came from the stub, not the live catalog.
+         Matrix walked: `/`, `/pantry`, `/bar`, `/kitchen` × {empty, stocked} ×
+         {light, dark} × {1024px, 375px} — 32 renders, no page errors, no
+         hydration warnings, exactly one h1 each, no redirects.
+         `/bar` showed "YOUR BAR (2)" with bourbon and lime and a collapsed
+         "Also in your pantry · 2 kitchen items"; `/kitchen` showed
+         "YOUR KITCHEN (3)" and "· 1 bar item" — one store, two shelves.
+         `/` showed "2 ingredients · 1 ready" and "3 ingredients · 0 ready"
+         stocked, and the hero with plain cards empty.
+         Adding chicken thigh from `/bar`'s search then navigating client-side
+         put it on the Kitchen's shelf and in the combined view, no reload.
+         Searching "chicken" from the Bar returned it under the Kitchen group —
+         grouped, not filtered (D4).
+         The collapsed group's summary takes focus and toggles on Enter.
+         Greyscale screenshots of /bar and /kitchen differ in h1, header
+         sentence, shelf heading, CTA verb, placeholder examples and the
+         counterpart label — nothing rests on hue (D10).
+         Not covered: a screen-reader pass, and anything that needs the real
+         catalog (true match counts, the full ingredient taxonomy).
+
+     Unresolved concerns:
+       - AuthMessage says "Your bar is saved on this device" and now says it on
+         the chooser, where there is nothing to add and the word is wrong twice
+         over. It was already wrong on the old `/`; Phase 5 §8.1's grep covers
+         'your bar' and §8.2 walks the route, so it is left there rather than
+         fixed out of phase.
+       - StarterSuggestions still queries the whole catalog, so the Kitchen's
+         strip offers bottles. Phase 4.4 is where that is fixed; 3.2 mounted it
+         knowing this.
+       - `home-hero.tsx`'s JSDoc still says "once the bar has anything in it".
+         Internal comment, Phase 5 §8.1 bucket 5.
+-->
+

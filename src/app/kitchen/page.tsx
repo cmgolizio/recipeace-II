@@ -1,19 +1,22 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { AlmostThereNudge } from "../../components/almost-there-nudge";
+import { IngredientSearch } from "../../components/ingredient-search";
+import { RememberDomain } from "../../components/last-domain";
+import { PantryPanel } from "../../components/pantry-panel";
+import { StarterSuggestions } from "../../components/starter-suggestions";
 import { pageTitle } from "../../lib/site";
+import { DOMAIN_ROUTES } from "../../lib/recipes/domain";
 import { getRecipes } from "../../lib/recipes/queries";
 import { createClient } from "../../lib/supabase/server";
 
 export const metadata: Metadata = {
   title: pageTitle("The Kitchen"),
   description:
-    "Food recipes matched against the same pantry that powers the Bar. Browse the catalog or see what dinner your shelves already hold.",
+    "Food recipes matched against the same pantry that powers the Bar. Add what’s on your shelves and see what dinner they already hold.",
   alternates: { canonical: "/kitchen" },
 };
-
-const cardClass =
-  "block rounded-xl border border-border bg-surface p-5 transition hover:-translate-y-0.5 hover:border-accent";
 
 export default async function KitchenPage() {
   const supabase = await createClient();
@@ -22,6 +25,7 @@ export default async function KitchenPage() {
 
   return (
     <div className="space-y-8">
+      <RememberDomain domain="food" />
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight">The Kitchen</h1>
         <p className="text-muted">
@@ -31,7 +35,7 @@ export default async function KitchenPage() {
         </p>
       </header>
 
-      {total === 0 ? (
+      {total === 0 && (
         <section className="rounded-xl border border-border bg-surface p-5">
           <h2 className="font-semibold">Still being stocked</h2>
           <p className="mt-1 text-sm text-muted">
@@ -40,35 +44,20 @@ export default async function KitchenPage() {
             count towards dinner as soon as the shelves are full.
           </p>
         </section>
-      ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Link href="/kitchen/matches" className={cardClass}>
-            <h2 className="font-semibold">What can I cook?</h2>
-            <p className="mt-1 text-sm text-muted">
-              Everything your pantry covers, and the dishes you’re an
-              ingredient or two away from.
-            </p>
-          </Link>
-          <Link href="/kitchen/recipes" className={cardClass}>
-            <h2 className="font-semibold">Browse recipes</h2>
-            <p className="mt-1 text-sm text-muted">
-              The whole food catalog, filtered by course, cuisine, time and
-              difficulty.
-            </p>
-          </Link>
-        </div>
       )}
 
+      <IngredientSearch domain="food" />
+      <StarterSuggestions />
+      <PantryPanel domain="food" />
+      <AlmostThereNudge domain="food" />
+
       <p className="text-sm text-muted">
-        Your{" "}
-        <Link href="/" className="underline hover:text-foreground">
-          pantry
-        </Link>{" "}
-        is shared with the{" "}
-        <Link href="/bar" className="underline hover:text-foreground">
-          Bar
-        </Link>{" "}
-        — one list of what you own, both kinds of recipe.
+        <Link
+          href={DOMAIN_ROUTES.food.recipes}
+          className="underline hover:text-foreground"
+        >
+          Browse the full catalog →
+        </Link>
       </p>
     </div>
   );

@@ -341,7 +341,7 @@ export function RecipePantryStatus({
         ))}
         {!hasPantry && (
           <p className="mt-3 text-sm text-muted">
-            <Link href="/" className="underline">
+            <Link href="/pantry" className="underline">
               Add ingredients to your pantry
             </Link>{" "}
             to see what you have and what you’re missing.

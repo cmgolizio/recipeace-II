@@ -98,7 +98,7 @@ export default async function IngredientPage({ params }: Props) {
     <article className="space-y-8">
       <div>
         <Link
-          href="/"
+          href="/pantry"
           className="text-sm text-muted underline hover:text-foreground"
         >
           ← Your pantry

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { track } from "../lib/analytics";
+import { writeLastDomain } from "../lib/domain/last";
 import {
   DOMAIN_ROUTES,
   DOMAIN_SURFACE,
@@ -57,6 +58,9 @@ export function DomainSwitcher() {
             key={domain}
             href={href}
             onClick={() => {
+              // Recorded even for the side already active: this is where the
+              // user is choosing to be, and `/` offers it back on return.
+              writeLastDomain(domain);
               if (!active) track("domain_switched", { domain });
             }}
             aria-current={active ? "page" : undefined}

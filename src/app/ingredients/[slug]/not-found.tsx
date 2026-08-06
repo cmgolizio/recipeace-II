@@ -13,7 +13,7 @@ export default function IngredientNotFound() {
       titleAs="h1"
       body="There’s nothing in the index under that name — it may have been renamed or removed."
       action={
-        <Link href="/" className={emptyStateActionClass}>
+        <Link href="/pantry" className={emptyStateActionClass}>
           Browse ingredients
         </Link>
       }
