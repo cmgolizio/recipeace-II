@@ -37,7 +37,7 @@ drifted.
 | Phase | Name                                  | Status |
 | ----- | ------------------------------------- | ------ |
 | 1     | De-cocktail the shared surfaces       | DONE   |
-| 2     | The pantry lens                       | TODO   |
+| 2     | The pantry lens                       | DONE   |
 | 3     | Move the work into the domains        | TODO   |
 | 4     | Domain-scope the remaining queries    | TODO   |
 | 5     | Close-out: audit, accessibility, docs | TODO   |
@@ -555,20 +555,26 @@ existing `tests/*.test.ts` files. Cover:
 
 ### Acceptance criteria
 
-- [ ] `tests/pantry-lens.test.ts` passes; all pre-existing tests still pass.
-- [ ] Deleting any key from `CATEGORY_DOMAINS` produces a TypeScript error
+- [x] `tests/pantry-lens.test.ts` passes; all pre-existing tests still pass.
+- [x] Deleting any key from `CATEGORY_DOMAINS` produces a TypeScript error
       (verify once manually with `npx tsc --noEmit`, then restore).
-- [ ] With `domain="cocktail"` and a mixed pantry, spirits/liqueurs/produce
+- [x] With `domain="cocktail"` and a mixed pantry, spirits/liqueurs/produce
       appear on the shelf and meat/pasta appear under the collapsed "Also in
-      your pantry" group.
-- [ ] In `IngredientSearch` with `domain="cocktail"`, typing "egg" still
-      returns eggs — in the second group, not filtered out (D4/D7).
+      your pantry" group. (Asserted at the logic level by
+      `tests/pantry-lens.test.ts`; not exercised in a browser — see changelog.)
+- [x] In `IngredientSearch` with `domain="cocktail"`, typing "egg" still
+      returns eggs — grouped, never filtered out (D4/D7). Corrected during
+      execution: this criterion said "in the second group", which contradicts
+      §2.1's listing of `egg` under Both. A result categorised `egg` (egg
+      white) serves the Bar and so ranks in the _first_ group; a food-only
+      category such as `pasta` (egg noodles) is what lands in the second.
+      Nothing is filtered either way, which is the criterion's substance.
 - [ ] Arrow-down from the last row of group 1 lands on the first row of
-      group 2, and Enter adds it.
+      group 2, and Enter adds it. (Code-verified only — no browser.)
 - [ ] `aria-activedescendant` always references the id of the currently
-      highlighted row, across groups.
+      highlighted row, across groups. (Code-verified only — no browser.)
 - [ ] `<details>` is keyboard operable and its summary reads sensibly to a
-      screen reader.
+      screen reader. (Native element, house pattern; not screen-reader tested.)
 
 ### Verification
 
@@ -1100,4 +1106,84 @@ Append one entry per completed phase. Newest last.
        and match_recipes_detail are fetched client-side) and this environment
        has no NEXT_PUBLIC_SUPABASE_URL / key. The four-state matrix on `/` and
        the domain-prop variants of PantryPanel are unverified in a browser.
+-->
+
+<!-- Phase 2 — 2026-08-05
+     Files touched:
+       src/lib/pantry/lens.ts          (2.1 — new; verbatim from the plan)
+       tests/pantry-lens.test.ts       (2.2 — new)
+       src/components/pantry-panel.tsx (2.3 — split shelf + collapsed group,
+                                        plus the hydration gate below)
+       src/components/ingredient-search.tsx (2.4 — grouped results, plus the
+                                        placeholder §1.3 deferred to here)
+       src/lib/recipes/domain.ts       (DOMAIN_INGREDIENT_EXAMPLES appended)
+
+     Deviations from plan (and why):
+       - 2.3, the heading count. The plan says the heading shows mine.length.
+         While ingredient details are still being fetched an id has no
+         category, so it cannot be placed; the plan itself puts those
+         skeletons in the `mine` bucket. The heading therefore counts
+         mine.length + loadingCount, so the number always equals the chips
+         rendered beneath it rather than counting up from 0 as details land.
+       - 2.3, the empty state. Its condition was `pantry.length === 0`; it is
+         now `shelfCount === 0`, which is the same thing when no domain is
+         passed. With a domain it also covers the food-only pantry seen from
+         the Bar: that shelf really is empty, and rendering a bare `<ul>` with
+         a match CTA above the "Also in your pantry" group read as broken.
+         The collapsed group renders in that state too, so the other side is
+         still visible (D3).
+       - 2.3 extracts the chip `<li>` into a local `chip()` function; `mine`
+         and `other` render identical chips. Same markup, one copy.
+       - 2.4, the row tag renders only when `domain` is set. The section asks
+         for a per-row side tag and then says an undefined domain renders
+         "ungrouped exactly as today"; the latter is the more specific
+         instruction, so `/`'s combined search is untouched by this phase.
+       - 2.4 groups are `role="group"` + `aria-labelledby` pointing at the
+         visible label, so the listbox's children stay options-within-groups
+         and the label is announced with each group.
+       - The domain-aware placeholder §1.3 defers to "Phase 2" is done here,
+         though §2.4 does not list it: no later phase claims it, so skipping
+         it would strand the deferral for good. The varying part lives in
+         DOMAIN_INGREDIENT_EXAMPLES in domain.ts per §3's copy invariant; the
+         examples are ingredients the seeds really contain (bourbon, midori;
+         chicken thigh, olive oil, parmesan cheese), and each list keeps a
+         fragment ("lim", "parm") because the search matches partial names.
+         The no-domain placeholder is Phase 1's, unchanged.
+       - PantryPanel now gates on usePantryReady, which it never did. §3's
+         hydration invariant requires it: before hydration the pantry is
+         unknown, not empty, and the component was rendering "Your bar is
+         empty" at every returning user for a frame. Not-ready renders
+         skeleton chips (the aria-hidden, length-3 idiom from matches-view),
+         holds the heading count back, and hides Clear all and the collapsed
+         group. This is a pre-existing bug the phase's own split made worse —
+         with a domain, an unready render also picked a shelf.
+
+     Verification results:
+       npm run lint      — pass
+       npx tsc --noEmit  — pass
+       npm test          — pass (8 files, 47 tests; was 7/43)
+       npm run build     — pass, 23 routes (unchanged)
+       Exhaustiveness    — removing `bitters` from CATEGORY_DOMAINS fails with
+         TS2741 ("Property 'bitters' is missing… but required in type
+         Record<…>"); file restored, tsc clean again.
+
+     Plan discrepancy found and corrected in place:
+       The acceptance criterion "typing 'egg' … in the second group" did not
+       follow from §2.1, which lists `egg` under Both. A result categorised
+       `egg` (egg white) serves the Bar and so ranks in the *first* group; a
+       food-only category such as `pasta` (egg noodles) is what lands in the
+       second. The criterion now says "grouped, never filtered out", which is
+       its substance (D4/D7) and is what the code does. §2.1's map is
+       unchanged — it is the map that is right here, not the criterion.
+
+     Manual inspection:
+       NOT RUN, and doubly blocked. As in Phase 1 there is no
+       NEXT_PUBLIC_SUPABASE_URL / key, so neither the ingredient-detail fetch
+       nor search_ingredients returns anything in this environment; and no
+       call site passes `domain` until phase 3.2 mounts these components on
+       /bar and /kitchen, so the grouped and split renderings have no route to
+       appear on yet. The keyboard cases are code-verified only: `ordered` is
+       [...mine, ...other], group 2 renders at offset mine.length, and every
+       index, clamp and aria-activedescendant reads `ordered`. Phase 5 §8.4
+       re-audits the combobox across groups.
 -->

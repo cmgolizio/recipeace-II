@@ -85,6 +85,16 @@ export const DOMAIN_MATCH_CTA: Record<RecipeDomain, string> = {
   food: "See what I can Cook →",
 };
 
+/**
+ * Examples for the ingredient input, so each side offers stock it actually
+ * carries. The trailing fragment ("lim", "parm") is deliberate — the search
+ * matches partial names, and the placeholder is where that gets taught.
+ */
+export const DOMAIN_INGREDIENT_EXAMPLES: Record<RecipeDomain, string> = {
+  cocktail: "“bourbon”, “midori”, or “lim”",
+  food: "“chicken thighs”, “olive oil”, or “parm”",
+};
+
 /** The other side. Two domains, so this is total. */
 export function otherDomain(domain: RecipeDomain): RecipeDomain {
   return domain === "cocktail" ? "food" : "cocktail";
