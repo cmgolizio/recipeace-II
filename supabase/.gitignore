@@ -1,0 +1,4 @@
+# Supabase CLI working state — per-machine, not per-repository.
+# .temp holds the linked project ref and pooler connection string.
+.branches
+.temp

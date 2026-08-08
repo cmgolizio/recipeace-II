@@ -1,0 +1,25 @@
+# Supabase CLI configuration.
+#
+# `supabase init` writes every setting out with its default; only the ones
+# that actually differ for this project are tracked here. Anything omitted
+# takes the CLI default.
+#
+# The link to the hosted project is per-machine, not per-repository: run
+# `supabase link --project-ref <ref>` once per clone. That writes
+# supabase/.temp/, which is gitignored.
+
+project_id = "recipeace-ii"
+
+[db]
+# The hosted project runs Postgres 17, so the local stack does too.
+major_version = 17
+
+[db.seed]
+enabled = true
+# Run after the migrations on `supabase db reset` — the same schema and data
+# the test database builds in-process (tests/db.ts).
+#
+# seed_test_recipes.sql is local development data (stub cocktails). It is
+# listed here because this list only ever applies to a local stack; never run
+# it against a project that holds real recipes.
+sql_paths = ["./seed.sql", "./seed_food.sql", "./seed_test_recipes.sql"]

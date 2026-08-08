@@ -1390,10 +1390,12 @@ where domain = 'food'` empties the Kitchen with no deploy), how to find a
 half-applied import, the known limits with their triggers, and the deferred
 cleanup of the deprecated columns with the verification query to run first.
 
-**Not executed, and cannot be from here:** this repository has no `.env*` and
-no linked Supabase CLI, so no migration has been run against a live project.
+**Not executed, and cannot be from here:** this repository has no `.env*`, so
+no migration was run against a live project while the inventory was written.
 Everything was verified against the real migration files in PGlite. The
-document says so at the top rather than implying otherwise.
+document says so at the top rather than implying otherwise. (The Supabase CLI
+has since been linked — see `docs/expansion-rollout.md` §9 for the workflow
+that replaced the by-hand one described there.)
 
 `docs/expansion-plan.md` gains §50, the as-built architecture: what was built,
 the eight decisions taken during implementation that differ from what the plan
