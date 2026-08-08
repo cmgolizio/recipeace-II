@@ -4,10 +4,14 @@
 > **Covers:** plan §41 (phase 16 review) and §42 (phase 17 rollout).
 >
 > Everything in this document was prepared without access to a Supabase
-> project — this repository has no `.env*` and no linked CLI. Schema work was
-> verified against the real migrations in PGlite (`tests/db.ts`). **The steps
-> below have not been run against production;** they are the procedure, and
-> the checks a maintainer should perform while running it.
+> project. Schema work was verified against the real migrations in PGlite
+> (`tests/db.ts`). **The steps below have not been run against production;**
+> they are the procedure, and the checks a maintainer should perform while
+> running it.
+>
+> The CLI has since been linked, so §9 is no longer the by-hand SQL Editor
+> procedure it originally described — migrations now ship with
+> `supabase db push`.
 
 ---
 
@@ -193,38 +197,71 @@ updating in the same change.
 
 ## 9. Runbook: applying this to a hosted project
 
-The repository has no linked Supabase CLI, so migrations go in through the SQL
-Editor by hand. `main` is also several commits behind this branch, so **what a
-given project still needs depends on the project, not on the branch.**
+The Supabase CLI is linked, so migrations ship with `supabase db push` rather
+than through the SQL Editor by hand.
+
+Link once per clone — the link is machine-local state under `supabase/.temp/`,
+which is gitignored:
+
+```bash
+supabase login
+supabase link --project-ref <ref>
+```
 
 ### 9.1 Ask the database what it has
 
-Run `supabase/migration-status.sql` in the SQL Editor. It is read-only and
-returns one row per migration with an `applied` flag. Apply every file marked
-`false`, in the `step` order it gives.
+```bash
+supabase migration list --linked
+```
+
+One row per migration, with the local file and the remote ledger side by side.
+A version with a `Local` but no `Remote` entry still needs applying.
+
+> **The ledger only knows what the CLI applied.** Migrations `20260727120000`
+> → `20260806120000` were originally applied through the SQL Editor, so the
+> schema had them but the ledger did not. That gap makes `db push` try to
+> re-apply them, and the first one fails on
+> `type "recipe_domain" already exists`. It was closed once, with
+> `supabase migration repair --status applied <version>` — which writes the
+> ledger row without touching the schema. Applying SQL by hand again would
+> reopen it; that is why this section no longer tells you to.
 
 ### 9.2 Apply them
 
-Open each file under `supabase/migrations/`, paste, **Run**. One file per Run.
+```bash
+supabase db push
+```
 
-> **This ordering is not optional.** `20260803120000` adds enum values, and
-> Postgres forbids _using_ a new enum value in the transaction that adds it.
-> Each SQL Editor Run is one transaction, so as long as that file is its own
-> Run — and the two seeds below are separate Runs after it — you are fine.
-> Pasting it together with `seed.sql` fails with
-> `unsafe use of new value "egg" of enum type ingredient_category`.
+Each migration runs in its own transaction, which is what `20260803120000`
+needs: it adds enum values, and Postgres forbids _using_ a new enum value in
+the transaction that adds it. The seeds below are separate steps after it, so
+the constraint is satisfied by construction. (Pasting that migration together
+with `seed.sql` in one SQL Editor Run is what used to fail, with
+`unsafe use of new value "egg" of enum type ingredient_category`.)
 
 ### 9.3 Re-apply the ingredient seed
 
-Paste `supabase/seed.sql`, Run. It upserts on ingredient name, so ids and
-slugs are preserved and nothing is deleted. The only change to existing rows
-is four categories: `whole egg` and `egg white` → `egg`, `fresh mint` and
-`fresh basil` → `herb`. **Must come after `20260803120000`** — those two
-category values do not exist before it.
+`db push` runs migrations only — seeds are not part of it, and
+`supabase db reset` is local-only (against `--linked` it would **wipe the
+hosted database**; never use it for this). Send a seed to a hosted project
+with psql, or paste it into the SQL Editor as before:
+
+```bash
+psql "$DATABASE_URL" -f supabase/seed.sql
+```
+
+It upserts on ingredient name, so ids and slugs are preserved and nothing is
+deleted. The only change to existing rows is four categories: `whole egg` and
+`egg white` → `egg`, `fresh mint` and `fresh basil` → `herb`. **Must come
+after `20260803120000`** — those two category values do not exist before it.
+
+Locally, none of this is manual: `supabase db reset` applies the migrations
+and then all three seeds, in the order `[db.seed] sql_paths` lists them in
+`supabase/config.toml`.
 
 ### 9.4 Apply the food catalog
 
-Paste `supabase/seed_food.sql`, Run. It adds 44 ingredients, 20 aliases and 13
+`psql "$DATABASE_URL" -f supabase/seed_food.sql`. It adds 44 ingredients, 20 aliases and 13
 published food recipes, and it refuses to run if any of its slugs already
 belongs to a recipe in another domain. Idempotent: running it twice changes
 nothing.
@@ -232,16 +269,16 @@ nothing.
 **Do not run `supabase/seed_test_recipes.sql` against a project with real
 recipes** — it is local development data (10 stub cocktails).
 
-### 9.5 Nothing to run in the terminal
+### 9.5 No pipeline run needed
 
 The generated SQL is committed, so no pipeline run is required to ship this.
 The pipelines are only needed when the _source_ changes:
 
-| You changed                 | Then run                                                     |
-| --------------------------- | ------------------------------------------------------------ |
-| `src/data/cocktail-seed.ts` | `npm run generate:seed`, then paste `supabase/seed.sql`      |
-| `src/data/food-seed.ts`     | `npm run pipeline:food`, then paste `supabase/seed_food.sql` |
-| nothing                     | nothing                                                      |
+| You changed                 | Then run                                                      |
+| --------------------------- | ------------------------------------------------------------- |
+| `src/data/cocktail-seed.ts` | `npm run generate:seed`, then apply `supabase/seed.sql`      |
+| `src/data/food-seed.ts`     | `npm run pipeline:food`, then apply `supabase/seed_food.sql` |
+| nothing                     | nothing                                                       |
 
 `npm run pipeline` (cocktail generation) and `npm run pipeline:enrich` are
 unchanged in how they are invoked, and both now write to

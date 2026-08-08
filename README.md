@@ -83,16 +83,25 @@ refreshing the session cookie on every request.
 ```bash
 npm install
 supabase start                 # local Postgres + Auth + Storage
-supabase db reset              # applies migrations + supabase/seed.sql (taxonomy)
+supabase db reset              # applies migrations, then the seeds
 npm run dev
 ```
+
+`db reset` applies every migration and then each seed listed under
+`[db.seed] sql_paths` in `supabase/config.toml` — the taxonomy, the food
+catalog, and a handful of stub cocktails for local use. That is the same
+schema and data the tests build in-process (`tests/db.ts`).
 
 `supabase/seed.sql` is generated from `src/data/cocktail-seed.ts` via
 `npm run generate:seed`, and `supabase/seed_food.sql` from
 `src/data/food-seed.ts` via `npm run pipeline:food` — edit the TypeScript, not
-the SQL. Apply both after the migrations. For a handful of test cocktails
-without running the generation pipeline, execute
-`supabase/seed_test_recipes.sql` against the local database.
+the SQL.
+
+To ship schema changes to a hosted project, link the clone once
+(`supabase link --project-ref <ref>`) and then `supabase db push`. The link
+lives in `supabase/.temp/`, which is machine-local and gitignored. Seeds are
+not part of `db push`; see `docs/expansion-rollout.md` §9. Never run
+`supabase db reset --linked` against a hosted project — it drops the data.
 
 Environment variables (`.env.local`):
 
