@@ -1,4 +1,4 @@
-# In House Mixers II — Polish Plan
+# In House Mixes II — Polish Plan
 
 ## Context
 

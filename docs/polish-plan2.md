@@ -1,4 +1,4 @@
-# In House Mixers — Polish Plan 2
+# In House Mixes — Polish Plan 2
 
 ## Context
 
@@ -167,7 +167,7 @@ building them together avoids touching `site-header.tsx` three times.
    (wordmark + tagline) for routes without a recipe image. Confirm recipe detail still
    overrides with its own image.
 3. **Header (12).** Rebuild `site-header.tsx`:
-   - A proper wordmark (mark + "In House Mixers"), not the bare emoji string.
+   - A proper wordmark (mark + "In House Mixes"), not the bare emoji string.
    - Active-route styling on nav links (`usePathname`), accent underline or weight.
    - The pantry-count becomes an accent pill.
    - Mobile: collapse secondary items (favorites, shopping, email, logout) behind a

@@ -1,5 +1,5 @@
 /**
- * In House Mixers — starter cocktail ingredient taxonomy (v1 seed data).
+ * In House Mixes — starter cocktail ingredient taxonomy (v1 seed data).
  * Sized to cover the ingredients for ~35 canonical cocktails.
  *
  * SEED ORDER (idempotent):
@@ -197,7 +197,7 @@ export const ingredients: SeedIngredient[] = [
   { name: "peychaud's bitters", category: "bitters", parent: "bitters" },
   { name: "chocolate bitters", category: "bitters", parent: "bitters" },
 
-  // ─── Mixers ───
+  // ─── Mixes ───
   { name: "soda water", category: "mixer" },
   { name: "tonic water", category: "mixer" },
   { name: "cola", category: "mixer" },

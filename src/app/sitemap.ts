@@ -13,6 +13,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // pre-expansion /recipes and /matches now redirect, so they are not listed.
   const staticRoutes: MetadataRoute.Sitemap = [
     "/",
+    "/pantry",
     "/bar",
     "/bar/recipes",
     "/bar/matches",

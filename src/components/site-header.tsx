@@ -134,7 +134,7 @@ export function SiteHeader() {
           <NavLink href="/search" className="hidden sm:inline">
             search
           </NavLink>
-          <NavLink href="/" exact className="hidden sm:inline">
+          <NavLink href="/pantry" className="hidden sm:inline">
             pantry
           </NavLink>
           {user && (
@@ -205,7 +205,7 @@ export function SiteHeader() {
                 <MenuLink href="/search" onNavigate={() => setMenuOpen(false)}>
                   search
                 </MenuLink>
-                <MenuLink href="/" onNavigate={() => setMenuOpen(false)}>
+                <MenuLink href="/pantry" onNavigate={() => setMenuOpen(false)}>
                   pantry
                 </MenuLink>
                 {user ? (

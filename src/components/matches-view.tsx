@@ -278,7 +278,7 @@ function MatchesContent({ copy }: { copy: MatchesCopy }) {
         </h1>
         <p className="text-muted">
           {copy.emptyPantry}{" "}
-          <Link href="/" className="underline">
+          <Link href="/pantry" className="underline">
             Add some ingredients
           </Link>{" "}
           to see what you can make.

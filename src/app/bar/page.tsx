@@ -1,19 +1,22 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { AlmostThereNudge } from "../../components/almost-there-nudge";
+import { IngredientSearch } from "../../components/ingredient-search";
+import { RememberDomain } from "../../components/last-domain";
+import { PantryPanel } from "../../components/pantry-panel";
+import { StarterSuggestions } from "../../components/starter-suggestions";
 import { pageTitle } from "../../lib/site";
+import { DOMAIN_ROUTES } from "../../lib/recipes/domain";
 import { getRecipes } from "../../lib/recipes/queries";
 import { createClient } from "../../lib/supabase/server";
 
 export const metadata: Metadata = {
   title: pageTitle("The Bar"),
   description:
-    "Cocktails you can make from the ingredients you already have. Browse the drinks catalog or see what your pantry unlocks.",
+    "Cocktails you can make from the ingredients you already have. Add what’s on your shelves and see what your pantry unlocks.",
   alternates: { canonical: "/bar" },
 };
-
-const cardClass =
-  "block rounded-xl border border-border bg-surface p-5 transition hover:-translate-y-0.5 hover:border-accent";
 
 export default async function BarPage() {
   const supabase = await createClient();
@@ -25,6 +28,7 @@ export default async function BarPage() {
 
   return (
     <div className="space-y-8">
+      <RememberDomain domain="cocktail" />
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight">The Bar</h1>
         <p className="text-muted">
@@ -34,33 +38,18 @@ export default async function BarPage() {
         </p>
       </header>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Link href="/bar/matches" className={cardClass}>
-          <h2 className="font-semibold">What can I make?</h2>
-          <p className="mt-1 text-sm text-muted">
-            Every drink your pantry covers, and the ones you’re an ingredient
-            or two away from.
-          </p>
-        </Link>
-        <Link href="/bar/recipes" className={cardClass}>
-          <h2 className="font-semibold">Browse cocktails</h2>
-          <p className="mt-1 text-sm text-muted">
-            The whole drinks catalog, filtered by method, glass, spirit and
-            flavour.
-          </p>
-        </Link>
-      </div>
+      <IngredientSearch domain="cocktail" />
+      <StarterSuggestions />
+      <PantryPanel domain="cocktail" />
+      <AlmostThereNudge domain="cocktail" />
 
       <p className="text-sm text-muted">
-        Your{" "}
-        <Link href="/" className="underline hover:text-foreground">
-          pantry
-        </Link>{" "}
-        is shared with the{" "}
-        <Link href="/kitchen" className="underline hover:text-foreground">
-          Kitchen
-        </Link>{" "}
-        — one list of what you own, both kinds of recipe.
+        <Link
+          href={DOMAIN_ROUTES.cocktail.recipes}
+          className="underline hover:text-foreground"
+        >
+          Browse the full catalog →
+        </Link>
       </p>
     </div>
   );

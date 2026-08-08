@@ -19,7 +19,7 @@
 | Data           | `supabase/seed.sql` (regenerated: 4 ingredients re-categorised) and new `supabase/seed_food.sql`      |
 | Routes         | `/bar`, `/bar/recipes`, `/bar/matches`, `/kitchen`, `/kitchen/recipes`, `/kitchen/matches`, `/search` |
 | Redirects      | `/recipes` → `/bar/recipes`, `/matches` → `/bar/matches` (307)                                        |
-| Brand          | Name unchanged ("In House Mixers"), now sourced from `src/lib/site.ts`; new fork-and-glass mark       |
+| Brand          | Name unchanged ("In House Mixes"), now sourced from `src/lib/site.ts`; new fork-and-glass mark        |
 | Service worker | `VERSION` bumped to `v2`, invalidating every `v1` cache                                               |
 
 ---

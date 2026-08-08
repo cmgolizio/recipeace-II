@@ -95,6 +95,18 @@ export const DOMAIN_INGREDIENT_EXAMPLES: Record<RecipeDomain, string> = {
   food: "“chicken thighs”, “olive oil”, or “parm”",
 };
 
+/** What each side is for, in one line, on the chooser at `/`. */
+export const DOMAIN_BLURB: Record<RecipeDomain, string> = {
+  cocktail: "Cocktails, matched against your pantry.",
+  food: "Dinner, matched against the same pantry.",
+};
+
+/** The "pick up where you left off" link, above the chooser's cards. */
+export const DOMAIN_CONTINUE: Record<RecipeDomain, string> = {
+  cocktail: "Continue in the Bar →",
+  food: "Continue in the Kitchen →",
+};
+
 /** The other side. Two domains, so this is total. */
 export function otherDomain(domain: RecipeDomain): RecipeDomain {
   return domain === "cocktail" ? "food" : "cocktail";

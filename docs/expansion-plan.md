@@ -3312,7 +3312,7 @@ schema with and without the change and diffing the results.
 6. **No food substitutions or derivations shipped.** This matcher treats
    substitutions as universal and bidirectional and derivations as free; both
    assumptions are wrong for food (§8.8, §8.9). Post-MVP.
-7. **The product name stayed "In House Mixers" and §10's first open question
+7. **The product name stayed "In House Mixes" and §10's first open question
    is still open.** This document's own naming — its title, §49, and the
    repository name — was read as a decision during implementation and the
    product was briefly renamed; the owner corrected it. The name is expected
