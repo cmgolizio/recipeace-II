@@ -47,7 +47,7 @@ export default async function KitchenPage() {
       )}
 
       <IngredientSearch domain="food" />
-      <StarterSuggestions />
+      <StarterSuggestions domain="food" />
       <PantryPanel domain="food" />
       <AlmostThereNudge domain="food" />
 

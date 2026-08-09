@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { track } from "../lib/analytics";
 import { splitByLens, type IngredientCategory } from "../lib/pantry/lens";
 import { usePantry, usePantryReady } from "../lib/pantry/store";
 import {
@@ -99,6 +100,10 @@ export function DomainSummaryCards() {
           <Link
             key={domain}
             href={DOMAIN_ROUTES[domain].home}
+            // Which side a user picks from a standing start is the one thing
+            // the switcher's own event can't tell us: it only ever fires from
+            // inside a domain.
+            onClick={() => track("domain_home_selected", { domain })}
             className={cardClass}
           >
             <h2 className="font-semibold">The {DOMAIN_SURFACE[domain]}</h2>

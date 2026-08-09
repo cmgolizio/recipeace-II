@@ -39,7 +39,7 @@ export default async function BarPage() {
       </header>
 
       <IngredientSearch domain="cocktail" />
-      <StarterSuggestions />
+      <StarterSuggestions domain="cocktail" />
       <PantryPanel domain="cocktail" />
       <AlmostThereNudge domain="cocktail" />
 

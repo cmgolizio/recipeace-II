@@ -132,7 +132,7 @@ export function SiteHeader() {
         <nav className="flex items-center gap-3 text-sm sm:gap-4">
           <DomainSwitcher />
           <NavLink href="/search" className="hidden sm:inline">
-            search
+            find a recipe
           </NavLink>
           <NavLink href="/pantry" className="hidden sm:inline">
             pantry
@@ -203,7 +203,7 @@ export function SiteHeader() {
             {menuOpen && (
               <div className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-border bg-surface p-1.5 shadow-lg">
                 <MenuLink href="/search" onNavigate={() => setMenuOpen(false)}>
-                  search
+                  find a recipe
                 </MenuLink>
                 <MenuLink href="/pantry" onNavigate={() => setMenuOpen(false)}>
                   pantry

@@ -13,6 +13,7 @@ import { track as vercelTrack } from "@vercel/analytics";
 import type { DomainFilter } from "./recipes/domain";
 
 export type AnalyticsEvent =
+  | "domain_home_selected"
   | "domain_switched"
   | "search_submitted"
   | "shopping_ingredients_added";

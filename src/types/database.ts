@@ -544,6 +544,8 @@ export type Database = {
       popular_ingredients: {
         Args: {
           max_results?: number;
+          /** null (the default) counts across every domain. */
+          p_domain?: Database["public"]["Enums"]["recipe_domain"] | null;
         };
         Returns: {
           id: number;
