@@ -6,6 +6,7 @@ import { afterAll, beforeAll, expect, test } from "vitest";
 import type { PGlite } from "@electric-sql/pglite";
 
 import { createSeededDb } from "./db";
+import type { RecipeDomain } from "../src/lib/recipes/domain.ts";
 
 type PopularRow = { id: number; name: string; recipe_count: number };
 
@@ -28,6 +29,22 @@ async function popularIngredients(maxResults?: number): Promise<PopularRow[]> {
   const { rows } = await db.query<PopularRow>(
     `select id::int as id, name, recipe_count::int as recipe_count from ${call}`,
     maxResults === undefined ? [] : [maxResults],
+  );
+  return rows;
+}
+
+/**
+ * The same rows, scoped to one domain. `null` is the explicit every-domain
+ * call, which must agree with omitting the argument entirely.
+ */
+async function popularIngredientsIn(
+  domain: RecipeDomain | null,
+  maxResults = 8,
+): Promise<PopularRow[]> {
+  const { rows } = await db.query<PopularRow>(
+    `select id::int as id, name, recipe_count::int as recipe_count
+     from public.popular_ingredients($1::int, $2::public.recipe_domain)`,
+    [maxResults, domain],
   );
   return rows;
 }
@@ -94,4 +111,47 @@ test("staples are excluded even when a recipe requires them", async () => {
 test("respects max_results and defaults to 8", async () => {
   expect(await popularIngredients(1)).toHaveLength(1);
   expect(await popularIngredients()).toHaveLength(8);
+});
+
+test("a domain scopes the count to that domain's recipes", async () => {
+  // The test seed is cocktails only, so the Kitchen needs a fixture: a
+  // published dish requiring two ingredients no cocktail requires — heavy
+  // cream is unused, and egg white's single cocktail use is optional.
+  await db.exec(`
+    insert into public.recipes (slug, name, domain, is_published)
+    values ('test-popular-domain-fixture', 'Popular Domain Fixture', 'food', true);
+    insert into public.recipe_ingredients (recipe_id, ingredient_id, display_order)
+    select r.id, i.id, i.ord
+    from public.recipes r,
+         (select id, 1 as ord from public.ingredients where name = 'egg white'
+          union all
+          select id, 2 from public.ingredients where name = 'heavy cream') i
+    where r.slug = 'test-popular-domain-fixture';
+  `);
+  try {
+    // The dish's own ingredients, and nothing the Bar contributes.
+    const food = await popularIngredientsIn("food", 50);
+    expect(food.map((r) => r.name)).toEqual(["egg white", "heavy cream"]);
+
+    const cocktail = (await popularIngredientsIn("cocktail", 50)).map(
+      (r) => r.name,
+    );
+    expect(cocktail).toContain("lime juice");
+    expect(cocktail).not.toContain("egg white");
+    expect(cocktail).not.toContain("heavy cream");
+  } finally {
+    // Cascades to recipe_ingredients; keeps later tests on pure seed data.
+    await db.exec(
+      "delete from public.recipes where slug = 'test-popular-domain-fixture'",
+    );
+  }
+});
+
+test("an explicit null domain is the same call as omitting the argument", async () => {
+  // The starter strip passes `p_domain: null` from a surface that belongs to
+  // neither side, and must get the whole-catalog list the old signature gave.
+  expect(await popularIngredientsIn(null)).toEqual(await popularIngredients(8));
+  expect(await popularIngredientsIn(null, 50)).toEqual(
+    await popularIngredients(50),
+  );
 });

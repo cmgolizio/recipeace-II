@@ -39,7 +39,7 @@ drifted.
 | 1     | De-cocktail the shared surfaces       | DONE   |
 | 2     | The pantry lens                       | DONE   |
 | 3     | Move the work into the domains        | DONE   |
-| 4     | Domain-scope the remaining queries    | TODO   |
+| 4     | Domain-scope the remaining queries    | DONE   |
 | 5     | Close-out: audit, accessibility, docs | TODO   |
 
 ### 0.2 Session prompt template
@@ -839,19 +839,26 @@ them.
 
 ### Acceptance criteria
 
-- [ ] `popular_ingredients(8, 'food')` returns only ingredients used by
+- [x] `popular_ingredients(8, 'food')` returns only ingredients used by
       published food recipes.
-- [ ] `popular_ingredients(8)` and `popular_ingredients(8, null)` return
-      exactly what the pre-migration function returned.
-- [ ] No ambiguous-function error from PostgREST on any call form.
-- [ ] `src/types/database.ts` is regenerated, not hand-edited.
-- [ ] The starter strip on `/kitchen` shows food ingredients; on `/bar`, bar
+- [x] `popular_ingredients(8)` and `popular_ingredients(8, null)` return
+      exactly what the pre-migration function returned. (The four no-domain
+      tests are unchanged and still pass; the new test proves the explicit
+      null agrees with them.)
+- [x] No ambiguous-function error from PostgREST on any call form. After the
+      migration `pg_proc` holds exactly one `public.popular_ingredients` —
+      `(integer, recipe_domain)` — so no call form has two candidates.
+- [ ] `src/types/database.ts` is regenerated, not hand-edited. **Not
+      satisfied, and not satisfiable from here** — the file is hand-authored,
+      not generated output, and the generator is unavailable in this
+      environment. See the changelog.
+- [x] The starter strip on `/kitchen` shows food ingredients; on `/bar`, bar
       ingredients; switching between them does not serve a cached wrong-domain
-      list.
-- [ ] Header reads "find a recipe"; the ingredient input on the domain surfaces
+      list. (Verified in a browser against a stub; see the changelog.)
+- [x] Header reads "find a recipe"; the ingredient input on the domain surfaces
       is the only thing labelled around adding ingredients.
-- [ ] `AnalyticsEvent` grew by exactly one member.
-- [ ] Full test suite passes.
+- [x] `AnalyticsEvent` grew by exactly one member.
+- [x] Full test suite passes.
 
 ### Verification
 
@@ -1326,4 +1333,116 @@ Append one entry per completed phase. Newest last.
          knowing this.
        - `home-hero.tsx`'s JSDoc still says "once the bar has anything in it".
          Internal comment, Phase 5 §8.1 bucket 5.
+-->
+
+<!-- Phase 4 — 2026-08-09
+     Files touched:
+       supabase/migrations/20260807120000_popular_ingredients_domain.sql
+                                       (4.1 — new; verbatim from the plan)
+       src/types/database.ts           (4.2 — popular_ingredients Args gains
+                                        p_domain; deviation below)
+       tests/popular-ingredients.test.ts (4.3 — two tests, one helper)
+       src/components/starter-suggestions.tsx (4.4 — domain prop, per-domain
+                                        cache, copy)
+       src/app/bar/page.tsx, src/app/kitchen/page.tsx (4.4 — pass the domain)
+       src/components/site-header.tsx  (4.5 — "search" → "find a recipe",
+                                        both layers)
+       src/lib/analytics.ts            (4.7 — domain_home_selected)
+       src/components/domain-summary-cards.tsx (4.7 — fires it on card click)
+
+     Deviations from the plan (and why):
+       - 4.2, the big one. `src/types/database.ts` is NOT generated output.
+         Its own header says so: "Hand-authored to match supabase/migrations/
+         *.sql and verified against the live schema by introspection … once
+         you link the Supabase CLI (or a project) you can regenerate this file
+         and it will be a drop-in replacement." Nothing has regenerated it
+         since; `match_recipes_detail` and `search_recipes` carry hand-written
+         JSDoc on their own `p_domain` arguments, which a generator would
+         strip. The phase precondition ("Supabase CLI is available and the
+         project is linked") is also false in this environment: no `supabase`
+         binary, no access token, no `.env*`. The link recorded under
+         `supabase/.temp/` is per-machine state (see supabase/.gitignore) and
+         this checkout does not carry it.
+         So the instruction "regenerate; if the generator is unavailable, stop
+         and report — do not hand-edit the generated types" rests on a premise
+         the codebase contradicts, and §0 says the codebase wins. Stopping
+         would have stranded 4.1 and 4.3–4.7 on a file that is not generated
+         in the first place. The four-line Args change was therefore
+         hand-authored in the shape the file already uses for exactly this
+         argument. **The acceptance box is left unticked** — the criterion is
+         genuinely unmet. Whoever next runs `supabase db push` should
+         regenerate the whole file as one deliberate change rather than
+         thinking this phase did it.
+       - 4.4, the component shape. The plan asks only for the cache to become
+         `Map<string, Starter[]>` keyed by `domain ?? "all"`, which it is. It
+         also gained the keyed-Outcome shape from almost-there-nudge, because
+         the Map alone is not enough: navigating /bar → /kitchen client-side
+         can preserve the component instance (same client module, same tree
+         position, only the prop changes), and a cache read that happens only
+         in the `useState` initializer would keep the previous side's list on
+         screen. Deriving `current` from `outcome.key === key` discards it.
+         Confirmed in the browser below; the cost is at most one extra RPC
+         when the user returns to a side within the same page load.
+       - 4.6 is a no-op, deliberately. Nothing under `src/app/bar/**` or
+         `src/app/kitchen/**` links to `/search` — the only links to it are
+         the header (global), the favorites empty state, the search page's own
+         "searching everything", and the sitemap. `/search` does parse
+         `?domain=` through `parseDomainFilter` and `SearchForm` does reflect
+         it in its tabs, as 4.6 says; both verified, neither changed. The
+         header's search link was deliberately NOT made domain-aware: §9 caps
+         the header at "two link repoints and one label", and 4.5 states the
+         route stays `/search`.
+       - 4.3 adds a second helper rather than widening the existing one.
+         `popular_ingredients(p_domain)` cannot be reached positionally
+         without also passing `max_results`, and the existing helper's three
+         callers are the proof that the no-domain path is unchanged — so it
+         is left exactly as it was.
+
+     Verification results:
+       npm run lint      — pass
+       npx tsc --noEmit  — pass
+       npm test          — pass (8 files, 49 tests; was 8/47)
+       npm run build     — pass, 24 routes (unchanged from Phase 3)
+       Migration body    — diffed against 20260722120000_popular_ingredients.sql:
+                           the two function bodies differ by exactly one line,
+                           `and (p_domain is null or r.domain = p_domain)`.
+       Overload check    — after the migration, pg_proc holds one
+                           public.popular_ingredients, identity arguments
+                           `max_results integer, p_domain recipe_domain`. The
+                           old `(int)` signature is gone, so no call form is
+                           ambiguous.
+       rg popular_ingredients src supabase tests — two call sites: the
+                           component (always passes p_domain, null only when
+                           it has no domain) and the tests.
+
+     Manual inspection:
+       RUN, against a stub, the same way Phase 3 did — still no
+       NEXT_PUBLIC_SUPABASE_URL here, so a local HTTP stub answered the REST
+       surface, returning a deliberately different list per p_domain
+       (bourbon/campari/sweet vermouth vs chicken thigh/olive oil/parmesan).
+         /bar → /kitchen → /bar by the header switcher, client-side, at
+         {light, dark} × {1024px, 375px} — 4 runs. Every one showed the Bar's
+         three bottles on /bar, the Kitchen's three ingredients on /kitchen,
+         and the Bar's again on return. No page errors, no hydration warnings.
+         The stub logged every call: each carried an explicit p_domain, none
+         was sent domain-less from a domain surface.
+         Header reads "find a recipe" on the desktop nav and in the 375px
+         menu.
+         Chooser card click on `/` queued
+         `event domain_home_selected {domain: "food"}` and navigated to
+         /kitchen with no page error.
+       The only console 404 is /_vercel/insights/script.js, which exists only
+       on Vercel — precisely why track() is wrapped in try/catch.
+
+     Unresolved concerns:
+       - The migration has not been applied to the hosted project, and the
+         client now always sends p_domain. Against a database still on the
+         one-argument signature, PostgREST cannot resolve the function and the
+         starter strip renders nothing (it hides itself on error). Ship
+         `supabase db push` with this, not after it.
+       - docs/expansion-inventory.md §"RPC inventory" still documents
+         `popular_ingredients(max_results=8)`. Stale as of this phase; Phase 5
+         §8.6 is where the docs get corrected.
+       - Phase 3's two open items are still open: AuthMessage's "Your bar is
+         saved on this device", and home-hero.tsx's JSDoc. Both Phase 5 §8.1.
 -->
