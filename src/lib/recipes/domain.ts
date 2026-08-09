@@ -40,8 +40,9 @@ export const DOMAIN_NOUN: Record<RecipeDomain, string> = {
 
 /**
  * The route convention: each domain owns a subtree, and everything shared —
- * the pantry at `/`, recipe details at `/recipes/[slug]`, favorites, the
- * shopping list — sits outside them (docs/expansion-plan.md §9).
+ * the pantry at `/pantry`, recipe details at `/recipes/[slug]`, favorites, the
+ * shopping list — sits outside them (docs/expansion-plan.md §9). `/` itself is
+ * the chooser (restructure-plan.md D2).
  */
 export const DOMAIN_ROUTES: Record<
   RecipeDomain,

@@ -4,12 +4,15 @@ A pantry-matching app for food and drink. Add what you have and see what you
 can make, what you're closest to making, and what one ingredient would unlock
 the most.
 
-One pantry answers two surfaces:
+One pantry answers two workspaces:
 
 - **The Bar** (`/bar`) — cocktails, filtered by method, glass, base spirit and
   flavour.
 - **The Kitchen** (`/kitchen`) — food, filtered by course, cuisine, total time
   and difficulty.
+
+`/` is the chooser between them; `/pantry` is the combined list, which belongs
+to neither side.
 
 Built with Next.js 16 (App Router) and Supabase (Postgres + Auth + Storage).
 
@@ -69,6 +72,62 @@ recipe:
   `max_missing` defaults to 2 (pass `null` for all recipes with any overlap).
   The names of missing ingredients are returned so the UI can show exactly
   what to buy.
+
+## One pantry, two workspaces
+
+There is one pantry store, one `pantry_items` table and one localStorage key.
+Bar and Kitchen are **lenses over it**, never separate inventories: lime juice
+is one row whichever side you are standing on, and adding an ingredient counts
+towards a drink and towards dinner at the same time.
+
+| Route                            | What it is                                                       |
+| -------------------------------- | ---------------------------------------------------------------- |
+| `/`                              | the chooser — two cards, each with that side's counts             |
+| `/pantry`                        | the combined list; belongs to neither side                        |
+| `/bar`, `/kitchen`               | the working surfaces: add ingredients, see this side's shelf, go to matches |
+| `/bar/matches`, `/kitchen/matches` | one matcher, one ranking, per domain                            |
+| `/bar/recipes`, `/kitchen/recipes` | catalog browsers, with each domain's own facets                 |
+
+`/recipes` and `/matches` still 307 to their `/bar` equivalents, query strings
+preserved.
+
+**The lens.** `src/lib/pantry/lens.ts` maps each `ingredient_category` to the
+side(s) it reads as — `spirit` is the Bar, `meat` the Kitchen, `produce` both.
+It is presentation only: the matcher never sees it, and `ingredients.category`
+stays domain-agnostic in the schema. Two rules follow from it:
+
+- On a domain surface the shelf shows that side's ingredients, and the rest sit
+  in a collapsed "Also in your pantry" group. Collapsed, never hidden — the
+  other side must stay visible for the pantry to read as one store.
+- Ingredient search **groups, never filters**. Typing "egg" in the Bar still
+  finds eggs; a flip needs them. Domain context ranks results, it never removes
+  them.
+
+The map is static rather than derived from `recipe_ingredients ⋈
+recipes.domain` on purpose: at 13 food recipes a derived Kitchen shelf would be
+almost empty. Revisit when the food catalog passes ~100 published recipes — the
+derived design is written up in `docs/restructure-plan.md` Appendix B.
+
+**Domain-parameterized components, not Bar/Kitchen twins.** Every component
+that differs by side takes a `domain` prop and reads its words from
+`src/lib/recipes/domain.ts` (`DOMAIN_SURFACE`, `DOMAIN_SHELF`,
+`DOMAIN_MATCH_CTA`, `DOMAIN_ROUTES`, …). There is one `MatchesView`, one
+`PantryPanel`, one `IngredientSearch`. Copy that varies by domain lives in
+`domain.ts` as a `Record<RecipeDomain, string>`, never as an inline ternary.
+
+Colour is orientation, not information: `.domain-bar` and `.domain-kitchen`
+rebind `--accent` for their subtree, so every `bg-accent` / `text-accent`
+follows automatically — but the heading, layout and copy have to distinguish
+the two sides in a greyscale screenshot on their own.
+
+**Adding a third domain** would be: add the value to the `recipe_domain` enum
+and a details table for its own metadata; add it to `RECIPE_DOMAINS` and to
+every `Record<RecipeDomain, …>` in `domain.ts` (TypeScript will name each one
+you miss); classify every `ingredient_category` for it in `lens.ts` (the
+`Record<IngredientCategory, …>` is exhaustive on purpose, so this also fails to
+compile until it is done); add the route subtree with its own layout and accent
+tokens; and pass the new domain to the components that already take one. No
+matcher change: `match_recipes(p_domain)` filters candidates and nothing else.
 
 ## Pantry & accounts
 
@@ -143,9 +202,11 @@ service worker (`public/sw.js`, registered in production only by
 `src/components/register-service-worker.tsx`). The worker precaches the app
 shell and serves recipe detail pages stale-while-revalidate, so a previously
 visited recipe opens offline. Pantry-, auth- and query-dependent routes
-(`/bar/matches`, `/kitchen/matches`, `/favorites`, `/shopping`, `/search`,
-`/login`, `/auth/*`, the filtered catalogs) are deliberately never cached. Bump `VERSION` in `public/sw.js` to
-invalidate every cache on the next deploy.
+(`/pantry`, `/bar`, `/kitchen`, `/bar/matches`, `/kitchen/matches`,
+`/favorites`, `/shopping`, `/search`, `/login`, `/auth/*`, the filtered
+catalogs) are deliberately never cached — editing the pantry offline is not
+offered. Bump `VERSION` in `public/sw.js` to invalidate every cache on the next
+deploy.
 
 ## Analytics & monitoring
 

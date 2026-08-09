@@ -1,10 +1,10 @@
 /*
  * Dependency-free service worker: an offline app shell plus
  * stale-while-revalidate for recipe detail pages, which are static public
- * content. Pantry-, auth- and search-dependent routes (/bar/matches,
- * /kitchen/matches, /favorites, /shopping, /search, /login, /auth/*, the
- * filtered catalogs) are never cached — they need the network and their HTML
- * is specific to one visitor or one query.
+ * content. Pantry-, auth- and search-dependent routes (/pantry, /bar,
+ * /kitchen, /bar/matches, /kitchen/matches, /favorites, /shopping, /search,
+ * /login, /auth/*, the filtered catalogs) are never cached — they need the
+ * network and their HTML is specific to one visitor or one query.
  *
  * Registered by src/components/register-service-worker.tsx (production only).
  * Bump VERSION to invalidate every cache on the next deploy.
@@ -18,8 +18,10 @@ const PAGE_CACHE = `ihm-pages-${VERSION}`;
 const ASSET_CACHE = `ihm-assets-${VERSION}`;
 const CURRENT_CACHES = [SHELL_CACHE, PAGE_CACHE, ASSET_CACHE];
 
-// Enough to open the app with no network. The home page's own content is
-// client-side (the pantry lives in localStorage), so it works offline as is.
+// Enough to open the app with no network. `/` is the Bar/Kitchen chooser; its
+// per-side counts need the network but degrade to plain cards without one, so
+// the shell is useful offline as is. The pantry itself now lives at /pantry
+// and is not precached — offline editing of the pantry is not offered.
 const SHELL_URLS = ["/", "/manifest.webmanifest", "/icons/icon-192.png"];
 
 // Recipe detail pages only — see the note above about the other routes.
