@@ -189,16 +189,16 @@ review.
 All seven are `stable`, `security invoker`, `set search_path = ''`, and granted
 to `anon, authenticated`.
 
-| Function                                      | Purpose                                          | Domain-blind?                                                      |
-| --------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------ |
-| `match_recipes(pantry, max_missing=2)`        | Rank published recipes by pantry coverage        | needs a domain filter                                              |
-| `match_recipes_detail(pantry, max_missing=2)` | `match_recipes` + card fields + ingredient jsonb | **returns `method`, `glass`** — cocktail fields in the signature   |
-| `recipe_pantry_status(recipe_id, pantry)`     | Per-ingredient have/substitute/missing           | domain-agnostic already                                            |
-| `search_ingredients(q, max_results=10)`       | Trigram autocomplete over names + aliases        | **returns `ingredient_category`**                                  |
-| `popular_ingredients(max_results=8)`          | Starter suggestions                              | **hardcodes `i.category <> 'garnish'`**                            |
-| `related_recipes(recipe_id, max_results=4)`   | "More like this"                                 | **hardcodes `i.category <> 'garnish'`** and ranks on `base_spirit` |
-| `ingredient_detail(slug)`                     | Everything the ingredient page renders           | **returns `ingredient_category`**                                  |
-| `slugify(text)`                               | Canonical name → URL slug                        | shared                                                             |
+| Function                                            | Purpose                                          | Domain-blind?                                                                   |
+| --------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------- |
+| `match_recipes(pantry, max_missing=2)`              | Rank published recipes by pantry coverage        | needs a domain filter                                                           |
+| `match_recipes_detail(pantry, max_missing=2)`       | `match_recipes` + card fields + ingredient jsonb | **returns `method`, `glass`** — cocktail fields in the signature                |
+| `recipe_pantry_status(recipe_id, pantry)`           | Per-ingredient have/substitute/missing           | domain-agnostic already                                                         |
+| `search_ingredients(q, max_results=10)`             | Trigram autocomplete over names + aliases        | **returns `ingredient_category`**                                               |
+| `popular_ingredients(max_results=8, p_domain=null)` | Starter suggestions                              | takes a domain since the restructure; still hardcodes `i.category <> 'garnish'` |
+| `related_recipes(recipe_id, max_results=4)`         | "More like this"                                 | **hardcodes `i.category <> 'garnish'`** and ranks on `base_spirit`              |
+| `ingredient_detail(slug)`                           | Everything the ingredient page renders           | **returns `ingredient_category`**                                               |
+| `slugify(text)`                                     | Canonical name → URL slug                        | shared                                                                          |
 
 ### 3.6 The matching algorithm
 
@@ -227,6 +227,11 @@ mirrors the same expansion per-ingredient and additionally reports
 ### 3.7 Route map
 
 _Updated in phase 4: the cocktail catalog and matches moved under `/bar`._
+
+_Superseded by the Bar/Kitchen restructure, which made `/` the chooser, moved
+the combined pantry to `/pantry`, and turned `/bar` and `/kitchen` into the
+working surfaces. See the restructure entry at the end of §12 for the current
+map._
 
 | Route                                                                      | Rendering                    | Data source                                                                          |
 | -------------------------------------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------ |
@@ -1401,6 +1406,77 @@ that replaced the by-hand one described there.)
 the eight decisions taken during implementation that differ from what the plan
 proposed (each with its reason), and what is deferred.
 
+### Restructure — Bar / Kitchen separation · complete
+
+Downstream of the expansion, not part of it: `docs/restructure-plan.md`, five
+phases, complete. The expansion made the Kitchen exist; the restructure made it
+a place you can work. Phase 17's deferred cleanup above is still open and is
+not part of it.
+
+**One shared pantry, two workspaces.** One `pantry_items` table, one
+`src/lib/pantry/store.ts`, one localStorage key — that is a binding decision,
+not an implementation detail. Splitting the store would break the "lime juice
+is one row" constraint the schema is built on and force double-adding. The
+separation is entirely presentational.
+
+**The route map now.** `/` is the chooser: two cards, Bar and Kitchen, each
+showing `N ingredients · M ready` for the pantry it already has, plus a
+"Continue in the …" link driven by `recipeace.domain.v1`. Nothing redirects —
+`/` always renders `/`. `/pantry` is the combined list, lifted from the old
+`/`. `/bar` and `/kitchen` are the working surfaces (ingredient input, starter
+strip, that side's shelf, the almost-there nudge, one catalog link); their hub
+cards are gone. `/recipes` and `/matches` still 307, query strings preserved.
+
+**The lens is a presentation map.** `src/lib/pantry/lens.ts` maps
+`ingredient_category` to the side(s) it reads as, and nothing else consumes it:
+the matcher never sees it, `ingredients.category` stays domain-agnostic in the
+schema (as `20260803120000_food_ingredient_categories.sql` documents), and a
+category serving both sides is listed under both. `splitByLens` puts shared
+items on the shelf being looked at rather than in a third bucket — limes belong
+next to the gin when you are standing in the Bar.
+
+It is static rather than derived from `recipe_ingredients ⋈ recipes.domain`
+deliberately. Derivation is strictly more accurate and, at 13 food recipes,
+would render an almost-empty Kitchen shelf; the static map is better _now_
+precisely because the food catalog is thin. **Revisit when the food catalog
+passes ~100 published recipes** — the derived design is preserved in
+`docs/restructure-plan.md` Appendix B so nobody has to re-derive it. The
+`Record<IngredientCategory, …>` is exhaustive on purpose: a new enum value
+fails to compile until someone classifies it.
+
+**Domain context ranks and groups; it never removes.** Ingredient search groups
+results current-side-first with a per-row tag and never filters — typing "egg"
+in the Bar still finds eggs. The other side's pantry items are collapsed under
+"Also in your pantry", never hidden. Where a shared surface offers a domain
+action it offers both at equal weight.
+
+**Domain-parameterized components, not Bar/Kitchen twins.** `MatchesView`,
+`PantryPanel`, `IngredientSearch`, `StarterSuggestions` and
+`AlmostThereNudge` each take a `domain` prop; the words come from
+`Record<RecipeDomain, string>` records in `src/lib/recipes/domain.ts`, never
+from inline ternaries. `.domain-bar` / `.domain-kitchen` rebind `--accent` for
+their subtree, so no component knows which side it is on — and no domain
+identity rests on colour, which is why the headings, layout and copy differ
+too.
+
+**Queries that were structurally cocktail-only.** `popular_ingredients` gained
+`p_domain` (`20260807120000_popular_ingredients_domain.sql`, dropping the old
+one-argument signature so no call form is ambiguous); without it the starter
+strip counted the whole catalog and, at 160 cocktails to 13 dishes, offered the
+Kitchen somebody else's bottles. `AlmostThereNudge` takes a required domain.
+Analytics gained exactly one event, `domain_home_selected`.
+
+**Adding a third domain** would be: extend the `recipe_domain` enum and add a
+details table; extend `RECIPE_DOMAINS` and every `Record<RecipeDomain, …>` in
+`domain.ts`; classify every `ingredient_category` for it in `lens.ts`; add the
+route subtree with its own layout and accent tokens; pass the domain to the
+components that already take one. The matcher does not change.
+
+**Not done, and deliberately:** renaming the site (the brand is still
+cocktail-first), deriving ingredient affinity from recipe usage, a mobile
+bottom nav, and unifying the two catalog filters. Each is its own project; the
+reasoning is in `docs/restructure-plan.md` §9.
+
 ---
 
 ## 13. Where the expansion landed
@@ -1427,5 +1503,14 @@ Against §48's definition of MVP completion:
 | Database security reviewed                                   | yes — exercised as `anon` in `tests/rls.test.ts`            |
 | Rollout and rollback documented                              | yes — `docs/expansion-rollout.md`                           |
 
-Final validation: `npm run lint`, `npx tsc --noEmit`, `npm run build`
-(22 routes) and `npm test` (18 files, 157 tests) all pass.
+Final validation: `npm run lint`, `npx tsc --noEmit`, `npm run build` and
+`npm test` all pass.
+
+> **Correction (restructure phase 5).** This line originally claimed a suite of
+> "18 files, 157 tests" and a build of "22 routes". No commit in this
+> repository's history has ever had 18 test files: the suite was 7 files / 43
+> tests when the restructure began, and is **8 files / 49 tests** today
+> (`tests/pantry-lens.test.ts` added in restructure phase 2, two cases added to
+> `tests/popular-ingredients.test.ts` in phase 4). The build is **24 routes**
+> — 23 through restructure phase 2, plus `/pantry` in phase 3. Quote the
+> commands, not this sentence; run them and read the output.

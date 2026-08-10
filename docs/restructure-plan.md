@@ -40,7 +40,7 @@ drifted.
 | 2     | The pantry lens                       | DONE   |
 | 3     | Move the work into the domains        | DONE   |
 | 4     | Domain-scope the remaining queries    | DONE   |
-| 5     | Close-out: audit, accessibility, docs | TODO   |
+| 5     | Close-out: audit, accessibility, docs | DONE   |
 
 ### 0.2 Session prompt template
 
@@ -569,12 +569,14 @@ existing `tests/*.test.ts` files. Cover:
       white) serves the Bar and so ranks in the _first_ group; a food-only
       category such as `pasta` (egg noodles) is what lands in the second.
       Nothing is filtered either way, which is the criterion's substance.
-- [ ] Arrow-down from the last row of group 1 lands on the first row of
-      group 2, and Enter adds it. (Code-verified only — no browser.)
-- [ ] `aria-activedescendant` always references the id of the currently
-      highlighted row, across groups. (Code-verified only — no browser.)
-- [ ] `<details>` is keyboard operable and its summary reads sensibly to a
-      screen reader. (Native element, house pattern; not screen-reader tested.)
+- [x] Arrow-down from the last row of group 1 lands on the first row of
+      group 2, and Enter adds it. (Verified in a browser by phase 5 §8.4.)
+- [x] `aria-activedescendant` always references the id of the currently
+      highlighted row, across groups. (Verified in a browser by phase 5 §8.4,
+      every row of a two-group result.)
+- [x] `<details>` is keyboard operable and its summary reads sensibly to a
+      screen reader. (Keyboard operation verified by phase 5 §8.4; the element
+      is native and still not screen-reader tested.)
 
 ### Verification
 
@@ -941,14 +943,52 @@ Correct `docs/expansion-inventory.md` §13's test-suite claim to match reality.
 
 ### Acceptance criteria
 
-- [ ] Every terminology hit is classified and the obsolete ones are fixed.
-- [ ] Every route in 8.2 checked, with findings recorded.
-- [ ] The pantry sync matrix in 8.3 passes end to end.
-- [ ] The a11y sweep in 8.4 passes, with contrast ratios recorded.
-- [ ] `npm run build` route count is understood and any change explained.
-- [ ] Docs updated; no doc claims a test file that doesn't exist.
-- [ ] No dead code left from Phases 1–4 (old hub-card class constants, unused
+- [x] Every terminology hit is classified and the obsolete ones are fixed.
+- [x] Every route in 8.2 checked, with findings recorded.
+- [x] The pantry sync matrix in 8.3 passes end to end.
+- [x] The a11y sweep in 8.4 passes, with contrast ratios recorded.
+- [x] `npm run build` route count is understood and any change explained.
+- [x] Docs updated; no doc claims a test file that doesn't exist.
+- [x] No dead code left from Phases 1–4 (old hub-card class constants, unused
       imports, superseded `CATEGORY_ORDER` entries if genuinely unreferenced).
+      One stray empty file, `src/components/x`, was committed by mistake in
+      phase 2 and is deleted. `CATEGORY_ORDER` is **not** superseded — it is
+      still the only display order `IngredientBrowse` has, and covers 27 of the
+      28 enum values (all but `staple`, excluded by design).
+
+### 8.7 Findings that this phase records but does not fix
+
+An audit that only ticks boxes is worth nothing. These are real, reproducible,
+and each is outside a phase that "writes no features":
+
+1. **Every pantry-derived client query fires twice on a cold load** with a
+   stocked anonymous pantry. `start()` in `src/lib/pantry/store.ts` sets
+   `ids: readLocal()`, and the `INITIAL_SESSION` auth event then runs
+   `onUser(null)`, which calls `readLocal()` again — equal contents, a new
+   array identity. Every effect that lists `pantry` in its dependencies
+   re-runs. Confirmed in a production build: two `match_recipes_detail` calls
+   on `/bar`, four on `/`, two `ingredients?id=in.(…)` on `/pantry`, and
+   exactly two localStorage reads of `recipeace.pantry.v1` per load. **Not
+   caused by this plan** — that file was last touched 2026-07-22, before phase
+   1 — and it is fenced off by D1, so it is left alone. The fix is one line in
+   `onUser`: keep the existing `ids` array when the contents have not changed.
+2. **`/recipes/[slug]` and `/ingredients/[slug]` answer an unknown slug with
+   HTTP 200**, not 404, while rendering their custom not-found pages. Verified
+   against `next start`, not just `next dev`; the framework's own `/no-such-page`
+   returns 404 correctly. A soft 404 is an SEO problem. Pre-existing — both
+   routes and their `not-found.tsx` predate phase 1.
+3. **`/`, `/favorites`, `/shopping` and `/login` emit no canonical link** and
+   inherit the root layout's title. `/favorites` and `/shopping` are client
+   components and cannot export metadata as written; `/` never had a metadata
+   export, before or after phase 3. Every restructured route that could carry a
+   canonical does.
+4. **No `loading.tsx` for `/bar` or `/kitchen`**, which are dynamic server
+   routes awaiting a catalog count. The catalogs and detail routes have one.
+5. **The offline shell no longer contains the pantry.** `public/sw.js`
+   precaches `/`, which phase 3 turned into the chooser; `/pantry` is not
+   cacheable. The stale comment claiming otherwise is corrected here, but
+   whether the shell should follow the pantry is a product decision, and
+   changing `SHELL_URLS` needs a `VERSION` bump.
 
 ---
 
@@ -1445,4 +1485,192 @@ Append one entry per completed phase. Newest last.
          §8.6 is where the docs get corrected.
        - Phase 3's two open items are still open: AuthMessage's "Your bar is
          saved on this device", and home-hero.tsx's JSDoc. Both Phase 5 §8.1.
+-->
+
+<!-- Phase 5 — 2026-08-09
+     Files touched:
+       src/components/auth-message.tsx (8.1 bucket 2 — copy)
+       src/components/home-hero.tsx    (8.1 bucket 5 — JSDoc)
+       src/lib/recipes/domain.ts       (DOMAIN_ROUTES comment: "the pantry at
+                                        `/`" → `/pantry`)
+       public/sw.js                    (8.2/8.6 — header comment; no
+                                        behaviour change, SHELL_URLS untouched)
+       README.md                       (8.6 — "One pantry, two workspaces")
+       docs/expansion-inventory.md     (8.6 — §3.5 RPC row, §3.7 pointer,
+                                        §12 restructure entry, §13 correction)
+       docs/restructure-plan.md        (this entry, the boxes, §8.7)
+     Files removed:
+       src/components/x                (empty, committed by accident in
+                                        phase 2; the only dead file found)
+
+     How the audit was run:
+       Earlier phases could not walk the routes — no NEXT_PUBLIC_SUPABASE_URL
+       here — and used a canned-response stub. This phase built a
+       PostgREST-shaped façade over PGlite loaded with the real migrations and
+       all three seeds, so every number below came from the actual schema:
+       23 published recipes (10 cocktails, 13 food), 204 ingredients, the real
+       matcher. Chromium drove it. The rig lives outside the repo; nothing was
+       added to package.json.
+
+     8.1 Terminology audit — five code hits, all classified, none obsolete
+     after two fixes:
+       1 (legitimate Bar wording): DOMAIN_SHELF.cocktail; NUDGE_COPY.cocktail
+         in almost-there-nudge.tsx and the JSDoc quoting both branches;
+         src/app/recipes/page.tsx:153 ("missing from your bar" on the legacy
+         cocktail catalog behind the 307 — domain-correct there, and the file
+         is compatibility code expansion-plan phase 17 deletes, §9).
+       2 (obsolete, fixed): AuthMessage said "Your bar is saved on this
+         device" on `/` and `/pantry`, both shared surfaces, and opened with
+         "Add the ingredients you have on hand" on a chooser that has no
+         input. Both sentences now talk about where the pantry lives.
+       3 (historical docs, left): expansion-inventory ×5, build-plan ×2,
+         polish-plan ×3, polish-plan2 ×3, this plan ×25.
+       4 (test fixtures): none.
+       5 (internal, one renamed word): home-hero.tsx's JSDoc said "once the
+         bar has anything in it" of a component gated on the whole pantry;
+         the cocktail pipeline's "the same bottle twice" is correct and stays.
+       `rg 'href="/"'` — one hit, the header logo. Still a genuine "go home".
+
+     8.2 Route audit — 14 routes × {empty, cocktail-only, food-only, both} ×
+     {light, dark} × {1024px, 375px}, 56 renders. Every route 200, exactly one
+     h1, no skipped heading level, correct aria-current, no console output but
+     the /_vercel/insights/script.js 404 that only resolves on Vercel.
+     Redirects: /recipes → /bar/recipes and /matches?missing=1&foo=bar →
+     /bar/matches?missing=1&foo=bar, both 307, query strings preserved,
+     verified against `next start` as well as `next dev`.
+       Empty states: /bar and /kitchen show the starter strip on an empty
+       pantry (Bar: lime juice, simple syrup, angostura bitters, bourbon;
+       Kitchen: butter, olive oil, garlic, whole egg, lemon juice — 4.4 with
+       real data); both matches pages show "Your pantry is empty"; a food-only
+       pantry on /bar shows "Your bar is empty" *with* the collapsed group
+       below it, and vice versa.
+       Loading: /bar with the ingredient fetch held open renders the heading
+       count plus four skeleton chips — the number always equals the chips
+       beneath it.
+       Error: with every RPC failing 500, /bar/matches says "Couldn't load
+       matches"; the nudge, the starter strip and the chooser's counts all
+       degrade silently, which is what each was built to do.
+       Recorded, not fixed: §8.7 items 2 (soft 404s), 3 (missing canonicals)
+       and 4 (no loading.tsx on the two domain surfaces).
+
+     8.3 Pantry synchronization — 20 checks, all pass. Add from /bar, from
+     /kitchen, from /pantry; remove from each; clear all; reload; a second tab
+     writing localStorage; sign-in migration; authenticated add/remove/reload;
+     sign-out. No duplicate ids anywhere, and the header badge equalled the
+     true total in all nine state × route combinations while each shelf showed
+     its own count: cocktail-only → badge 2, "Your bar (2)" / "Your kitchen
+     (0) + also 2 bar items"; both → badge 4, "Your bar (2)" / "Your kitchen
+     (3)". Sign-in moved all four local ids into pantry_items and cleared
+     localStorage; sign-out returned to the (now empty) local pantry and left
+     the saved rows alone.
+
+     8.4 Accessibility — 22 checks, all pass. Contrast measured from the
+     computed --accent / --accent-foreground inside each subtree, so the
+     .domain-* rebinding is what was measured:
+         Bar     light #4339fb / #ffffff  6.53:1
+         Bar     dark  #736bfb / #0c0a09  4.92:1
+         Kitchen light #a83b0c / #ffffff  6.37:1
+         Kitchen dark  #d97b3f / #0c0a09  6.45:1
+       Combobox: role/aria-expanded/aria-controls/aria-autocomplete correct;
+       searching "to" from the Bar returns 6 Bar rows and 3 Kitchen rows —
+       grouped, never filtered (D4) — and arrow-down walks all nine in
+       rendered order, crossing the group boundary, with
+       aria-activedescendant naming the highlighted option at every step.
+       Enter adds it and focus stays on the input; Escape closes the panel.
+       The <details> summary takes focus and toggles on Enter.
+       Header count carries its aria-label. prefers-reduced-motion collapses
+       transitions to 0.01ms. Chooser cards are 343×90 at 375px. Domain
+       identity survives greyscale on copy alone: "The Bar"/"The Kitchen",
+       "Your bar"/"Your kitchen", "Mix"/"Cook".
+       Not covered: a screen-reader pass. Native elements and existing
+       patterns only, but nobody has heard it.
+
+     8.5 Performance — run against `next start`, not `next dev`: Strict Mode
+     double-invokes effects and would have hidden the real finding underneath
+     an artefact.
+       Pass: the /bar catalog count is `limit=1` + `Prefer: count=exact`, not
+       a catalog fetch; the chooser's two matcher calls go out together (8ms
+       apart) one per domain; a response held open for 2.5s while the pantry
+       changed underneath could not land (the cards showed the new pantry's
+       2/0, never the old 0/2); no hydration mismatch on any route; 24 routes,
+       unchanged since phase 3, every rendering mode identical.
+       Fail, and recorded as §8.7 item 1: every pantry-derived client query
+       fires exactly twice on a cold anonymous load. Root cause traced to two
+       readLocal() calls in the pantry store — pre-existing, D1-fenced, left
+       alone with the one-line fix written down.
+
+     8.6 Documentation — README gains "One pantry, two workspaces" (route
+     table, the lens and why it is static with the ~100-recipe trigger, the
+     domain-parameterized component pattern, what adding a third domain would
+     take). expansion-inventory gains a restructure entry at the end of §12
+     covering the same ground, its §3.5 row for popular_ingredients now shows
+     the p_domain signature, and §3.7's route map carries a pointer to the new
+     entry rather than being rewritten in place — it is a phase-4 snapshot and
+     should read like one.
+       §13's closing line claimed "(22 routes)" and "(18 files, 157 tests)".
+       The test figure was never true of this repository at any commit; the
+       suite is 8 files / 49 tests. Corrected in place with the real numbers
+       and a note saying to run the commands rather than quote the sentence.
+
+     Deviations from the plan (and why):
+       - Three changes 8.1–8.6 do not name. domain.ts's DOMAIN_ROUTES comment
+         still said the pantry lives "at `/`", which phase 3 made false;
+         sw.js's header comment said the same thing twice. Both are claims
+         about the route layout this plan changed, so both are corrected. The
+         service worker's behaviour is untouched — SHELL_URLS and VERSION are
+         exactly as they were.
+       - Phase 2 left three acceptance boxes unticked as "code-verified only",
+         and its own changelog said §8.4 would re-audit them. They are now
+         verified in a browser and ticked, with the screen-reader caveat kept.
+       - Phase 4's `src/types/database.ts` box stays unticked. Still no
+         Supabase CLI, no token, no .env* here.
+       - §8.7 is new. The plan asks for findings to be "recorded" but gives
+         them nowhere to live; a phase report scrolls away, the plan does not.
+
+     Verification results:
+       npm run lint      — pass
+       npx tsc --noEmit  — pass
+       npm test          — pass (8 files, 49 tests; unchanged)
+       npm run build     — pass, 24 routes (unchanged from phases 3 and 4).
+                           A second build *with* the stub env prerendered 204
+                           ingredient pages and 23 recipe pages and produced
+                           the same 24 route entries in the same rendering
+                           modes, so the env-less CI build is not hiding
+                           anything.
+       Terminology grep  — five code hits, classified above.
+       rg 'href="/"'     — one hit, the logo.
+
+     Manual inspection:
+       RUN, in a browser, against the real schema. 56 route renders across
+       four pantry states, two themes and two viewports; 20 pantry-sync
+       checks; 22 accessibility checks; 10 performance checks against a
+       production build. What is *not* covered: a screen reader, the hosted
+       catalog's real 160 cocktails (the seeds carry 10), and RLS — PGlite
+       runs as superuser, so the audit exercised the app's queries, not the
+       policies that guard them. tests/rls.test.ts is where those live.
+
+     Unresolved concerns:
+       - The five findings in §8.7. Item 1 (doubled pantry queries) is the
+         only one with a user-visible cost today, and it is one line.
+       - Regenerating src/types/database.ts, which is still hand-authored
+         (phase 4's one unticked box).
+
+     Correction, same day, after the report was written:
+       This entry originally carried phase 4's concern forward — that
+       20260807120000_popular_ingredients_domain.sql was unapplied to the
+       hosted project and had to ship with `supabase db push`. It was already
+       applied; the owner had pushed it before this phase ran, and phase 4 had
+       no way to see that from an env-less checkout. Verified against the live
+       project: supabase_migrations.schema_migrations holds all 25 versions
+       through 20260807120000, and pg_proc holds exactly one
+       public.popular_ingredients, `(max_results integer, p_domain
+       recipe_domain)`, security invoker, execute granted to anon and
+       authenticated. So no call form is ambiguous in production either, and
+       acceptance criterion 4.1 now has a check against the real catalog
+       rather than the seeds: popular_ingredients(8, 'food') returns butter,
+       olive oil, garlic, whole egg, lemon juice, milk, all-purpose flour,
+       canned crushed tomatoes; (8, 'cocktail') returns lemon juice, simple
+       syrup, gin, lime juice, angostura bitters, sweet vermouth, vodka, rye
+       whiskey; and (8, null) returns the all-cocktail list — which is
+       precisely the 160:13 asymmetry the domain parameter exists to fix.
 -->

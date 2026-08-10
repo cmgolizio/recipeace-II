@@ -37,6 +37,12 @@ select * from (values
    exists (select 1 from information_schema.columns
            where table_schema='public' and table_name='recipes' and column_name='license')),
   ('12', '20260806120000_search_recipes',
-   to_regprocedure('public.search_recipes(text,public.recipe_domain,int)') is not null)
+   to_regprocedure('public.search_recipes(text,public.recipe_domain,int)') is not null),
+  -- Applied means the *old* one-argument signature is gone as well: the
+  -- migration drops it, and leaving both would make popular_ingredients(8)
+  -- ambiguous for PostgREST.
+  ('13', '20260807120000_popular_ingredients_domain',
+   to_regprocedure('public.popular_ingredients(int,public.recipe_domain)') is not null
+   and to_regprocedure('public.popular_ingredients(int)') is null)
 ) as t(step, migration, applied)
 order by step;

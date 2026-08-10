@@ -7,7 +7,7 @@ const STEPS = ["Add what you own", "See your matches", "Shop the gap"];
 /**
  * Compact hero for first-time visitors: what the app does, in three steps.
  * Gated on pantry hydration so returning users never see it flash, and gone
- * for good once the bar has anything in it.
+ * for good once the pantry has anything in it.
  */
 export function HomeHero() {
   const pantry = usePantry();
