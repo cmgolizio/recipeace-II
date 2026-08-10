@@ -1652,10 +1652,25 @@ Append one entry per completed phase. Newest last.
      Unresolved concerns:
        - The five findings in §8.7. Item 1 (doubled pantry queries) is the
          only one with a user-visible cost today, and it is one line.
-       - Phase 4's migration, 20260807120000_popular_ingredients_domain.sql,
-         is still unapplied to the hosted project, and the client always sends
-         p_domain. Against the old one-argument signature PostgREST cannot
-         resolve the function and the starter strip renders nothing. This ships
-         with `supabase db push`, not after it. That, plus regenerating
-         src/types/database.ts once the CLI is linked, is what is left.
+       - Regenerating src/types/database.ts, which is still hand-authored
+         (phase 4's one unticked box).
+
+     Correction, same day, after the report was written:
+       This entry originally carried phase 4's concern forward — that
+       20260807120000_popular_ingredients_domain.sql was unapplied to the
+       hosted project and had to ship with `supabase db push`. It was already
+       applied; the owner had pushed it before this phase ran, and phase 4 had
+       no way to see that from an env-less checkout. Verified against the live
+       project: supabase_migrations.schema_migrations holds all 25 versions
+       through 20260807120000, and pg_proc holds exactly one
+       public.popular_ingredients, `(max_results integer, p_domain
+       recipe_domain)`, security invoker, execute granted to anon and
+       authenticated. So no call form is ambiguous in production either, and
+       acceptance criterion 4.1 now has a check against the real catalog
+       rather than the seeds: popular_ingredients(8, 'food') returns butter,
+       olive oil, garlic, whole egg, lemon juice, milk, all-purpose flour,
+       canned crushed tomatoes; (8, 'cocktail') returns lemon juice, simple
+       syrup, gin, lime juice, angostura bitters, sweet vermouth, vodka, rye
+       whiskey; and (8, null) returns the all-cocktail list — which is
+       precisely the 160:13 asymmetry the domain parameter exists to fix.
 -->
