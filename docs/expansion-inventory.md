@@ -482,7 +482,7 @@ the phase that owns it.
 19. **The shopping list stores bare ingredient names in localStorage.** No ids,
     no recipe link, no domain, no account sync. _(Phase 12)_
 20. **Copy is cocktail-only throughout** — "Build your bar", "my bar", "Your bar
-    is empty", "In House Mixes", the martini-glass logo, the OG image, the
+    is empty", "What's In House", the martini-glass logo, the OG image, the
     manifest. _(Phases 4, 15)_
 21. **No analytics events exist.** Vercel Analytics is page-level only, so
     §17's domain-tagged events are net-new. _(Phase 14)_
@@ -632,10 +632,10 @@ the phases that depend on them.
 **1. Product name — STILL OPEN, and the owner's to decide.** The plan calls
 the product _RecipeAce_; the repository is `recipeace-II`; the localStorage
 keys are `recipeace.*`; but every piece of user-facing copy, the `<title>`,
-the manifest, the OG image and the logo say **In House Mixes**.
+the manifest, the OG image and the logo say **What's In House**.
 
 Phase 15 mistook the plan's naming for a decision and renamed the product;
-that was reverted. The site is **In House Mixes** and the name is expected to
+that was reverted. The site is **What's In House** and the name is expected to
 change again, so the outcome is that it is no longer a decision the code cares
 about: `SITE_NAME` in `src/lib/site.ts` is the only place it appears, and
 changing it is one line plus the README heading.
@@ -850,7 +850,7 @@ Copy: only the lines that described the product as drinks-only. Root metadata
 description, the home `<h1>` ("Build your bar" → "Your pantry"), the first-run
 hero (now the plan's "Add what you have. Discover what you can make."), the
 matches empty state, the ingredient page's back link, the pantry badge
-tooltip. The remaining "your bar" toasts and the `In House Mixes` brand
+tooltip. The remaining "your bar" toasts and the `What's In House` brand
 itself are phase 15's audit.
 
 Internal links repointed: `recipes-filter`, `pantry-panel`,
@@ -1302,7 +1302,7 @@ action.
 **The product name.** §10's first open decision is **still open**, and is the
 owner's to make. I first read the plan's own naming (its title, §49, and the
 repository name `recipeace-II`) as a decision and renamed the product to
-"RecipeAce"; the owner corrected that — the site is **In House Mixes**, and
+"RecipeAce"; the owner corrected that — the site is **What's In House**, and
 the name is expected to change again.
 
 So the name is unchanged, and the useful work is that it is now in one place:

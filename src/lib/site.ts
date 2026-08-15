@@ -13,9 +13,9 @@
  *
  * See ./site-url.ts for the origin.
  */
-export const SITE_NAME = "In House Mixes";
+export const SITE_NAME = "What's In House";
 
-/** "The Bar — In House Mixes". Every page title is built through this. */
+/** "The Bar — What's In House". Every page title is built through this. */
 export function pageTitle(page: string): string {
   return `${page} — ${SITE_NAME}`;
 }

@@ -1,6 +1,6 @@
 # restructure-plan.md
 
-Bar / Kitchen separation for **recipeace-II** (`inhousemixes.vercel.app`).
+Bar / Kitchen separation for **recipeace-II** (`whatsinhouse.vercel.app`).
 Five phases. Execute **one phase per session**.
 
 This plan sits downstream of `docs/expansion-plan.md`, which is complete
@@ -996,7 +996,7 @@ and each is outside a phase that "writes no features":
 
 Do not do any of these, in any phase, even if they look adjacent:
 
-- **Renaming the site.** "In House Mixes" is cocktail-branded and will fight
+- **Renaming the site.** "What's In House" is cocktail-branded and will fight
   this eventually, but a rename is a domain/SEO/analytics project, not a UI
   one — and it is the wrong spend while food is 13 recipes deep. Revisit when
   the Kitchen can carry its own weight.

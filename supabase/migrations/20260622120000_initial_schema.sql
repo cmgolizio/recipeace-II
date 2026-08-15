@@ -1,4 +1,4 @@
--- In House Mixes — initial schema (cocktail pantry-matching app)
+-- What's In House — initial schema (cocktail pantry-matching app)
 --
 -- Reference & content data (ingredients, aliases, substitutions, recipes) is
 -- world-readable and written only by the offline pipeline using the Supabase

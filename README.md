@@ -1,4 +1,4 @@
-# In House Mixes
+# What's In House
 
 A pantry-matching app for food and drink. Add what you have and see what you
 can make, what you're closest to making, and what one ingredient would unlock
