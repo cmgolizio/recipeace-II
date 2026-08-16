@@ -70,7 +70,7 @@ export function EmptyState({
     <div className="rounded-xl border border-dashed border-border px-6 py-10 text-center">
       <span
         aria-hidden
-        className="mx-auto flex size-12 items-center justify-center rounded-full bg-accent/10 text-accent"
+        className="mx-auto flex size-12 items-center justify-center rounded-full bg-accent-tint text-accent-ink"
       >
         {ICONS[icon]}
       </span>

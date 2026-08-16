@@ -1,94 +1,233 @@
 @import "tailwindcss";
 
 /*
- * Design tokens. Brand accent is indigo; neutrals are warm stone.
- * Light lives on :root; dark applies via the system preference AND via a
- * `.dark` class on <html> (the explicit override the theme toggle sets).
- * `.light`/`.dark` come after the media query so an explicit choice wins.
+ * The palette (docs/ux-plan.md D1). Five accents, fixed, no additions. These
+ * are mode-independent: the same five hues in light and dark. What moves
+ * between modes is the *ink* derived from them, below.
+ *
+ * --accent-foreground lives here for the same reason: D2 fixes it at #05081a
+ * in both modes. Blue is why. Against #0b1026 blue measures 4.49:1 and misses
+ * the threshold by a hair; #05081a puts it at 4.75:1. Blue is the binding
+ * constraint everywhere in this palette — check it first, always.
+ */
+:root {
+  --p-blue: #3772ff;
+  --p-magenta: #f038ff;
+  --p-pink: #ef709d;
+  --p-lime: #e2ef70;
+  --p-cyan: #70e4ef;
+  --accent-foreground: #05081a;
+}
+
+/*
+ * Measured contrast (WCAG 2.1), read out of this file in Chromium and
+ * required by ux-plan.md P1. Fifteen ratios, all ≥ 4.5:1.
+ *
+ * --accent-ink vs its mode's --background:
+ *   light  blue     85%  rgb(48,98,219)     5.39:1
+ *   light  magenta  72%  rgb(170,50,188)    5.40:1
+ *   light  pink     68%  rgb(159,81,117)    5.37:1
+ *   light  lime     40%  rgb(85,97,75)      6.57:1
+ *   light  cyan     45%  rgb(53,102,122)    6.30:1
+ *   dark   blue     88%  rgb(77,132,255)    5.43:1
+ *   dark   magenta  raw  rgb(240,56,255)    6.01:1
+ *   dark   pink     raw  rgb(239,112,157)   6.70:1
+ *   dark   lime     raw  rgb(226,239,112)  15.06:1
+ *   dark   cyan     raw  rgb(112,228,239)  12.57:1
+ *
+ * Accent fills vs --accent-foreground #05081a:
+ *   blue   4.75:1   magenta  6.36:1   pink  7.08:1
+ *   lime  15.92:1   cyan    13.29:1
+ *
+ * D2's starting percentages all cleared 4.5:1 on measurement; none were
+ * adjusted. Changing any --p-* value invalidates this block — re-measure.
+ *
+ * The status colours are picked to clear 4.5:1 both on --background and on
+ * their own -tint wash, which is the stricter of the two (a tint block with
+ * the status colour as its text):
+ *   light  ok #00793d 5.52 / 4.51   warn #a84d00 5.64 / 4.60   miss #c2152f 6.10 / 4.78
+ *   dark   ok #00ce6f 9.01 / 6.64   warn #f29200 7.96 / 6.08   miss #ff6b6f 6.79 / 5.35
+ */
+
+/*
+ * Neutrals and mode-dependent tokens (D1). Light lives on :root; dark applies
+ * via the system preference AND via a `.dark` class on <html> (the explicit
+ * override the theme toggle sets). `.light`/`.dark` come after the media query
+ * so an explicit choice wins.
+ *
+ * Light --background and --surface are both pure white on purpose: cards are
+ * delimited by a neutral hairline and their accent bar, never by a fill
+ * difference. Dark mode is this palette's home; light mode is engineered
+ * around it.
  */
 :root {
   color-scheme: light dark;
-  --background: #fafaf9;
+  --background: #ffffff;
   --surface: #ffffff;
-  --foreground: #1c1917;
-  --muted: #78716c;
-  --border: #e7e5e4;
-  --accent: #4339fb;
-  --accent-foreground: #ffffff;
-  --accent-bar: #4339fb;
-  --accent-bar-foreground: #ffffff;
-  --accent-kitchen: #a83b0c;
-  --accent-kitchen-foreground: #ffffff;
+  --foreground: #0b1026;
+  --muted: #5b6480;
+  --border: #e4e7f0;
+  --accent: var(--p-blue);
+  --accent-ink: color-mix(in oklab, var(--p-blue) 85%, #0b1026);
+  --tint-strength: 14%;
+  --ok: #00793d;
+  --warn: #a84d00;
+  --miss: #c2152f;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0c0a09;
-    --surface: #171412;
-    --foreground: #fafaf9;
-    --muted: #a8a29e;
-    --border: #2a2522;
-    --accent: #736bfb;
-    --accent-foreground: #1c1917;
-    --accent-bar: #736bfb;
-    --accent-bar-foreground: #0c0a09;
-    --accent-kitchen: #d97b3f;
-    --accent-kitchen-foreground: #0c0a09;
+    color-scheme: dark;
+    --background: #0b1026;
+    --surface: #141a38;
+    --foreground: #f2f4fb;
+    --muted: #98a1c0;
+    --border: #262e52;
+    --accent: var(--p-blue);
+    --accent-ink: color-mix(in oklab, var(--p-blue) 88%, #f2f4fb);
+    --tint-strength: 18%;
+    --ok: #00ce6f;
+    --warn: #f29200;
+    --miss: #ff6b6f;
   }
 }
 
 .dark {
   color-scheme: dark;
-  --background: #0c0a09;
-  --surface: #171412;
-  --foreground: #fafaf9;
-  --muted: #a8a29e;
-  --border: #2a2522;
-  --accent: #736bfb;
-  --accent-foreground: #1c1917;
-  --accent-bar: #736bfb;
-  --accent-bar-foreground: #0c0a09;
-  --accent-kitchen: #d97b3f;
-  --accent-kitchen-foreground: #0c0a09;
+  --background: #0b1026;
+  --surface: #141a38;
+  --foreground: #f2f4fb;
+  --muted: #98a1c0;
+  --border: #262e52;
+  --accent: var(--p-blue);
+  --accent-ink: color-mix(in oklab, var(--p-blue) 88%, #f2f4fb);
+  --tint-strength: 18%;
+  --ok: #00ce6f;
+  --warn: #f29200;
+  --miss: #ff6b6f;
 }
 
 .light {
   color-scheme: light;
-  --background: #fafaf9;
+  --background: #ffffff;
   --surface: #ffffff;
-  --foreground: #1c1917;
-  --muted: #78716c;
-  --border: #e7e5e4;
-  --accent: #4339fb;
-  --accent-foreground: #ffffff;
-  --accent-bar: #4339fb;
-  --accent-bar-foreground: #ffffff;
-  --accent-kitchen: #a83b0c;
-  --accent-kitchen-foreground: #ffffff;
+  --foreground: #0b1026;
+  --muted: #5b6480;
+  --border: #e4e7f0;
+  --accent: var(--p-blue);
+  --accent-ink: color-mix(in oklab, var(--p-blue) 85%, #0b1026);
+  --tint-strength: 14%;
+  --ok: #00793d;
+  --warn: #a84d00;
+  --miss: #c2152f;
 }
 
 /*
- * One accent per domain (restructure-plan.md D6). `@theme inline` below maps
- * --color-accent to --accent, so rebinding --accent on a wrapper repaints every
- * bg-accent / text-accent / border-accent inside that subtree and no component
- * needs to know which side it is on. Colour is orientation only — the heading,
- * layout and copy carry the identity (D10).
+ * --accent-ink (D2): what to use when an accent must be *text* or a *thin
+ * line*. Raw accents are fills only — lime and cyan measure 1.25:1 and 1.50:1
+ * on white, which is not a style choice but a defect. Each value is a mix
+ * toward the mode's opposite pole, tuned per colour until it clears 4.5:1
+ * against --background. The ratios are in the block above.
  *
- * The Bar keeps the brand indigo; the Kitchen takes a warm terracotta. Both
- * ink tokens are the darkest neutral in dark mode rather than the global
- * --accent-foreground (#1c1917), which clears 4.5:1 against these accents by
- * too small a margin to rely on.
+ * Four blocks, mirroring the neutrals, for the same reason: a system-dark
+ * reader with no theme cookie must not get the light-mode ink. Light lime ink
+ * on midnight measures ~2.7:1.
+ *
+ * The dark values reference --p-* rather than --accent so they resolve
+ * correctly regardless of whether anything has rebound --accent for this
+ * subtree; the two are the same colour once a wrapper class deals one.
  */
-.domain-bar {
-  --accent: var(--accent-bar);
-  --accent-foreground: var(--accent-bar-foreground);
+.accent-blue {
+  --accent-ink: color-mix(in oklab, var(--p-blue) 85%, #0b1026);
 }
 
-.domain-kitchen {
-  --accent: var(--accent-kitchen);
-  --accent-foreground: var(--accent-kitchen-foreground);
+.accent-magenta {
+  --accent-ink: color-mix(in oklab, var(--p-magenta) 72%, #0b1026);
 }
 
+.accent-pink {
+  --accent-ink: color-mix(in oklab, var(--p-pink) 68%, #0b1026);
+}
+
+.accent-lime {
+  --accent-ink: color-mix(in oklab, var(--p-lime) 40%, #0b1026);
+}
+
+.accent-cyan {
+  --accent-ink: color-mix(in oklab, var(--p-cyan) 45%, #0b1026);
+}
+
+@media (prefers-color-scheme: dark) {
+  .accent-blue {
+    --accent-ink: color-mix(in oklab, var(--p-blue) 88%, #f2f4fb);
+  }
+
+  .accent-magenta {
+    --accent-ink: var(--p-magenta);
+  }
+
+  .accent-pink {
+    --accent-ink: var(--p-pink);
+  }
+
+  .accent-lime {
+    --accent-ink: var(--p-lime);
+  }
+
+  .accent-cyan {
+    --accent-ink: var(--p-cyan);
+  }
+}
+
+.dark .accent-blue {
+  --accent-ink: color-mix(in oklab, var(--p-blue) 88%, #f2f4fb);
+}
+
+.dark .accent-magenta {
+  --accent-ink: var(--p-magenta);
+}
+
+.dark .accent-pink {
+  --accent-ink: var(--p-pink);
+}
+
+.dark .accent-lime {
+  --accent-ink: var(--p-lime);
+}
+
+.dark .accent-cyan {
+  --accent-ink: var(--p-cyan);
+}
+
+.light .accent-blue {
+  --accent-ink: color-mix(in oklab, var(--p-blue) 85%, #0b1026);
+}
+
+.light .accent-magenta {
+  --accent-ink: color-mix(in oklab, var(--p-magenta) 72%, #0b1026);
+}
+
+.light .accent-pink {
+  --accent-ink: color-mix(in oklab, var(--p-pink) 68%, #0b1026);
+}
+
+.light .accent-lime {
+  --accent-ink: color-mix(in oklab, var(--p-lime) 40%, #0b1026);
+}
+
+.light .accent-cyan {
+  --accent-ink: color-mix(in oklab, var(--p-cyan) 45%, #0b1026);
+}
+
+/*
+ * The -tint utilities carry their color-mix here rather than in a custom
+ * property, and that is load-bearing. A custom property resolves its var()
+ * references where it is *declared*: `--accent-tint: color-mix(…var(--accent)…)`
+ * on :root would bake in :root's accent, and a subtree that rebinds --accent
+ * would inherit the already-resolved blue. `@theme inline` emits the mix into
+ * the utility itself, so it resolves against the element that uses it.
+ * --tint-strength is a plain per-mode value, so it inherits normally.
+ */
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);
@@ -97,6 +236,20 @@
   --color-border: var(--border);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-tint: color-mix(in srgb,
+      var(--accent) var(--tint-strength),
+      transparent);
+  --color-ok: var(--ok);
+  --color-ok-tint: color-mix(in srgb, var(--ok) var(--tint-strength), transparent);
+  --color-warn: var(--warn);
+  --color-warn-tint: color-mix(in srgb,
+      var(--warn) var(--tint-strength),
+      transparent);
+  --color-miss: var(--miss);
+  --color-miss-tint: color-mix(in srgb,
+      var(--miss) var(--tint-strength),
+      transparent);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

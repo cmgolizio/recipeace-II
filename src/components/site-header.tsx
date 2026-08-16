@@ -36,7 +36,7 @@ function NavLink({
       aria-current={active ? "page" : undefined}
       className={`${
         active
-          ? "text-foreground underline decoration-accent decoration-2 underline-offset-4"
+          ? "text-foreground underline decoration-accent-ink decoration-2 underline-offset-4"
           : "text-muted hover:text-foreground"
       } ${className}`}
     >
@@ -111,7 +111,7 @@ export function SiteHeader() {
         >
           <svg
             viewBox="0 0 512 512"
-            className="h-5 w-5 text-accent"
+            className="h-5 w-5 text-accent-ink"
             fill="none"
             stroke="currentColor"
             strokeWidth={36}

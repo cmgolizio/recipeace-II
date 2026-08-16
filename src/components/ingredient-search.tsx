@@ -187,7 +187,7 @@ export function IngredientSearch({ domain }: { domain?: RecipeDomain }) {
         <span
           className={
             inPantry
-              ? "shrink-0 text-sm font-medium text-green-700 dark:text-green-400"
+              ? "shrink-0 text-sm font-medium text-ok"
               : "shrink-0 text-sm font-medium text-muted"
           }
         >

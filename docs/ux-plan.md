@@ -51,6 +51,9 @@ Root causes, not symptoms:
    model breaks in roughly ten weeks.
 7. **`NEXT_PUBLIC_SITE_URL` in production is still `inhousemixes.vercel.app`.**
    Sitemap, robots, canonicals and OG images all point at the dead domain.
+   Root cause is not the value but the location: a canonical origin held in a
+   deploy dashboard has no reviewer and drifts silently. **Closed in P1** by
+   moving it into the repo as a constant.
 
 ## Dependency order
 
@@ -127,6 +130,15 @@ this palette's home; light mode has to be engineered around it.** Therefore:
   line_. It is a mix toward the mode's opposite pole, tuned per colour until it
   clears 4.5:1 against `--background`:
 
+Four blocks, not two. The snippet below shows light and `.dark`; the shipped
+rules also carry `@media (prefers-color-scheme: dark)` and `.light`, mirroring
+the neutrals. Without them a system-dark reader with no theme cookie gets the
+light-mode ink, and light lime ink on midnight measures ~2.7:1.
+
+The dark values reference `--p-*` rather than `--accent`: nothing rebinds
+`--accent` until P2, so `var(--accent)` would resolve to blue for all four.
+The two are the same colour once a wrapper class deals one.
+
 ```css
 /* light — mix toward near-black; percentages are the accent's share */
 .accent-blue {
@@ -149,20 +161,39 @@ this palette's home; light mode has to be engineered around it.** Therefore:
 .dark .accent-blue {
   --accent-ink: color-mix(in oklab, var(--p-blue) 88%, #f2f4fb);
 }
-.dark .accent-magenta,
-.dark .accent-pink,
-.dark .accent-lime,
+.dark .accent-magenta {
+  --accent-ink: var(--p-magenta);
+}
+.dark .accent-pink {
+  --accent-ink: var(--p-pink);
+}
+.dark .accent-lime {
+  --accent-ink: var(--p-lime);
+}
 .dark .accent-cyan {
-  --accent-ink: var(--accent);
+  --accent-ink: var(--p-cyan);
 }
 ```
 
-**Those percentages are starting values, not measurements.** P1's acceptance
-criteria require measuring all ten and adjusting per colour. Adjust only the
-colour that fails; never move the other four to match.
+**Those percentages were starting values, not measurements.** P1 measured all
+ten in Chromium against the built stylesheet. **All ten cleared 4.5:1 as
+written; none were adjusted.** The measured ratios are recorded in the comment
+block at the top of `globals.css`. Adjust only a colour that fails; never move
+the other four to match.
 
 - **`--accent-tint`** is the large-area wash sitting behind neutral text:
   `color-mix(in srgb, var(--accent) 14%, transparent)` light, `18%` dark.
+  It cannot be a custom property. A custom property resolves its `var()`
+  references where it is _declared_, so `--accent-tint` on `:root` bakes in
+  `:root`'s accent and a subtree that rebinds `--accent` inherits the resolved
+  blue. It lives in `@theme inline` instead, where the mix is emitted into the
+  utility and resolves against the element using it. The percentage is a
+  separate per-mode variable (`--tint-strength`), which inherits normally.
+  **"Behind neutral text" is literal.** `--accent-ink` on `--accent-tint` is
+  not a sanctioned pair: blue ink on blue tint measures 4.44:1 over
+  `--background` and 3.97:1 over `--surface` in dark mode. Text on a tint is
+  neutral; only non-text (icons, the card's fallback initial) may take the
+  ink, against WCAG 1.4.11's 3:1.
 - An accent bar that is a card's _only_ visible boundary would need 3:1. Keep the
   neutral `--border` on every card so the accent bar stays decorative and
   redundant, and the question never arises.
@@ -260,12 +291,20 @@ Everything inherits this. Nothing else in the plan can start.
    them as `--ok`, `--warn`, `--miss` plus `-tint` variants, so they stop being
    inline Tailwind palette classes scattered across four components.
 5. Audit every existing `text-accent` and `border-accent` usage and move it to
-   `text-accent-ink` / `border-accent-ink`. Known sites: the header logo SVG,
-   `EmptyState`'s glyph, `AlmostThereNudge`'s border and background,
-   `RecipeCard`'s fallback-tile initial, `NavLink`'s active underline, and every
-   card's `hover:border-accent`.
-6. Unrelated one-liner, do it here: set `NEXT_PUBLIC_SITE_URL` to
-   `https://whatsinhouse.vercel.app` in the Vercel production environment.
+   `text-accent-ink` / `border-accent-ink`, and every `bg-accent/10` wash to
+   `bg-accent-tint`. The list is not exhaustive — grep for it. Sites: the
+   header logo SVG, `NavLink`'s active underline, `EmptyState`'s glyph,
+   `AlmostThereNudge`'s border and background, `RecipeCard`'s fallback-tile
+   initial, `LastDomain`'s underline, `RecipesFilter`'s checked chip,
+   `/ingredients/[slug]`'s related chips, and every card's
+   `hover:border-accent`. `bg-accent` + `text-accent-foreground` fills are
+   already correct and stay as they are.
+6. Unrelated one-liner, do it here: retire `NEXT_PUBLIC_SITE_URL` and make the
+   canonical origin a constant in `src/lib/site-url.ts`, branching on
+   `NODE_ENV` so `next dev` still serves from localhost. Setting the env var in
+   the dashboard would fix the symptom; the finding is that a canonical origin
+   with no reviewer drifts. Preview deploys resolving to the production origin
+   is intended — a preview should canonicalise to production.
 
 **Acceptance criteria**
 
@@ -275,7 +314,9 @@ Everything inherits this. Nothing else in the plan can start.
   their mode's `--background`. All five accents clear **4.5:1** against
   `--accent-foreground`. Record the fifteen measured ratios as a comment block
   in `globals.css`.
-- No accent colour appears as a `1px` border or as body text anywhere in `src/`.
+- No **raw** accent (`--accent` / `--p-*`) appears as a `1px` border or as text
+  anywhere in `src/`. `--accent-ink` is the sanctioned form for both, per D2;
+  raw accents are fills only.
 - Toggling light/dark produces no flash — `themeInitScript` still runs before
   first paint.
 - `npm run build` clean, `npm run test` green, `npm run lint` clean.

@@ -73,7 +73,7 @@ export function AlmostThereNudge({ domain }: { domain: RecipeDomain }) {
   return (
     <Link
       href={`${DOMAIN_ROUTES[domain].matches}?missing=1`}
-      className="block rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm hover:border-accent"
+      className="block rounded-xl border border-accent-ink/40 bg-accent-tint px-4 py-3 text-sm hover:border-accent-ink"
     >
       You’re {copy.lead} <span className="font-semibold">{current.count}</span>{" "}
       {current.count === 1 ? DOMAIN_NOUN[domain] : copy.plural} →
