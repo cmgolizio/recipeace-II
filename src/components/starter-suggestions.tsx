@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { addToPantry, usePantry, usePantryReady } from "../lib/pantry/store";
 import type { RecipeDomain } from "../lib/recipes/domain";
 import { createClient } from "../lib/supabase/client";
-import { accentClass, dealAccents } from "../lib/theme/accents";
+import { accentClass, accentFor, dealAccents } from "../lib/theme/accents";
 import type { Database } from "../types/database";
 
 import { toast } from "./toast/store";
@@ -70,8 +70,8 @@ export function StarterSuggestions({ domain }: { domain?: RecipeDomain }) {
   const accents = dealAccents(starters.map((s) => String(s.id)));
 
   return (
-    <section>
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+    <section className={accentClass(accentFor("popular starting points"))}>
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-accent-ink">
         Popular starting points
       </h2>
       <ul className="mt-3 flex flex-wrap gap-2">
@@ -87,7 +87,7 @@ export function StarterSuggestions({ domain }: { domain?: RecipeDomain }) {
               // label stays neutral, since a tint sits behind neutral text
               // (D2). Hover moves to the border rather than a neutral wash,
               // which would have painted over the colour it just gained.
-              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-accent-tint px-3 py-1 text-sm hover:border-accent-ink"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-accent-tint px-3 py-1 text-sm hover:border-accent-line"
             >
               <span aria-hidden="true" className="opacity-50">
                 +

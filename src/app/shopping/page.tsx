@@ -9,7 +9,7 @@ import {
 } from "../../components/empty-state";
 import { toast } from "../../components/toast/store";
 import { DOMAIN_SURFACE } from "../../lib/recipes/domain";
-import { accentClass, dealAccents } from "../../lib/theme/accents";
+import { accentClass, accentFor, dealAccents } from "../../lib/theme/accents";
 import {
   clearShopping,
   removeFromShopping,
@@ -63,7 +63,7 @@ function ItemRow({ item }: { item: ShoppingItem }) {
             {" "}
             <Link
               href={`/recipes/${item.from.slug}`}
-              className="text-sm text-muted underline decoration-border underline-offset-2 hover:text-foreground"
+              className="text-sm text-muted underline decoration-accent-line underline-offset-2 hover:text-foreground"
             >
               for {item.from.name}
             </Link>
@@ -138,7 +138,7 @@ export default function ShoppingPage() {
                   onClick={() => setGrouping(value)}
                   className={
                     grouping === value
-                      ? "rounded-md bg-black/6 px-3 py-1 font-medium dark:bg-white/10"
+                      ? "rounded-md bg-accent-tint px-3 py-1 font-medium text-foreground"
                       : "rounded-md px-3 py-1 text-muted hover:text-foreground"
                   }
                 >
@@ -153,8 +153,11 @@ export default function ShoppingPage() {
               {groups.map((group) => {
                 const accents = dealAccents(group.items.map((it) => it.name));
                 return (
-                <section key={group.title}>
-                  <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+                <section
+                  key={group.title}
+                  className={accentClass(accentFor(group.title))}
+                >
+                  <h2 className="text-sm font-semibold uppercase tracking-wide text-accent-ink">
                     {group.title}
                     {group.hint && (
                       <span className="ml-2 font-normal normal-case opacity-70">
@@ -195,7 +198,7 @@ export default function ShoppingPage() {
               clearShopping();
               toast("Cleared your shopping list");
             }}
-            className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-black/4 dark:hover:bg-white/6"
+            className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:border-accent-line hover:bg-accent-tint"
           >
             Clear list
           </button>

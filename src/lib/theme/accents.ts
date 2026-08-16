@@ -1,9 +1,30 @@
-export const ACCENTS = ["blue", "magenta", "pink", "lime", "cyan"] as const;
+/**
+ * Ten accents: D1's original five, plus five added to halve how often a colour
+ * repeats down a long list. Order is the bag's initial order and nothing else —
+ * the dealer shuffles it before every round, and D3 forbids anything in the app
+ * being identifiable by its accent.
+ */
+export const ACCENTS = [
+  "blue",
+  "magenta",
+  "pink",
+  "lime",
+  "cyan",
+  "violet",
+  "azure",
+  "mint",
+  "green",
+  "gold",
+] as const;
 export type Accent = (typeof ACCENTS)[number];
 
 /**
  * How many previously dealt colours a new pick must differ from. 3 covers 1-,
  * 2- and 3-column grids, where a cell's neighbours are i±1, i±2 and i±3.
+ *
+ * The guarantee holds for any palette of more than LOOKBACK colours: a bag is
+ * only refilled at full size, so the picks that follow a refill always have at
+ * least ACCENTS.length - LOOKBACK candidates to choose from.
  */
 const LOOKBACK = 3;
 
@@ -54,7 +75,7 @@ export function dealAccents(keys: readonly string[]): Accent[] {
   for (let i = 0; i < keys.length; i++) {
     if (bag.length === 0) bag = shuffled(seed + round++);
     const recent = out.slice(-LOOKBACK);
-    // With five colours and LOOKBACK 3 this never returns -1: a bag is only
+    // With ten colours and LOOKBACK 3 this never returns -1: a bag is only
     // refilled at full size, and remaining bag entries are by definition not
     // yet dealt from this bag. The fallback exists so a future palette or
     // lookback change degrades instead of throwing.

@@ -47,7 +47,7 @@ export function RecipeCard({
   return (
     <Link
       href={`/recipes/${recipe.slug}`}
-      className="relative block h-full overflow-hidden rounded-xl border border-border bg-surface transition hover:-translate-y-0.5 hover:border-accent-ink"
+      className="relative block h-full overflow-hidden rounded-xl border border-border bg-surface transition hover:-translate-y-0.5 hover:border-accent-line"
     >
       {/* The card's accent affordance: a 4px fill on the leading edge, dealt by
           the wrapper element's .accent-* class. Decorative and redundant — the

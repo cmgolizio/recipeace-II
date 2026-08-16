@@ -188,7 +188,7 @@ export function RecipesFilter({
               // label stays neutral because --accent-tint is defined as a wash
               // sitting behind neutral text (ux-plan.md D2). Blue ink on blue
               // tint measures 4.44:1 in dark mode — under the threshold.
-              className="cursor-pointer rounded-full border border-border px-3 py-1 hover:bg-black/4 has-checked:border-accent-ink has-checked:bg-accent-tint dark:hover:bg-white/6"
+              className="cursor-pointer rounded-full border border-border px-3 py-1 hover:bg-black/4 has-checked:border-accent-line has-checked:bg-accent-tint dark:hover:bg-white/6"
             >
               <input
                 type="checkbox"

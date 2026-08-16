@@ -22,7 +22,7 @@ export function Pagination({
       className="flex items-center justify-between text-sm"
     >
       {page > 1 ? (
-        <Link href={href(page - 1)} className="text-muted hover:text-foreground">
+        <Link href={href(page - 1)} className="text-accent-ink hover:text-foreground">
           ← Previous
         </Link>
       ) : (
@@ -34,7 +34,7 @@ export function Pagination({
         Page {page} of {totalPages}
       </span>
       {page < totalPages ? (
-        <Link href={href(page + 1)} className="text-muted hover:text-foreground">
+        <Link href={href(page + 1)} className="text-accent-ink hover:text-foreground">
           Next →
         </Link>
       ) : (

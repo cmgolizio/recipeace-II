@@ -14,7 +14,7 @@ import {
   type ShoppingSource,
 } from "../lib/shopping/store";
 import { createClient } from "../lib/supabase/client";
-import { accentClass, dealAccents } from "../lib/theme/accents";
+import { accentClass, accentFor, dealAccents } from "../lib/theme/accents";
 import { formatQuantity } from "../lib/units/format";
 import { useUnit } from "../lib/units/store";
 import type { Database } from "../types/database";
@@ -143,7 +143,7 @@ function AddMissingButton({
             : `Added ${remaining.length} ingredients to your shopping list`,
         );
       }}
-      className="mt-3 rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-black/4 dark:hover:bg-white/6"
+      className="mt-3 rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:border-accent-line hover:bg-accent-tint"
     >
       + Add missing to shopping list
     </button>
@@ -325,7 +325,9 @@ function MatchesContent({ copy }: { copy: MatchesCopy }) {
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div
+        className={`flex flex-wrap items-center gap-3 ${accentClass(accentFor(copy.path))}`}
+      >
         <div
           role="group"
           aria-label="Filter by how many ingredients are missing"
@@ -339,7 +341,7 @@ function MatchesContent({ copy }: { copy: MatchesCopy }) {
               onClick={() => selectFilter(f.value)}
               className={
                 maxMissing === f.value
-                  ? "rounded-md bg-black/6 px-3 py-1 font-medium dark:bg-white/10"
+                  ? "rounded-md bg-accent-tint px-3 py-1 font-medium text-foreground"
                   : "rounded-md px-3 py-1 text-muted hover:text-foreground"
               }
             >
@@ -382,7 +384,12 @@ function MatchesContent({ copy }: { copy: MatchesCopy }) {
 
       {sections.map((s) =>
         s.items.length === 0 ? null : (
-          <section key={s.missing} className="space-y-3">
+          // The section's own accent colours its heading; each card below
+          // rebinds --accent for itself, so the two never have to agree.
+          <section
+            key={s.missing}
+            className={`space-y-3 ${accentClass(accentFor(s.title))}`}
+          >
             {s.missing === 1 && suggestion && (
               <div className="rounded-xl bg-ok-tint px-4 py-3 text-sm text-ok">
                 Add <span className="font-semibold">{suggestion.name}</span> to
@@ -390,7 +397,7 @@ function MatchesContent({ copy }: { copy: MatchesCopy }) {
                 {suggestion.unlocks === 1 ? copy.unit.singular : copy.unit.plural}.
               </div>
             )}
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-accent-ink">
               {s.title} · {s.items.length}
             </h2>
             <ul className="space-y-3">

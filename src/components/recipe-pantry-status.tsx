@@ -10,6 +10,7 @@ import {
   type ShoppingSource,
 } from "../lib/shopping/store";
 import { createClient } from "../lib/supabase/client";
+import { accentClass, accentFor } from "../lib/theme/accents";
 import { formatQuantity, type Unit } from "../lib/units/format";
 import { useUnit } from "../lib/units/store";
 import type { Database } from "../types/database";
@@ -308,9 +309,9 @@ export function RecipePantryStatus({
         </p>
       )}
 
-      <section>
+      <section className={accentClass(accentFor("Ingredients"))}>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-accent-ink">
             Ingredients
           </h2>
           <div className="flex items-center gap-2">
@@ -321,7 +322,7 @@ export function RecipePantryStatus({
         {bySection(poured).map((group) => (
           <div key={group.section ?? ""}>
             {group.section && (
-              <h3 className="mt-3 text-xs font-semibold uppercase tracking-wide text-muted">
+              <h3 className="mt-3 text-xs font-semibold uppercase tracking-wide text-accent-ink">
                 {group.section}
               </h3>
             )}
@@ -350,8 +351,8 @@ export function RecipePantryStatus({
       </section>
 
       {garnishes.length > 0 && (
-        <section>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+        <section className={accentClass(accentFor("Garnish"))}>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-accent-ink">
             Garnish
           </h2>
           <ul className="mt-2 divide-y divide-black/5 dark:divide-white/10">

@@ -19,7 +19,12 @@ import {
   type RecipeDomain,
 } from "../lib/recipes/domain";
 import { createClient } from "../lib/supabase/client";
-import { accentClass, dealAccents, type Accent } from "../lib/theme/accents";
+import {
+  accentClass,
+  accentFor,
+  dealAccents,
+  type Accent,
+} from "../lib/theme/accents";
 import type { Tables } from "../types/database";
 
 import { EmptyState } from "./empty-state";
@@ -115,9 +120,11 @@ export function PantryPanel({ domain }: { domain?: RecipeDomain }) {
   }
 
   return (
-    <section>
+    // The shelf's own accent, which colours its heading and its match CTA. The
+    // chips inside each rebind --accent for themselves.
+    <section className={accentClass(accentFor(shelf))}>
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-accent-ink">
           {ready ? `${shelf} (${shelfCount})` : shelf}
         </h2>
         {ready && pantry.length > 0 && (
@@ -192,7 +199,7 @@ export function PantryPanel({ domain }: { domain?: RecipeDomain }) {
         // Collapsed, never hidden: the other side stays visible so the pantry
         // reads as one store seen from here, not as two.
         <details className="mt-4 rounded-lg border border-border bg-surface">
-          <summary className="cursor-pointer select-none px-4 py-2.5 text-sm text-muted">
+          <summary className="cursor-pointer select-none px-4 py-2.5 text-sm text-muted hover:text-accent-ink">
             Also in your pantry · {other.length}{" "}
             {DOMAIN_SURFACE[otherDomain(domain)].toLowerCase()} item
             {other.length === 1 ? "" : "s"}

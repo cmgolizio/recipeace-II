@@ -152,7 +152,7 @@ export default function FavoritesPage() {
               onClick={() => setDomain(tab.value)}
               className={
                 domain === tab.value
-                  ? "rounded-md bg-black/6 px-3 py-1 font-medium dark:bg-white/10"
+                  ? "rounded-md bg-accent-tint px-3 py-1 font-medium text-foreground"
                   : "rounded-md px-3 py-1 text-muted hover:text-foreground"
               }
             >

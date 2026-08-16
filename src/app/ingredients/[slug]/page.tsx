@@ -7,6 +7,11 @@ import { RecipeCard } from "../../../components/recipe-card";
 import { matchPills, type RecipeDomain } from "../../../lib/recipes/domain";
 import { SITE_NAME, pageTitle } from "../../../lib/site";
 import { createStaticClient } from "../../../lib/supabase/static";
+import {
+  accentClass,
+  accentFor,
+  dealAccents,
+} from "../../../lib/theme/accents";
 import type { Database } from "../../../types/database";
 
 type Detail =
@@ -78,7 +83,7 @@ function IngredientChip({ name, slug }: { name: string; slug: string }) {
   return (
     <Link
       href={`/ingredients/${slug}`}
-      className="inline-flex items-center rounded-full border border-border px-3 py-1 text-sm hover:border-accent-ink"
+      className="inline-flex items-center rounded-full border border-border px-3 py-1 text-sm hover:border-accent-line"
     >
       {name}
     </Link>
@@ -93,6 +98,7 @@ export default async function IngredientPage({ params }: Props) {
   const recipes = ingredient.recipes as unknown as UsedIn[];
   const substitutes = ingredient.substitutes as unknown as RelatedIngredient[];
   const derives = ingredient.derives as unknown as RelatedIngredient[];
+  const recipeAccents = dealAccents(recipes.map((r) => r.slug));
 
   return (
     <article className="space-y-8">
@@ -135,13 +141,13 @@ export default async function IngredientPage({ params }: Props) {
       </header>
 
       {recipes.length > 0 && (
-        <section>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+        <section className={accentClass(accentFor("Used in"))}>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-accent-ink">
             Used in {recipes.length} recipe{recipes.length > 1 ? "s" : ""}
           </h2>
           <ul className="mt-3 grid gap-3 sm:grid-cols-2">
-            {recipes.map((recipe) => (
-              <li key={recipe.id}>
+            {recipes.map((recipe, i) => (
+              <li key={recipe.id} className={accentClass(recipeAccents[i])}>
                 <RecipeCard
                   recipe={{
                     ...recipe,
@@ -156,8 +162,8 @@ export default async function IngredientPage({ params }: Props) {
       )}
 
       {substitutes.length > 0 && (
-        <section>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+        <section className={accentClass(accentFor("Use instead"))}>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-accent-ink">
             Use instead
           </h2>
           <ul className="mt-3 space-y-2">
@@ -175,8 +181,8 @@ export default async function IngredientPage({ params }: Props) {
       )}
 
       {derives.length > 0 && (
-        <section>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+        <section className={accentClass(accentFor("Owning this also gives you"))}>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-accent-ink">
             Owning this also gives you
           </h2>
           <ul className="mt-3 flex flex-wrap gap-2">

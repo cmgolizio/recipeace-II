@@ -261,8 +261,8 @@ export default async function RecipeDetailPage({ params }: Props) {
       {/* The island renders the garnish ingredients when the recipe has any;
           this free-text note is the fallback for recipes that don't. */}
       {cocktail?.garnish && !ingredients.some((ri) => ri.is_garnish) && (
-        <section>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+        <section className={accentClass(accentFor("Garnish"))}>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-accent-ink">
             Garnish
           </h2>
           <p className="mt-1 opacity-90">{cocktail.garnish}</p>
@@ -270,11 +270,11 @@ export default async function RecipeDetailPage({ params }: Props) {
       )}
 
       {recipe.instructions.length > 0 && (
-        <section>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+        <section className={accentClass(accentFor("Method"))}>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-accent-ink">
             Method
           </h2>
-          <ol className="mt-2 list-decimal space-y-1 pl-5">
+          <ol className="mt-2 list-decimal space-y-1 pl-5 marker:font-semibold marker:text-accent-ink">
             {recipe.instructions.map((step, idx) => (
               <li key={idx} className="opacity-90">
                 {step}
@@ -305,8 +305,8 @@ export default async function RecipeDetailPage({ params }: Props) {
       )}
 
       {related.length > 0 && (
-        <section>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+        <section className={accentClass(accentFor("More like this"))}>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-accent-ink">
             More like this
           </h2>
           <ul className="mt-3 grid gap-3 sm:grid-cols-2">

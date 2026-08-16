@@ -12,9 +12,17 @@ import {
 } from "../lib/pantry/store";
 import { useShopping } from "../lib/shopping/store";
 import { SITE_NAME } from "../lib/site";
+import { accentClass, accentFor, dealAccents } from "../lib/theme/accents";
 import { DomainSwitcher } from "./domain-switcher";
 import { ThemeToggle } from "./theme-toggle";
 
+/**
+ * Every link carries its dealt accent, so the active one cannot be identified
+ * by hue (D3). Three neutral signals mark it instead — weight, a switch to
+ * --foreground, and the accent underline — none of which depend on seeing
+ * colour, and none of which change the link's box, so navigating never
+ * reflows the nav.
+ */
 function NavLink({
   href,
   exact = false,
@@ -36,8 +44,8 @@ function NavLink({
       aria-current={active ? "page" : undefined}
       className={`${
         active
-          ? "text-foreground underline decoration-accent-ink decoration-2 underline-offset-4"
-          : "text-muted hover:text-foreground"
+          ? "font-semibold text-foreground underline decoration-accent-line decoration-2 underline-offset-4"
+          : "text-accent-ink hover:text-foreground"
       } ${className}`}
     >
       {children}
@@ -58,7 +66,7 @@ function MenuLink({
     <Link
       href={href}
       onClick={onNavigate}
-      className="block rounded-lg px-3 py-2 hover:bg-black/4 dark:hover:bg-white/6"
+      className="block rounded-lg px-3 py-2 hover:bg-accent-tint"
     >
       {children}
     </Link>
@@ -102,6 +110,17 @@ export function SiteHeader() {
     ? `${pantry.length} ingredient${pantry.length === 1 ? "" : "s"} in your pantry`
     : "Loading your pantry";
 
+  // The nav's own list, dealt as one so neighbouring links never repeat. Login
+  // sits past the badge and the theme toggle rather than in this run, so it is
+  // a neighbourless accentFor instead.
+  const navLinks = [
+    { href: "/search", label: "find a recipe" },
+    { href: "/pantry", label: "pantry" },
+    ...(user ? [{ href: "/favorites", label: "favorites" }] : []),
+    ...(shopping.length > 0 ? [{ href: "/shopping", label: "shopping" }] : []),
+  ];
+  const navAccents = dealAccents(navLinks.map((link) => link.href));
+
   return (
     <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur">
       <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3">
@@ -131,22 +150,17 @@ export function SiteHeader() {
         </Link>
         <nav className="flex items-center gap-3 text-sm sm:gap-4">
           <DomainSwitcher />
-          <NavLink href="/search" className="hidden sm:inline">
-            find a recipe
-          </NavLink>
-          <NavLink href="/pantry" className="hidden sm:inline">
-            pantry
-          </NavLink>
-          {user && (
-            <NavLink href="/favorites" className="hidden sm:inline">
-              favorites
-            </NavLink>
-          )}
-          {shopping.length > 0 && (
-            <NavLink href="/shopping" className="hidden sm:inline">
-              shopping
-            </NavLink>
-          )}
+          {navLinks.map((link, i) => (
+            // The wrapper carries the class; NavLink itself gains no prop (D6).
+            // `hidden sm:inline` moves here so the span never opens a gap of
+            // its own in the flex row on small screens.
+            <span
+              key={link.href}
+              className={`hidden sm:inline ${accentClass(navAccents[i])}`}
+            >
+              <NavLink href={link.href}>{link.label}</NavLink>
+            </span>
+          ))}
           <span
             className="rounded-full bg-accent px-2.5 py-0.5 text-xs tabular-nums text-accent-foreground"
             // `title` alone is not an accessible name on a span: a screen
@@ -171,9 +185,11 @@ export function SiteHeader() {
               </button>
             </>
           ) : (
-            <NavLink href="/login" className="hidden sm:inline">
-              login
-            </NavLink>
+            <span
+              className={`hidden sm:inline ${accentClass(accentFor("/login"))}`}
+            >
+              <NavLink href="/login">login</NavLink>
+            </span>
           )}
           <div ref={menuRef} className="relative sm:hidden">
             <button
@@ -202,28 +218,20 @@ export function SiteHeader() {
             </button>
             {menuOpen && (
               <div className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-border bg-surface p-1.5 shadow-lg">
-                <MenuLink href="/search" onNavigate={() => setMenuOpen(false)}>
-                  find a recipe
-                </MenuLink>
-                <MenuLink href="/pantry" onNavigate={() => setMenuOpen(false)}>
-                  pantry
-                </MenuLink>
-                {user ? (
-                  <>
+                {/* The same run of links, so the same deal — the menu is the
+                    small-screen form of the nav, not a second list. */}
+                {navLinks.map((link, i) => (
+                  <div key={link.href} className={accentClass(navAccents[i])}>
                     <MenuLink
-                      href="/favorites"
+                      href={link.href}
                       onNavigate={() => setMenuOpen(false)}
                     >
-                      favorites
+                      {link.label}
                     </MenuLink>
-                    {shopping.length > 0 && (
-                      <MenuLink
-                        href="/shopping"
-                        onNavigate={() => setMenuOpen(false)}
-                      >
-                        shopping
-                      </MenuLink>
-                    )}
+                  </div>
+                ))}
+                {user ? (
+                  <>
                     <div className="truncate px-3 py-2 text-xs text-muted">
                       {user.email}
                     </div>
@@ -236,9 +244,14 @@ export function SiteHeader() {
                     </button>
                   </>
                 ) : (
-                  <MenuLink href="/login" onNavigate={() => setMenuOpen(false)}>
-                    login
-                  </MenuLink>
+                  <div className={accentClass(accentFor("/login"))}>
+                    <MenuLink
+                      href="/login"
+                      onNavigate={() => setMenuOpen(false)}
+                    >
+                      login
+                    </MenuLink>
+                  </div>
                 )}
               </div>
             )}

@@ -35,7 +35,7 @@ export function ContinueInDomain() {
   return (
     <Link
       href={DOMAIN_ROUTES[domain].home}
-      className="inline-block text-sm font-medium underline decoration-accent-ink decoration-2 underline-offset-4 hover:text-accent-ink"
+      className="inline-block text-sm font-medium underline decoration-accent-line decoration-2 underline-offset-4 hover:text-accent-ink"
     >
       {DOMAIN_CONTINUE[domain]}
     </Link>

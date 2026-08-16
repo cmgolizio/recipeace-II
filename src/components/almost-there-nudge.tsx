@@ -75,7 +75,7 @@ export function AlmostThereNudge({ domain }: { domain: RecipeDomain }) {
     <Link
       href={`${DOMAIN_ROUTES[domain].matches}?missing=1`}
       // One strip, no neighbours to avoid: stable per domain (P2 task 4).
-      className={`block rounded-xl border border-accent-ink/40 bg-accent-tint px-4 py-3 text-sm hover:border-accent-ink ${accentClass(accentFor(domain))}`}
+      className={`block rounded-xl border border-accent-line/40 bg-accent-tint px-4 py-3 text-sm hover:border-accent-line ${accentClass(accentFor(domain))}`}
     >
       You’re {copy.lead} <span className="font-semibold">{current.count}</span>{" "}
       {current.count === 1 ? DOMAIN_NOUN[domain] : copy.plural} →

@@ -51,10 +51,23 @@ test("no two entries within 3 positions share a colour", () => {
   }
 });
 
-test("all five colours appear by length 5", () => {
-  for (let n = 5; n <= MAX_LENGTH; n++) {
+test("every colour appears by the time the list is as long as the palette", () => {
+  for (let n = ACCENTS.length; n <= MAX_LENGTH; n++) {
     expect(new Set(dealAccents(keys(n))).size).toBe(ACCENTS.length);
   }
+});
+
+test("the palette is ten distinct names", () => {
+  expect(ACCENTS).toHaveLength(10);
+  expect(new Set(ACCENTS).size).toBe(10);
+  // The original five are unchanged and still lead the bag (D1, amended).
+  expect(ACCENTS.slice(0, 5)).toEqual([
+    "blue",
+    "magenta",
+    "pink",
+    "lime",
+    "cyan",
+  ]);
 });
 
 test("dealing is deterministic — the same keys give the same array", () => {
@@ -91,6 +104,11 @@ test("accentClass names the CSS class that rebinds --accent", () => {
     "accent-pink",
     "accent-lime",
     "accent-cyan",
+    "accent-violet",
+    "accent-azure",
+    "accent-mint",
+    "accent-green",
+    "accent-gold",
   ]);
 });
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { RecipeCard } from "../../components/recipe-card";
+import { accentClass, dealAccents } from "../../lib/theme/accents";
 import {
   RecipesFilter,
   type RecipeFilters,
@@ -133,6 +134,7 @@ export default async function RecipesPage({
   ].sort();
 
   const recipes: Recipe[] = data ?? [];
+  const catalogAccents = dealAccents(recipes.map((r) => r.slug));
   const total = count ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const filtered = !!(
@@ -192,8 +194,8 @@ export default async function RecipesPage({
       )}
 
       <ul className="grid gap-3 sm:grid-cols-2">
-        {recipes.map((r) => (
-          <li key={r.id}>
+        {recipes.map((r, i) => (
+          <li key={r.id} className={accentClass(catalogAccents[i])}>
             <RecipeCard recipe={r} />
           </li>
         ))}

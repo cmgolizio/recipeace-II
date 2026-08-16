@@ -27,7 +27,7 @@ type Counts = { ingredients: number; ready: number };
 type Outcome = { key: string; counts: Record<RecipeDomain, Counts> | null };
 
 const cardClass =
-  "relative block overflow-hidden rounded-xl border border-border bg-surface p-5 transition hover:-translate-y-0.5 hover:border-accent-ink";
+  "relative block overflow-hidden rounded-xl border border-border bg-surface p-5 transition hover:-translate-y-0.5 hover:border-accent-line";
 
 // The same 4px leading fill the recipe card carries, so a dealt accent is
 // visible here rather than only on hover.

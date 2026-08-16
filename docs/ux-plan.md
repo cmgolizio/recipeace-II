@@ -80,15 +80,34 @@ independent, but P4's value on the Kitchen side is thin until it lands.
 
 ### D1. The palette
 
-Five accents, fixed, no additions:
+**Amended during P2, at the owner's instruction: ten accents, not five.** The
+original five are unchanged in both value and name. Five were added because at
+five colours a repeat lands every fifth card, which reads as a pattern rather
+than as decoration.
 
-| Token         | Hex       | Name    |
-| ------------- | --------- | ------- |
-| `--p-blue`    | `#3772FF` | blue    |
-| `--p-magenta` | `#F038FF` | magenta |
-| `--p-pink`    | `#EF709D` | pink    |
-| `--p-lime`    | `#E2EF70` | lime    |
-| `--p-cyan`    | `#70E4EF` | cyan    |
+| Token         | Hex       | Name    | Hue  |                |
+| ------------- | --------- | ------- | ---- | -------------- |
+| `--p-gold`    | `#EFC770` | gold    | 41°  | added in P2    |
+| `--p-lime`    | `#E2EF70` | lime    | 66°  | original       |
+| `--p-green`   | `#A6EF70` | green   | 94°  | added in P2    |
+| `--p-mint`    | `#70EFB6` | mint    | 153° | added in P2    |
+| `--p-cyan`    | `#70E4EF` | cyan    | 185° | original       |
+| `--p-azure`   | `#70B6EF` | azure   | 207° | added in P2    |
+| `--p-blue`    | `#3772FF` | blue    | 222° | original       |
+| `--p-violet`  | `#8B70FF` | violet  | 251° | added in P2    |
+| `--p-magenta` | `#F038FF` | magenta | 295° | original       |
+| `--p-pink`    | `#EF709D` | pink    | 339° | original       |
+
+The additions follow the original five's construction — channel values drawn
+from the same `0x37 / 0x70 / 0xA6 / 0xB6 / 0xC7 / 0xE2 / 0xEF / 0xFF` set, two
+vivid against eight pastel. The one hue gap, 339° round to 41°, is the red arc
+and stays empty on purpose: that is where `--miss` lives, and D3 keeps status
+colours out of the dealt palette. Gold sits nearest `--warn` and mint nearest
+`--ok`; they stay separable because status colours are only ever text or a
+tint, and accents are only ever fills.
+
+Blue is still the binding constraint at 4.75:1 against `--accent-foreground`;
+violet, at 5.55:1, is the closest of the additions. Check blue first, always.
 
 Neutrals:
 
@@ -197,6 +216,17 @@ the other four to match.
 - An accent bar that is a card's _only_ visible boundary would need 3:1. Keep the
   neutral `--border` on every card so the accent bar stays decorative and
   redundant, and the question never arises.
+- **`--accent-line`** — added during P2, at the owner's instruction. Holding a
+  1px rule to the 4.5:1 text threshold darkened it until a lime hover border no
+  longer read as lime at all. A thin decorative rule is not text: WCAG 1.4.11
+  asks 3:1 of non-text, so `--accent-line` is mixed only as far as 3:1 against
+  `--background` requires, and keeps its hue. Five of the ten pass unmixed in
+  light mode and all ten do in dark. Use it for **borders and underlines**;
+  `--accent-ink` remains the only form for **text and icons**. This narrows
+  D2's "text or a thin line" clause to text alone — the rule that raw accents
+  are never text is untouched, and `--accent-line` is never used as a card's
+  only boundary, so the 1.4.11 bar is the right one rather than a floor it has
+  to beat.
 
 ### D3. Accents carry no meaning
 
@@ -316,7 +346,9 @@ Everything inherits this. Nothing else in the plan can start.
   in `globals.css`.
 - No **raw** accent (`--accent` / `--p-*`) appears as a `1px` border or as text
   anywhere in `src/`. `--accent-ink` is the sanctioned form for both, per D2;
-  raw accents are fills only.
+  raw accents are fills only. _(P2 narrowed this: borders and underlines now
+  take `--accent-line`, which is a measured 3:1 mix rather than a raw accent.
+  Text is still `--accent-ink` only.)_
 - Toggling light/dark produces no flash — `themeInitScript` still runs before
   first paint.
 - `npm run build` clean, `npm run test` green, `npm run lint` clean.
@@ -604,6 +636,10 @@ first.
 
 ## Appendix A — `src/lib/theme/accents.ts` (reference implementation)
 
+Shipped with ten accents rather than the five shown here (D1, amended). The
+dealer is unchanged: the bag simply holds ten, and the lookback guarantee holds
+for any palette larger than `LOOKBACK`.
+
 ```ts
 export const ACCENTS = ["blue", "magenta", "pink", "lime", "cyan"] as const;
 export type Accent = (typeof ACCENTS)[number];
@@ -696,6 +732,11 @@ before shipping P1, and record the resulting `--accent-ink` ratios beside them.
 | `#EF709D` pink    | 0.3238 | 2.81:1             | 6.70:1                | 7.08:1           |
 | `#E2EF70` lime    | 0.7908 | **1.25:1**         | 15.06:1               | 15.92:1          |
 | `#70E4EF` cyan    | 0.6516 | **1.50:1**         | 12.57:1               | 13.29:1          |
+| `#8B70FF` violet  | 0.2430 | 3.58:1             | 5.25:1                | 5.55:1           |
+| `#70B6EF` azure   | 0.4313 | 2.20:1             | 8.62:1                | 9.12:1           |
+| `#70EFB6` mint    | 0.6856 | 1.43:1             | 13.18:1               | 13.93:1          |
+| `#A6EF70` green   | 0.7101 | 1.38:1             | 13.62:1               | 14.39:1          |
+| `#EFC770` gold    | 0.6037 | 1.60:1             | 11.71:1               | 12.38:1          |
 
 Three things to read out of this table:
 

@@ -1,14 +1,20 @@
 @import "tailwindcss";
 
 /*
- * The palette (docs/ux-plan.md D1). Five accents, fixed, no additions. These
- * are mode-independent: the same five hues in light and dark. What moves
- * between modes is the *ink* derived from them, below.
+ * The palette (docs/ux-plan.md D1, amended). Ten accents. The first five are
+ * D1's original set, unchanged; the second five were added to halve how often
+ * a colour repeats down a long list. These are mode-independent: the same ten
+ * hues in light and dark. What moves between modes is the *ink* and the *line*
+ * derived from them, below.
+ *
+ * The ten hues are 41° 66° 94° 153° 185° 207° 222° 251° 295° 339°. The one gap
+ * — 339° round to 41°, the reds — is deliberate and stays empty: that arc is
+ * where --miss lives, and D3 keeps status colours out of the dealt palette.
  *
  * --accent-foreground lives here for the same reason: D2 fixes it at #05081a
  * in both modes. Blue is why. Against #0b1026 blue measures 4.49:1 and misses
- * the threshold by a hair; #05081a puts it at 4.75:1. Blue is the binding
- * constraint everywhere in this palette — check it first, always.
+ * the threshold by a hair; #05081a puts it at 4.75:1. Blue is still the
+ * binding constraint — every added colour clears it — so check blue first.
  */
 :root {
   --p-blue: #3772ff;
@@ -16,31 +22,59 @@
   --p-pink: #ef709d;
   --p-lime: #e2ef70;
   --p-cyan: #70e4ef;
+  --p-violet: #8b70ff;
+  --p-azure: #70b6ef;
+  --p-mint: #70efb6;
+  --p-green: #a6ef70;
+  --p-gold: #efc770;
   --accent-foreground: #05081a;
 }
 
 /*
- * Measured contrast (WCAG 2.1), read out of this file in Chromium and
- * required by ux-plan.md P1. Fifteen ratios, all ≥ 4.5:1.
+ * Measured contrast (WCAG 2.1), read out of this file in Chromium.
  *
- * --accent-ink vs its mode's --background:
- *   light  blue     85%  rgb(48,98,219)     5.39:1
- *   light  magenta  72%  rgb(170,50,188)    5.40:1
- *   light  pink     68%  rgb(159,81,117)    5.37:1
- *   light  lime     40%  rgb(85,97,75)      6.57:1
- *   light  cyan     45%  rgb(53,102,122)    6.30:1
- *   dark   blue     88%  rgb(77,132,255)    5.43:1
- *   dark   magenta  raw  rgb(240,56,255)    6.01:1
- *   dark   pink     raw  rgb(239,112,157)   6.70:1
- *   dark   lime     raw  rgb(226,239,112)  15.06:1
- *   dark   cyan     raw  rgb(112,228,239)  12.57:1
+ * Three derived forms, three different jobs, three different thresholds:
  *
- * Accent fills vs --accent-foreground #05081a:
- *   blue   4.75:1   magenta  6.36:1   pink  7.08:1
- *   lime  15.92:1   cyan    13.29:1
+ *   --accent        a fill.        Ink on it is --accent-foreground, ≥ 4.5:1.
+ *   --accent-ink    text or icon.  ≥ 4.5:1 on --background (WCAG 1.4.3).
+ *   --accent-line   a thin rule.   ≥ 3:1 on --background (WCAG 1.4.11).
  *
- * D2's starting percentages all cleared 4.5:1 on measurement; none were
- * adjusted. Changing any --p-* value invalidates this block — re-measure.
+ * --accent-line is the newer of the two derived inks. A 1px border and a 12px
+ * label are not the same problem: holding a decorative rule to the text
+ * threshold darkened it until it no longer read as the accent at all. It is
+ * mixed only as far as 3:1 requires, so it keeps the hue. It is never used for
+ * text, and never as a card's only boundary — the neutral --border stays, so
+ * the rule is redundant and 1.4.11's 3:1 is the right bar rather than a floor
+ * it has to beat.
+ *
+ * --accent-ink vs its mode's --background (all ≥ 4.5:1):
+ *   light  blue     85%  rgb(48,98,219)     5.39:1    dark  88%  5.43:1
+ *   light  magenta  72%  rgb(170,50,188)    5.40:1    dark  raw  6.01:1
+ *   light  pink     68%  rgb(159,81,117)    5.37:1    dark  raw  6.70:1
+ *   light  lime     40%  rgb(85,97,75)      6.57:1    dark  raw 15.06:1
+ *   light  cyan     45%  rgb(53,102,122)    6.30:1    dark  raw 12.57:1
+ *   light  violet   87%  rgb(120,98,223)    4.55:1    dark  raw  5.25:1
+ *   light  azure    67%  rgb(76,122,167)    4.52:1    dark  raw  8.62:1
+ *   light  mint     55%  rgb(62,130,115)    4.52:1    dark  raw 13.18:1
+ *   light  green    54%  rgb(86,128,85)     4.55:1    dark  raw 13.62:1
+ *   light  gold     58%  rgb(133,116,86)    4.54:1    dark  raw 11.71:1
+ *
+ * --accent-line vs its mode's --background (all ≥ 3:1). Every colour passes
+ * raw in dark; only light needs mixing, and five clear 3:1 unmixed:
+ *   light  blue     raw  4.19:1    magenta raw 3.13:1   violet raw 3.58:1
+ *   light  pink     96%  3.03:1    lime     65% 3.04:1  cyan    71% 3.00:1
+ *   light  azure    85%  3.00:1    mint     69% 3.04:1  green   68% 3.04:1
+ *   light  gold     73%  3.04:1
+ *   dark   all raw: 4.49 / 6.01 / 6.70 / 15.06 / 12.57 / 5.25 / 8.62 / 13.18
+ *                   / 13.62 / 11.71
+ *
+ * Accent fills vs --accent-foreground #05081a (all ≥ 4.5:1):
+ *   blue   4.75:1   magenta 6.36:1   pink  7.08:1   lime  15.92:1
+ *   cyan  13.29:1   violet  5.55:1   azure 9.12:1   mint  13.93:1
+ *   green 14.39:1   gold   12.38:1
+ *
+ * Blue at 4.75:1 remains the floor; violet at 5.55:1 is the closest of the
+ * five additions. Changing any --p-* value invalidates this block — re-measure.
  *
  * The status colours are picked to clear 4.5:1 both on --background and on
  * their own -tint wash, which is the stricter of the two (a tint block with
@@ -69,6 +103,7 @@
   --border: #e4e7f0;
   --accent: var(--p-blue);
   --accent-ink: color-mix(in oklab, var(--p-blue) 85%, #0b1026);
+  --accent-line: var(--p-blue);
   --tint-strength: 14%;
   --ok: #00793d;
   --warn: #a84d00;
@@ -85,6 +120,7 @@
     --border: #262e52;
     --accent: var(--p-blue);
     --accent-ink: color-mix(in oklab, var(--p-blue) 88%, #f2f4fb);
+    --accent-line: var(--p-blue);
     --tint-strength: 18%;
     --ok: #00ce6f;
     --warn: #f29200;
@@ -101,6 +137,7 @@
   --border: #262e52;
   --accent: var(--p-blue);
   --accent-ink: color-mix(in oklab, var(--p-blue) 88%, #f2f4fb);
+  --accent-line: var(--p-blue);
   --tint-strength: 18%;
   --ok: #00ce6f;
   --warn: #f29200;
@@ -116,6 +153,7 @@
   --border: #e4e7f0;
   --accent: var(--p-blue);
   --accent-ink: color-mix(in oklab, var(--p-blue) 85%, #0b1026);
+  --accent-line: var(--p-blue);
   --tint-strength: 14%;
   --ok: #00793d;
   --warn: #a84d00;
@@ -123,111 +161,185 @@
 }
 
 /*
- * --accent-ink (D2): what to use when an accent must be *text* or a *thin
- * line*. Raw accents are fills only — lime and cyan measure 1.25:1 and 1.50:1
- * on white, which is not a style choice but a defect. Each value is a mix
- * toward the mode's opposite pole, tuned per colour until it clears 4.5:1
- * against --background. The ratios are in the block above.
+ * The dealt accent classes (D6, src/lib/theme/accents.ts). A wrapper element
+ * carries one, --accent is rebound for its whole subtree, and every bg-accent /
+ * text-accent-ink / border-accent-line / bg-accent-tint inside follows with no
+ * component change.
+ *
+ * Each class binds three things: the fill, the ink (text, 4.5:1) and the line
+ * (thin rules, 3:1). Raw accents are never text — lime and cyan measure 1.25:1
+ * and 1.50:1 on white, which is not a style choice but a defect — so the ink is
+ * always mixed toward the mode's opposite pole. The line is mixed only as far
+ * as 3:1 needs, which is what keeps a hover border recognisably its accent.
  *
  * Four blocks, mirroring the neutrals, for the same reason: a system-dark
  * reader with no theme cookie must not get the light-mode ink. Light lime ink
- * on midnight measures ~2.7:1.
+ * on midnight measures ~2.7:1. Dark collapses to two rules because every colour
+ * clears both thresholds raw against midnight — blue's ink is the lone
+ * exception, at 4.49:1 before lifting.
  *
- * The dark values reference --p-* rather than --accent so they resolve
- * correctly regardless of whether anything has rebound --accent for this
- * subtree; the two are the same colour once a wrapper class deals one.
+ * The values reference --p-* rather than --accent so they resolve correctly
+ * regardless of what has rebound --accent for this subtree; the two are the
+ * same colour once a wrapper class deals one. --accent is mode-independent, so
+ * it is declared once, in the light block.
  *
- * These are also the classes the dealer applies (D6, src/lib/theme/accents.ts):
- * a wrapper element carries one, --accent is rebound for its whole subtree, and
- * every bg-accent / text-accent-ink / bg-accent-tint inside follows with no
- * component change. --accent is mode-independent, so it is declared once here;
- * only the ink is re-stated per mode below.
+ * Generated from the measured percentages in the block at the top of this file
+ * — twenty-four rules are not worth transcribing by hand.
  */
+/* ── light ─────────────────────────────────────────────────── */
 .accent-blue {
   --accent: var(--p-blue);
   --accent-ink: color-mix(in oklab, var(--p-blue) 85%, #0b1026);
+  --accent-line: var(--p-blue);
 }
 
 .accent-magenta {
   --accent: var(--p-magenta);
   --accent-ink: color-mix(in oklab, var(--p-magenta) 72%, #0b1026);
+  --accent-line: var(--p-magenta);
 }
 
 .accent-pink {
   --accent: var(--p-pink);
   --accent-ink: color-mix(in oklab, var(--p-pink) 68%, #0b1026);
+  --accent-line: color-mix(in oklab, var(--p-pink) 96%, #0b1026);
 }
 
 .accent-lime {
   --accent: var(--p-lime);
   --accent-ink: color-mix(in oklab, var(--p-lime) 40%, #0b1026);
+  --accent-line: color-mix(in oklab, var(--p-lime) 65%, #0b1026);
 }
 
 .accent-cyan {
   --accent: var(--p-cyan);
   --accent-ink: color-mix(in oklab, var(--p-cyan) 45%, #0b1026);
+  --accent-line: color-mix(in oklab, var(--p-cyan) 71%, #0b1026);
 }
 
+.accent-violet {
+  --accent: var(--p-violet);
+  --accent-ink: color-mix(in oklab, var(--p-violet) 87%, #0b1026);
+  --accent-line: var(--p-violet);
+}
+
+.accent-azure {
+  --accent: var(--p-azure);
+  --accent-ink: color-mix(in oklab, var(--p-azure) 67%, #0b1026);
+  --accent-line: color-mix(in oklab, var(--p-azure) 85%, #0b1026);
+}
+
+.accent-mint {
+  --accent: var(--p-mint);
+  --accent-ink: color-mix(in oklab, var(--p-mint) 55%, #0b1026);
+  --accent-line: color-mix(in oklab, var(--p-mint) 69%, #0b1026);
+}
+
+.accent-green {
+  --accent: var(--p-green);
+  --accent-ink: color-mix(in oklab, var(--p-green) 54%, #0b1026);
+  --accent-line: color-mix(in oklab, var(--p-green) 68%, #0b1026);
+}
+
+.accent-gold {
+  --accent: var(--p-gold);
+  --accent-ink: color-mix(in oklab, var(--p-gold) 58%, #0b1026);
+  --accent-line: color-mix(in oklab, var(--p-gold) 73%, #0b1026);
+}
+
+/* ── dark, via the system preference ───────────────────────── */
 @media (prefers-color-scheme: dark) {
+  :is(
+    .accent-blue,
+    .accent-magenta,
+    .accent-pink,
+    .accent-lime,
+    .accent-cyan,
+    .accent-violet,
+    .accent-azure,
+    .accent-mint,
+    .accent-green,
+    .accent-gold
+  ) {
+    --accent-ink: var(--accent);
+    --accent-line: var(--accent);
+  }
+
   .accent-blue {
     --accent-ink: color-mix(in oklab, var(--p-blue) 88%, #f2f4fb);
   }
+}
 
-  .accent-magenta {
-    --accent-ink: var(--p-magenta);
-  }
-
-  .accent-pink {
-    --accent-ink: var(--p-pink);
-  }
-
-  .accent-lime {
-    --accent-ink: var(--p-lime);
-  }
-
-  .accent-cyan {
-    --accent-ink: var(--p-cyan);
-  }
+/* ── dark, via the explicit toggle ─────────────────────────── */
+.dark :is(
+  .accent-blue,
+    .accent-magenta,
+    .accent-pink,
+    .accent-lime,
+    .accent-cyan,
+    .accent-violet,
+    .accent-azure,
+    .accent-mint,
+    .accent-green,
+    .accent-gold
+) {
+  --accent-ink: var(--accent);
+  --accent-line: var(--accent);
 }
 
 .dark .accent-blue {
   --accent-ink: color-mix(in oklab, var(--p-blue) 88%, #f2f4fb);
 }
 
-.dark .accent-magenta {
-  --accent-ink: var(--p-magenta);
-}
-
-.dark .accent-pink {
-  --accent-ink: var(--p-pink);
-}
-
-.dark .accent-lime {
-  --accent-ink: var(--p-lime);
-}
-
-.dark .accent-cyan {
-  --accent-ink: var(--p-cyan);
-}
-
+/* ── light, via the explicit toggle ────────────────────────── */
 .light .accent-blue {
   --accent-ink: color-mix(in oklab, var(--p-blue) 85%, #0b1026);
+  --accent-line: var(--p-blue);
 }
 
 .light .accent-magenta {
   --accent-ink: color-mix(in oklab, var(--p-magenta) 72%, #0b1026);
+  --accent-line: var(--p-magenta);
 }
 
 .light .accent-pink {
   --accent-ink: color-mix(in oklab, var(--p-pink) 68%, #0b1026);
+  --accent-line: color-mix(in oklab, var(--p-pink) 96%, #0b1026);
 }
 
 .light .accent-lime {
   --accent-ink: color-mix(in oklab, var(--p-lime) 40%, #0b1026);
+  --accent-line: color-mix(in oklab, var(--p-lime) 65%, #0b1026);
 }
 
 .light .accent-cyan {
   --accent-ink: color-mix(in oklab, var(--p-cyan) 45%, #0b1026);
+  --accent-line: color-mix(in oklab, var(--p-cyan) 71%, #0b1026);
+}
+
+.light .accent-violet {
+  --accent-ink: color-mix(in oklab, var(--p-violet) 87%, #0b1026);
+  --accent-line: var(--p-violet);
+}
+
+.light .accent-azure {
+  --accent-ink: color-mix(in oklab, var(--p-azure) 67%, #0b1026);
+  --accent-line: color-mix(in oklab, var(--p-azure) 85%, #0b1026);
+}
+
+.light .accent-mint {
+  --accent-ink: color-mix(in oklab, var(--p-mint) 55%, #0b1026);
+  --accent-line: color-mix(in oklab, var(--p-mint) 69%, #0b1026);
+}
+
+.light .accent-green {
+  --accent-ink: color-mix(in oklab, var(--p-green) 54%, #0b1026);
+  --accent-line: color-mix(in oklab, var(--p-green) 68%, #0b1026);
+}
+
+.light .accent-gold {
+  --accent-ink: color-mix(in oklab, var(--p-gold) 58%, #0b1026);
+  --accent-line: color-mix(in oklab, var(--p-gold) 73%, #0b1026);
 }
 
 /*
@@ -248,6 +360,7 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent-ink: var(--accent-ink);
+  --color-accent-line: var(--accent-line);
   --color-accent-tint: color-mix(in srgb,
       var(--accent) var(--tint-strength),
       transparent);
