@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { addToPantry, usePantry, usePantryReady } from "../lib/pantry/store";
 import type { RecipeDomain } from "../lib/recipes/domain";
 import { createClient } from "../lib/supabase/client";
+import { accentClass, dealAccents } from "../lib/theme/accents";
 import type { Database } from "../types/database";
 
 import { toast } from "./toast/store";
@@ -66,21 +67,27 @@ export function StarterSuggestions({ domain }: { domain?: RecipeDomain }) {
   const starters = current?.starters;
   if (!show || !starters || starters.length === 0) return null;
 
+  const accents = dealAccents(starters.map((s) => String(s.id)));
+
   return (
     <section>
       <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
         Popular starting points
       </h2>
       <ul className="mt-3 flex flex-wrap gap-2">
-        {starters.map((s) => (
-          <li key={s.id}>
+        {starters.map((s, i) => (
+          <li key={s.id} className={accentClass(accents[i])}>
             <button
               type="button"
               onClick={() => {
                 addToPantry(s.id);
                 toast(`Added ${s.name} to your pantry`);
               }}
-              className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-sm hover:bg-black/4 dark:hover:bg-white/6"
+              // The tint is what makes the dealt accent visible on a chip; the
+              // label stays neutral, since a tint sits behind neutral text
+              // (D2). Hover moves to the border rather than a neutral wash,
+              // which would have painted over the colour it just gained.
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-accent-tint px-3 py-1 text-sm hover:border-accent-ink"
             >
               <span aria-hidden="true" className="opacity-50">
                 +

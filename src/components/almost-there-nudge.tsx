@@ -10,6 +10,7 @@ import {
   type RecipeDomain,
 } from "../lib/recipes/domain";
 import { createClient } from "../lib/supabase/client";
+import { accentClass, accentFor } from "../lib/theme/accents";
 
 // Keyed to the pantry the count was computed for, so a stale response never
 // renders against a changed pantry (same pattern as the matches page).
@@ -73,7 +74,8 @@ export function AlmostThereNudge({ domain }: { domain: RecipeDomain }) {
   return (
     <Link
       href={`${DOMAIN_ROUTES[domain].matches}?missing=1`}
-      className="block rounded-xl border border-accent-ink/40 bg-accent-tint px-4 py-3 text-sm hover:border-accent-ink"
+      // One strip, no neighbours to avoid: stable per domain (P2 task 4).
+      className={`block rounded-xl border border-accent-ink/40 bg-accent-tint px-4 py-3 text-sm hover:border-accent-ink ${accentClass(accentFor(domain))}`}
     >
       You’re {copy.lead} <span className="font-semibold">{current.count}</span>{" "}
       {current.count === 1 ? DOMAIN_NOUN[domain] : copy.plural} →

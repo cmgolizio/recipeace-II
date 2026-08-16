@@ -9,6 +9,7 @@ import {
 } from "../../components/empty-state";
 import { toast } from "../../components/toast/store";
 import { DOMAIN_SURFACE } from "../../lib/recipes/domain";
+import { accentClass, dealAccents } from "../../lib/theme/accents";
 import {
   clearShopping,
   removeFromShopping,
@@ -46,9 +47,15 @@ function byRecipe(
   return groups;
 }
 
+// The <li> lives at the call site, because that is the element the dealer's
+// .accent-* class goes on (D6) — and there are two call sites, flat and
+// grouped, each of which deals over what it actually renders.
+const rowClass =
+  "flex items-center justify-between gap-3 border-l-4 border-l-accent py-2 pl-3";
+
 function ItemRow({ item }: { item: ShoppingItem }) {
   return (
-    <li className="flex items-center justify-between gap-3 py-2">
+    <>
       <span className="min-w-0">
         <span className="font-medium">{item.name}</span>
         {item.from && (
@@ -73,7 +80,7 @@ function ItemRow({ item }: { item: ShoppingItem }) {
       >
         Remove
       </button>
-    </li>
+    </>
   );
 }
 
@@ -85,6 +92,7 @@ export default function ShoppingPage() {
   const groups = byRecipe(items);
   // Grouping is only worth offering once there is something to group by.
   const canGroup = groups.length > 1;
+  const flatAccents = dealAccents(items.map((item) => item.name));
 
   return (
     <div className="space-y-6">
@@ -142,7 +150,9 @@ export default function ShoppingPage() {
 
           {grouping === "recipe" && canGroup ? (
             <div className="space-y-5">
-              {groups.map((group) => (
+              {groups.map((group) => {
+                const accents = dealAccents(group.items.map((it) => it.name));
+                return (
                 <section key={group.title}>
                   <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
                     {group.title}
@@ -153,17 +163,28 @@ export default function ShoppingPage() {
                     )}
                   </h2>
                   <ul className="divide-y divide-black/5 dark:divide-white/10">
-                    {group.items.map((item) => (
-                      <ItemRow key={item.name} item={item} />
+                    {group.items.map((item, i) => (
+                      <li
+                        key={item.name}
+                        className={`${rowClass} ${accentClass(accents[i])}`}
+                      >
+                        <ItemRow item={item} />
+                      </li>
                     ))}
                   </ul>
                 </section>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <ul className="divide-y divide-black/5 dark:divide-white/10">
-              {items.map((item) => (
-                <ItemRow key={item.name} item={item} />
+              {items.map((item, i) => (
+                <li
+                  key={item.name}
+                  className={`${rowClass} ${accentClass(flatAccents[i])}`}
+                >
+                  <ItemRow item={item} />
+                </li>
               ))}
             </ul>
           )}

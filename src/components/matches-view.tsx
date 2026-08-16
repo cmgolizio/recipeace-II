@@ -14,6 +14,7 @@ import {
   type ShoppingSource,
 } from "../lib/shopping/store";
 import { createClient } from "../lib/supabase/client";
+import { accentClass, dealAccents } from "../lib/theme/accents";
 import { formatQuantity } from "../lib/units/format";
 import { useUnit } from "../lib/units/store";
 import type { Database } from "../types/database";
@@ -149,61 +150,60 @@ function AddMissingButton({
   );
 }
 
+// The <li> lives at the call site rather than here, because that is the element
+// the dealer's .accent-* class goes on (D6). Threading the colour down as a
+// prop instead is the thing that decision exists to forbid.
 function MatchCard({ match: m }: { match: Match }) {
   const unit = useUnit();
   const missing = new Set(m.missing_ingredients);
   const ingredients = m.ingredients as unknown as MatchIngredient[];
   const pills = matchPills(m.domain, m.metadata);
   return (
-    <li>
-      <RecipeCard
-        recipe={{
-          id: m.recipe_id,
-          slug: m.slug,
-          name: m.name,
-          pills,
-        }}
-        titleAs="h3"
-        badge={
-          <span
-            className={
-              m.missing_count === 0
-                ? "shrink-0 rounded-full bg-ok-tint px-2.5 py-0.5 text-xs font-medium text-ok"
-                : "shrink-0 rounded-full bg-black/6 px-2.5 py-0.5 text-xs font-medium opacity-80 dark:bg-white/10"
-            }
-          >
-            {statusLabel(m)}
-          </span>
-        }
-      >
-        <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-          {ingredients.map((ing, idx) => {
-            const quantity = formatQuantity(ing.amount, ing.unit, unit);
-            return (
-              <li
-                key={idx}
-                className={
-                  missing.has(ing.name) ? "text-miss" : "opacity-80"
-                }
-              >
-                {quantity.amount && <span>{quantity.amount} </span>}
-                {quantity.unit && <span>{quantity.unit} </span>}
-                {ing.name}
-                {ing.is_optional && (
-                  <span className="opacity-50"> (optional)</span>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-        {m.missing_count > 0 && (
-          <AddMissingButton
-            names={m.missing_ingredients}
-            from={{ slug: m.slug, name: m.name, domain: m.domain }}
-          />
-        )}
-      </RecipeCard>
-    </li>
+    <RecipeCard
+      recipe={{
+        id: m.recipe_id,
+        slug: m.slug,
+        name: m.name,
+        pills,
+      }}
+      titleAs="h3"
+      badge={
+        <span
+          className={
+            m.missing_count === 0
+              ? "shrink-0 rounded-full bg-ok-tint px-2.5 py-0.5 text-xs font-medium text-ok"
+              : "shrink-0 rounded-full bg-black/6 px-2.5 py-0.5 text-xs font-medium opacity-80 dark:bg-white/10"
+          }
+        >
+          {statusLabel(m)}
+        </span>
+      }
+    >
+      <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+        {ingredients.map((ing, idx) => {
+          const quantity = formatQuantity(ing.amount, ing.unit, unit);
+          return (
+            <li
+              key={idx}
+              className={missing.has(ing.name) ? "text-miss" : "opacity-80"}
+            >
+              {quantity.amount && <span>{quantity.amount} </span>}
+              {quantity.unit && <span>{quantity.unit} </span>}
+              {ing.name}
+              {ing.is_optional && (
+                <span className="opacity-50"> (optional)</span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      {m.missing_count > 0 && (
+        <AddMissingButton
+          names={m.missing_ingredients}
+          from={{ slug: m.slug, name: m.name, domain: m.domain }}
+        />
+      )}
+    </RecipeCard>
   );
 }
 
@@ -291,10 +291,13 @@ function MatchesContent({ copy }: { copy: MatchesCopy }) {
   const matches = current && "matches" in current ? current.matches : [];
   const suggestion = buyNext(matches);
   const readyToMake = matches.filter((m) => m.missing_count === 0);
-  const sections = SECTIONS.map((s) => ({
-    ...s,
-    items: matches.filter((m) => m.missing_count === s.missing),
-  }));
+  // Dealt per section, not across the page: the three are visually separate
+  // blocks, so dealing across them would let a "Ready to make" card and a
+  // "Missing 1" card collide at the seam without the lookback noticing.
+  const sections = SECTIONS.map((s) => {
+    const items = matches.filter((m) => m.missing_count === s.missing);
+    return { ...s, items, accents: dealAccents(items.map((m) => m.slug)) };
+  });
 
   function selectFilter(value: MaxMissing) {
     // 2 is the default, so keep the URL clean for it.
@@ -391,8 +394,10 @@ function MatchesContent({ copy }: { copy: MatchesCopy }) {
               {s.title} · {s.items.length}
             </h2>
             <ul className="space-y-3">
-              {s.items.map((m) => (
-                <MatchCard key={m.recipe_id} match={m} />
+              {s.items.map((m, i) => (
+                <li key={m.recipe_id} className={accentClass(s.accents[i])}>
+                  <MatchCard match={m} />
+                </li>
               ))}
             </ul>
           </section>

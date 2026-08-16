@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { accentClass, accentFor } from "../lib/theme/accents";
+
 // Small inline glyphs so empty states need no image assets. Stroke-based and
 // currentColor, so they pick up the accent tint from the wrapper.
 const ICONS = {
@@ -67,7 +69,11 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-dashed border-border px-6 py-10 text-center">
+    // No neighbours to avoid — one block, stable per title (P2 task 4). The
+    // accent arrives by class, not by prop: this component gains none (D6).
+    <div
+      className={`rounded-xl border border-dashed border-border px-6 py-10 text-center ${accentClass(accentFor(title))}`}
+    >
       <span
         aria-hidden
         className="mx-auto flex size-12 items-center justify-center rounded-full bg-accent-tint text-accent-ink"

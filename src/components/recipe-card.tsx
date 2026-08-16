@@ -47,8 +47,13 @@ export function RecipeCard({
   return (
     <Link
       href={`/recipes/${recipe.slug}`}
-      className="block h-full overflow-hidden rounded-xl border border-border bg-surface transition hover:-translate-y-0.5 hover:border-accent-ink"
+      className="relative block h-full overflow-hidden rounded-xl border border-border bg-surface transition hover:-translate-y-0.5 hover:border-accent-ink"
     >
+      {/* The card's accent affordance: a 4px fill on the leading edge, dealt by
+          the wrapper element's .accent-* class. Decorative and redundant — the
+          neutral --border is what delimits the card, so the bar never has to
+          carry a boundary's 3:1 (D2). */}
+      <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-accent" />
       {hasMedia && (
         <div className="relative aspect-3/2 w-full">
           {recipe.image_url ? (
@@ -91,9 +96,13 @@ export function RecipeCard({
         {pills.length > 0 && (
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {pills.map((pill) => (
+              // The tint is a wash sitting behind *neutral* text (D2), and the
+              // neutral here is --foreground rather than --muted: muted on the
+              // lime tint over --surface measures 4.11:1 in dark mode, under
+              // the threshold. Foreground's worst case is 9.58:1.
               <span
                 key={pill}
-                className="rounded-full border border-border bg-surface px-2 py-0.5 text-xs text-muted"
+                className="rounded-full border border-border bg-accent-tint px-2 py-0.5 text-xs"
               >
                 {pill}
               </span>

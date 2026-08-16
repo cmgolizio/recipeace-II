@@ -11,6 +11,7 @@ import {
   type RecipeListFilters,
 } from "../../../lib/recipes/queries";
 import { createClient } from "../../../lib/supabase/server";
+import { accentClass, dealAccents } from "../../../lib/theme/accents";
 
 export const metadata: Metadata = {
   title: pageTitle("Food recipes"),
@@ -83,6 +84,7 @@ export default async function KitchenRecipesPage({
     facetRows.some((r) => r.difficulty === d),
   );
 
+  const accents = dealAccents(recipes.map((r) => r.slug));
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const filtered = !!(
     filters.q ||
@@ -128,8 +130,8 @@ export default async function KitchenRecipesPage({
       )}
 
       <ul className="grid gap-3 sm:grid-cols-2">
-        {recipes.map((r) => (
-          <li key={r.id}>
+        {recipes.map((r, i) => (
+          <li key={r.id} className={accentClass(accents[i])}>
             <RecipeCard recipe={r} />
           </li>
         ))}

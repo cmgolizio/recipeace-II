@@ -22,6 +22,11 @@ import {
 import { pageTitle } from "../../../lib/site";
 import { siteUrl } from "../../../lib/site-url";
 import { createStaticClient } from "../../../lib/supabase/static";
+import {
+  accentClass,
+  accentFor,
+  dealAccents,
+} from "../../../lib/theme/accents";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -128,6 +133,7 @@ export default async function RecipeDetailPage({ params }: Props) {
         a.display_order - b.display_order || a.name.localeCompare(b.name),
     );
   const related = relatedRows ?? [];
+  const relatedAccents = dealAccents(related.map((r) => r.slug));
 
   // Its own domain's metadata, and only that. The union in getRecipeBySlug
   // means a food recipe has no `cocktail` member to read by accident.
@@ -213,7 +219,9 @@ export default async function RecipeDetailPage({ params }: Props) {
         </div>
       )}
 
-      <header className="space-y-1">
+      {/* A lone header with no neighbours to avoid, so accentFor rather than a
+          deal (P2 task 4). It is what tints the pills below. */}
+      <header className={`space-y-1 ${accentClass(accentFor(recipe.slug))}`}>
         <h1 className="text-2xl font-semibold tracking-tight">{recipe.name}</h1>
         {subtitle.length > 0 && (
           <p className="text-xs uppercase tracking-wide opacity-50">
@@ -223,9 +231,12 @@ export default async function RecipeDetailPage({ params }: Props) {
         {pills.length > 0 && (
           <div className="flex flex-wrap gap-1.5 pt-2">
             {pills.map((pill) => (
+              // Same pill treatment as the recipe card: an accent tint behind
+              // neutral --foreground text. Not --muted, which measures 4.11:1
+              // on the lime tint in dark mode (D2).
               <span
                 key={pill}
-                className="rounded-full border border-border bg-surface px-2 py-0.5 text-xs text-muted"
+                className="rounded-full border border-border bg-accent-tint px-2 py-0.5 text-xs"
               >
                 {pill}
               </span>
@@ -299,8 +310,11 @@ export default async function RecipeDetailPage({ params }: Props) {
             More like this
           </h2>
           <ul className="mt-3 grid gap-3 sm:grid-cols-2">
-            {related.map((r) => (
-              <li key={r.recipe_id}>
+            {related.map((r, i) => (
+              <li
+                key={r.recipe_id}
+                className={accentClass(relatedAccents[i])}
+              >
                 <RecipeCard
                   recipe={{
                     id: r.recipe_id,

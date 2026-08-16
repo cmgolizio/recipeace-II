@@ -14,6 +14,7 @@ import {
   type RecipeDomain,
 } from "../lib/recipes/domain";
 import { createClient } from "../lib/supabase/client";
+import { accentClass, dealAccents } from "../lib/theme/accents";
 
 import { Skeleton } from "./skeleton";
 
@@ -26,7 +27,13 @@ type Counts = { ingredients: number; ready: number };
 type Outcome = { key: string; counts: Record<RecipeDomain, Counts> | null };
 
 const cardClass =
-  "block rounded-xl border border-border bg-surface p-5 transition hover:-translate-y-0.5 hover:border-accent-ink";
+  "relative block overflow-hidden rounded-xl border border-border bg-surface p-5 transition hover:-translate-y-0.5 hover:border-accent-ink";
+
+// The same 4px leading fill the recipe card carries, so a dealt accent is
+// visible here rather than only on hover.
+const ACCENT_BAR = "absolute inset-y-0 left-0 w-1 bg-accent";
+
+const DOMAIN_ACCENTS = dealAccents(RECIPE_DOMAINS);
 
 /**
  * The chooser: two cards, Bar and Kitchen, each with what this pantry holds for
@@ -94,7 +101,7 @@ export function DomainSummaryCards() {
 
   return (
     <div className="grid gap-3 sm:grid-cols-2">
-      {RECIPE_DOMAINS.map((domain) => {
+      {RECIPE_DOMAINS.map((domain, i) => {
         const counts = current?.counts?.[domain];
         return (
           <Link
@@ -104,8 +111,9 @@ export function DomainSummaryCards() {
             // the switcher's own event can't tell us: it only ever fires from
             // inside a domain.
             onClick={() => track("domain_home_selected", { domain })}
-            className={cardClass}
+            className={`${cardClass} ${accentClass(DOMAIN_ACCENTS[i])}`}
           >
+            <span aria-hidden className={ACCENT_BAR} />
             <h2 className="font-semibold">The {DOMAIN_SURFACE[domain]}</h2>
             <p className="mt-1 text-sm text-muted">{DOMAIN_BLURB[domain]}</p>
             {loading && <Skeleton className="mt-3 h-5 w-40" />}

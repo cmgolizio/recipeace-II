@@ -136,24 +136,35 @@
  * The dark values reference --p-* rather than --accent so they resolve
  * correctly regardless of whether anything has rebound --accent for this
  * subtree; the two are the same colour once a wrapper class deals one.
+ *
+ * These are also the classes the dealer applies (D6, src/lib/theme/accents.ts):
+ * a wrapper element carries one, --accent is rebound for its whole subtree, and
+ * every bg-accent / text-accent-ink / bg-accent-tint inside follows with no
+ * component change. --accent is mode-independent, so it is declared once here;
+ * only the ink is re-stated per mode below.
  */
 .accent-blue {
+  --accent: var(--p-blue);
   --accent-ink: color-mix(in oklab, var(--p-blue) 85%, #0b1026);
 }
 
 .accent-magenta {
+  --accent: var(--p-magenta);
   --accent-ink: color-mix(in oklab, var(--p-magenta) 72%, #0b1026);
 }
 
 .accent-pink {
+  --accent: var(--p-pink);
   --accent-ink: color-mix(in oklab, var(--p-pink) 68%, #0b1026);
 }
 
 .accent-lime {
+  --accent: var(--p-lime);
   --accent-ink: color-mix(in oklab, var(--p-lime) 40%, #0b1026);
 }
 
 .accent-cyan {
+  --accent: var(--p-cyan);
   --accent-ink: color-mix(in oklab, var(--p-cyan) 45%, #0b1026);
 }
 

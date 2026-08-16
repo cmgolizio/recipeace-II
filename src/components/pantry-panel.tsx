@@ -19,6 +19,7 @@ import {
   type RecipeDomain,
 } from "../lib/recipes/domain";
 import { createClient } from "../lib/supabase/client";
+import { accentClass, dealAccents, type Accent } from "../lib/theme/accents";
 import type { Tables } from "../types/database";
 
 import { EmptyState } from "./empty-state";
@@ -84,10 +85,15 @@ export function PantryPanel({ domain }: { domain?: RecipeDomain }) {
     ? splitByLens(items, domain)
     : { mine: items, other: [] };
   const shelfCount = domain ? mine.length + loadingCount : pantry.length;
+  // Two rendered lists, so two deals: the collapsed "also in your pantry" group
+  // is a separate block, and dealing across the seam would let the last chip on
+  // one shelf collide with the first on the other.
+  const mineAccents = dealAccents(mine.map((it) => String(it.id)));
+  const otherAccents = dealAccents(other.map((it) => String(it.id)));
 
-  function chip(it: Ingredient) {
+  function chip(it: Ingredient, accent: Accent) {
     return (
-      <li key={it.id}>
+      <li key={it.id} className={accentClass(accent)}>
         <button
           type="button"
           onClick={() => {
@@ -95,7 +101,9 @@ export function PantryPanel({ domain }: { domain?: RecipeDomain }) {
             toast(`Removed ${it.name} from your pantry`);
           }}
           title="Remove from pantry"
-          className="group inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-sm hover:border-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
+          // Hover deliberately paints over the tint with the destructive wash:
+          // this chip's action is removal, and red is semantic, never dealt (D3).
+          className="group inline-flex items-center gap-1.5 rounded-full border border-border bg-accent-tint px-3 py-1 text-sm hover:border-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
         >
           <span>{it.name}</span>
           <span className="opacity-40 group-hover:text-red-500 group-hover:opacity-100">
@@ -150,7 +158,7 @@ export function PantryPanel({ domain }: { domain?: RecipeDomain }) {
       ) : (
         <>
           <ul className="mt-3 flex flex-wrap gap-2">
-            {mine.map(chip)}
+            {mine.map((it, i) => chip(it, mineAccents[i]))}
             {loadingCount > 0 &&
               Array.from({ length: loadingCount }, (_, i) => (
                 <li key={`loading-${i}`}>
@@ -189,7 +197,9 @@ export function PantryPanel({ domain }: { domain?: RecipeDomain }) {
             {DOMAIN_SURFACE[otherDomain(domain)].toLowerCase()} item
             {other.length === 1 ? "" : "s"}
           </summary>
-          <ul className="flex flex-wrap gap-2 px-4">{other.map(chip)}</ul>
+          <ul className="flex flex-wrap gap-2 px-4">
+            {other.map((it, i) => chip(it, otherAccents[i]))}
+          </ul>
           <p className="px-4 pb-3 pt-2 text-xs text-muted">
             These count toward the {DOMAIN_SURFACE[otherDomain(domain)]}. One
             pantry, both sides.
