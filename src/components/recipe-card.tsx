@@ -47,7 +47,7 @@ export function RecipeCard({
   return (
     <Link
       href={`/recipes/${recipe.slug}`}
-      className="block h-full overflow-hidden rounded-xl border border-border bg-surface transition hover:-translate-y-0.5 hover:border-accent"
+      className="block h-full overflow-hidden rounded-xl border border-border bg-surface transition hover:-translate-y-0.5 hover:border-accent-ink"
     >
       {hasMedia && (
         <div className="relative aspect-3/2 w-full">
@@ -66,11 +66,8 @@ export function RecipeCard({
               />
             </>
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-accent/10">
-              <span
-                aria-hidden
-                className="text-4xl font-semibold text-accent/70"
-              >
+            <div className="flex h-full w-full items-center justify-center bg-accent-tint">
+              <span aria-hidden className="text-4xl font-semibold text-accent-ink">
                 {recipe.name.charAt(0).toUpperCase()}
               </span>
             </div>

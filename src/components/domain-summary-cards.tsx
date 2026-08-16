@@ -26,7 +26,7 @@ type Counts = { ingredients: number; ready: number };
 type Outcome = { key: string; counts: Record<RecipeDomain, Counts> | null };
 
 const cardClass =
-  "block rounded-xl border border-border bg-surface p-5 transition hover:-translate-y-0.5 hover:border-accent";
+  "block rounded-xl border border-border bg-surface p-5 transition hover:-translate-y-0.5 hover:border-accent-ink";
 
 /**
  * The chooser: two cards, Bar and Kitchen, each with what this pantry holds for

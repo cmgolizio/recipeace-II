@@ -184,7 +184,11 @@ export function RecipesFilter({
             // repeated `tag` entries); the label styles its checked state.
             <label
               key={tag}
-              className="cursor-pointer rounded-full border border-border px-3 py-1 hover:bg-black/4 has-checked:border-accent has-checked:bg-accent/10 has-checked:text-accent dark:hover:bg-white/6"
+              // Checked state is the accent border plus the tint wash; the
+              // label stays neutral because --accent-tint is defined as a wash
+              // sitting behind neutral text (ux-plan.md D2). Blue ink on blue
+              // tint measures 4.44:1 in dark mode — under the threshold.
+              className="cursor-pointer rounded-full border border-border px-3 py-1 hover:bg-black/4 has-checked:border-accent-ink has-checked:bg-accent-tint dark:hover:bg-white/6"
             >
               <input
                 type="checkbox"

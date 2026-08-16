@@ -168,7 +168,6 @@ Environment variables (`.env.local`):
 | -------------------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `NEXT_PUBLIC_SUPABASE_URL`             | app + pipeline  | Supabase project URL                                                                                                                                         |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | app             | public API key (RLS applies)                                                                                                                                 |
-| `NEXT_PUBLIC_SITE_URL`                 | app             | absolute origin for canonical URLs, OG images, sitemap and robots (set to the production URL in the deploy environment; defaults to `http://localhost:3000`) |
 | `SUPABASE_SECRET_KEY`                  | pipeline only   | bypasses RLS to write content                                                                                                                                |
 | `ANTHROPIC_API_KEY`                    | pipeline        | recipe generation (default provider)                                                                                                                         |
 | `OPENAI_TEXT_API_KEY`                  | pipeline        | recipe generation with `--provider openai`                                                                                                                   |
@@ -176,6 +175,14 @@ Environment variables (`.env.local`):
 | `NEXT_PUBLIC_SENTRY_DSN`               | app             | optional; error monitoring. Without it Sentry is never initialized and nothing is sent                                                                       |
 | `SENTRY_ORG`, `SENTRY_PROJECT`         | build           | optional; source-map upload target                                                                                                                           |
 | `SENTRY_AUTH_TOKEN`                    | build           | optional; enables source-map upload. Builds without it skip the upload                                                                                       |
+
+The absolute origin for canonical URLs, OG images, sitemap and robots is **not**
+an environment variable. It is a constant in `src/lib/site-url.ts`, branching on
+`NODE_ENV` so `next dev` serves from `http://localhost:3000` and every built
+deploy serves the production origin. A canonical origin held in a deploy
+dashboard has no reviewer and drifts silently, which is exactly what happened
+across the rename (`docs/ux-plan.md` audit finding 7). Change the domain by
+editing that file.
 
 ## Content pipeline
 

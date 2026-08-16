@@ -127,7 +127,7 @@ export function IngredientBrowse() {
                   // Split chip: tapping the name toggles the pantry, the trailing
                   // arrow opens the ingredient's page.
                   const tone = inPantry
-                    ? "border-green-600/40 bg-green-50 text-green-700 dark:border-green-400/40 dark:bg-green-950/30 dark:text-green-400"
+                    ? "border-ok/40 bg-ok-tint text-ok"
                     : "border-border hover:bg-black/4 dark:hover:bg-white/6";
                   return (
                     <li key={it.id} className="inline-flex">

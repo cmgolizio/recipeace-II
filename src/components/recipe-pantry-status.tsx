@@ -62,20 +62,20 @@ type Outcome =
 function StatusBadge({ row }: { row: StatusRow }) {
   if (row.status === "have") {
     return (
-      <span className="shrink-0 text-xs font-medium text-green-700 dark:text-green-400">
+      <span className="shrink-0 text-xs font-medium text-ok">
         {row.derived_from ? `✓ via ${row.derived_from}` : "✓ in your pantry"}
       </span>
     );
   }
   if (row.status === "substitute") {
     return (
-      <span className="shrink-0 text-xs font-medium text-amber-700 dark:text-amber-400">
+      <span className="shrink-0 text-xs font-medium text-warn">
         ↺ use {row.substitute_with}
       </span>
     );
   }
   return (
-    <span className="shrink-0 text-xs font-medium text-red-600/80 dark:text-red-400/80">
+    <span className="shrink-0 text-xs font-medium text-miss">
       ✗ missing
     </span>
   );
@@ -291,7 +291,7 @@ export function RecipePantryStatus({
         <p
           className={
             missingRequired === 0
-              ? "rounded-lg bg-green-100 px-3 py-2 text-sm font-medium text-green-800 dark:bg-green-950 dark:text-green-300"
+              ? "rounded-lg bg-ok-tint px-3 py-2 text-sm font-medium text-ok"
               : "rounded-lg bg-black/6 px-3 py-2 text-sm font-medium dark:bg-white/10"
           }
         >

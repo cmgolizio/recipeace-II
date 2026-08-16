@@ -119,7 +119,7 @@ function AddMissingButton({
   const remaining = names.filter((n) => !shopping.includes(n));
   if (remaining.length === 0) {
     return (
-      <p className="mt-3 text-xs font-medium text-green-700 dark:text-green-400">
+      <p className="mt-3 text-xs font-medium text-ok">
         ✓ On your shopping list
       </p>
     );
@@ -168,7 +168,7 @@ function MatchCard({ match: m }: { match: Match }) {
           <span
             className={
               m.missing_count === 0
-                ? "shrink-0 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-950 dark:text-green-300"
+                ? "shrink-0 rounded-full bg-ok-tint px-2.5 py-0.5 text-xs font-medium text-ok"
                 : "shrink-0 rounded-full bg-black/6 px-2.5 py-0.5 text-xs font-medium opacity-80 dark:bg-white/10"
             }
           >
@@ -183,9 +183,7 @@ function MatchCard({ match: m }: { match: Match }) {
               <li
                 key={idx}
                 className={
-                  missing.has(ing.name)
-                    ? "text-red-600 dark:text-red-400"
-                    : "opacity-80"
+                  missing.has(ing.name) ? "text-miss" : "opacity-80"
                 }
               >
                 {quantity.amount && <span>{quantity.amount} </span>}
@@ -383,7 +381,7 @@ function MatchesContent({ copy }: { copy: MatchesCopy }) {
         s.items.length === 0 ? null : (
           <section key={s.missing} className="space-y-3">
             {s.missing === 1 && suggestion && (
-              <div className="rounded-xl bg-green-100 px-4 py-3 text-sm text-green-800 dark:bg-green-950 dark:text-green-300">
+              <div className="rounded-xl bg-ok-tint px-4 py-3 text-sm text-ok">
                 Add <span className="font-semibold">{suggestion.name}</span> to
                 unlock {suggestion.unlocks} more{" "}
                 {suggestion.unlocks === 1 ? copy.unit.singular : copy.unit.plural}.

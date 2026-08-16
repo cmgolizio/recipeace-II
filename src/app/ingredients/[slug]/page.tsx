@@ -78,7 +78,7 @@ function IngredientChip({ name, slug }: { name: string; slug: string }) {
   return (
     <Link
       href={`/ingredients/${slug}`}
-      className="inline-flex items-center rounded-full border border-border px-3 py-1 text-sm hover:border-accent"
+      className="inline-flex items-center rounded-full border border-border px-3 py-1 text-sm hover:border-accent-ink"
     >
       {name}
     </Link>
