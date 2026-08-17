@@ -52,8 +52,17 @@ export function RecipeCard({
       {/* The card's accent affordance: a 4px fill on the leading edge, dealt by
           the wrapper element's .accent-* class. Decorative and redundant — the
           neutral --border is what delimits the card, so the bar never has to
-          carry a boundary's 3:1 (D2). */}
-      <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-accent" />
+          carry a boundary's 3:1 (D2).
+
+          z-10 is load-bearing. The media wrapper below is position:relative and
+          comes later in the tree, so with both at z-index:auto the photo paints
+          over the bar and the card loses its colour everywhere but the text
+          block. It only looks fine on a recipe with no image, because the
+          fallback tile is a translucent tint the bar shows through. */}
+      <span
+        aria-hidden
+        className="absolute inset-y-0 left-0 z-10 w-1 bg-accent"
+      />
       {hasMedia && (
         <div className="relative aspect-3/2 w-full">
           {recipe.image_url ? (
