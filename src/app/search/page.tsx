@@ -3,7 +3,11 @@ import Link from "next/link";
 
 import { pageTitle } from "../../lib/site";
 import { RecipeCard } from "../../components/recipe-card";
-import { accentClass, dealAccents } from "../../lib/theme/accents";
+import {
+  accentClass,
+  dealAccents,
+  randomSeed,
+} from "../../lib/theme/accents";
 import { SearchForm } from "../../components/search-form";
 import {
   matchPills,
@@ -93,7 +97,7 @@ export default async function SearchPage({
 
       {results.length > 0 && (
         <ul className="grid gap-3 sm:grid-cols-2">
-          {dealAccents(results.map((r) => r.slug)).map((accent, i) => {
+          {dealAccents(results.map((r) => r.slug), randomSeed()).map((accent, i) => {
             const r = results[i];
             return (
             <li key={r.recipe_id} className={accentClass(accent)}>

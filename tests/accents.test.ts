@@ -11,6 +11,7 @@ import {
   accentClass,
   accentFor,
   dealAccents,
+  randomSeed,
   type Accent,
 } from "../src/lib/theme/accents.ts";
 
@@ -114,4 +115,64 @@ test("accentClass names the CSS class that rebinds --accent", () => {
 
 test("an empty list deals nothing", () => {
   expect(dealAccents([])).toEqual([]);
+});
+
+// ── Re-dealing on every page load ─────────────────────────────────────────
+// The seed only chooses which shuffle each bag starts from, so both
+// guarantees have to survive every seed — not just the one derived from the
+// list. Without this, a reshuffle could quietly put two of a colour together.
+
+test("dispersion and lookback hold for arbitrary seeds", () => {
+  const list = keys(37);
+  for (let trial = 0; trial < 300; trial++) {
+    const dealt = dealAccents(list, randomSeed());
+    const counts = ACCENTS.map((a) => dealt.filter((d) => d === a).length);
+    expect(Math.max(...counts) - Math.min(...counts)).toBeLessThanOrEqual(1);
+    for (let i = 0; i < dealt.length; i++) {
+      for (let j = i + 1; j <= i + LOOKBACK && j < dealt.length; j++) {
+        expect(dealt[i]).not.toBe(dealt[j]);
+      }
+    }
+  }
+});
+
+test("a seed re-deals the same list a different way", () => {
+  const list = keys(24);
+  const base = dealAccents(list);
+  // Not a guarantee for any single seed, but over many seeds the deal must
+  // move — otherwise the seed is being ignored.
+  const moved = Array.from({ length: 50 }, () =>
+    dealAccents(list, randomSeed()),
+  ).filter((d) => d.join() !== base.join());
+  expect(moved.length).toBeGreaterThan(40);
+});
+
+test("the same seed always deals the same way", () => {
+  const list = keys(24);
+  const seed = randomSeed();
+  expect(dealAccents(list, seed)).toEqual(dealAccents(list, seed));
+});
+
+test("an omitted seed is still derived from the list, unchanged", () => {
+  // What the server renders into cacheable HTML must not move.
+  const list = keys(24);
+  expect(dealAccents(list)).toEqual(dealAccents(list, undefined));
+});
+
+test("accentFor re-picks with a seed and is stable without one", () => {
+  expect(accentFor("home-hero")).toBe(accentFor("home-hero"));
+  expect(accentFor("home-hero", 0)).toBe(accentFor("home-hero"));
+  const picks = new Set(
+    Array.from({ length: 200 }, () => accentFor("home-hero", randomSeed())),
+  );
+  expect(picks.size).toBe(ACCENTS.length);
+});
+
+test("randomSeed returns a 32-bit unsigned integer", () => {
+  for (let i = 0; i < 500; i++) {
+    const s = randomSeed();
+    expect(Number.isInteger(s)).toBe(true);
+    expect(s).toBeGreaterThanOrEqual(0);
+    expect(s).toBeLessThanOrEqual(0xffffffff);
+  }
 });

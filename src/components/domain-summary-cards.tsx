@@ -15,6 +15,7 @@ import {
 } from "../lib/recipes/domain";
 import { createClient } from "../lib/supabase/client";
 import { accentClass, dealAccents } from "../lib/theme/accents";
+import { useAccentSeed } from "../lib/theme/use-accent-seed";
 
 import { Skeleton } from "./skeleton";
 
@@ -33,7 +34,6 @@ const cardClass =
 // visible here rather than only on hover.
 const ACCENT_BAR = "absolute inset-y-0 left-0 w-1 bg-accent";
 
-const DOMAIN_ACCENTS = dealAccents(RECIPE_DOMAINS);
 
 /**
  * The chooser: two cards, Bar and Kitchen, each with what this pantry holds for
@@ -45,6 +45,7 @@ export function DomainSummaryCards() {
   const pantry = usePantry();
   const ready = usePantryReady();
   const [outcome, setOutcome] = useState<Outcome | null>(null);
+  const domainAccents = dealAccents(RECIPE_DOMAINS, useAccentSeed());
 
   const key = [...pantry].sort((a, b) => a - b).join(",");
 
@@ -111,7 +112,7 @@ export function DomainSummaryCards() {
             // the switcher's own event can't tell us: it only ever fires from
             // inside a domain.
             onClick={() => track("domain_home_selected", { domain })}
-            className={`${cardClass} ${accentClass(DOMAIN_ACCENTS[i])}`}
+            className={`${cardClass} ${accentClass(domainAccents[i])}`}
           >
             <span aria-hidden className={ACCENT_BAR} />
             <h2 className="font-semibold">The {DOMAIN_SURFACE[domain]}</h2>

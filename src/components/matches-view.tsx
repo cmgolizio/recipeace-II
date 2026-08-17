@@ -15,6 +15,7 @@ import {
 } from "../lib/shopping/store";
 import { createClient } from "../lib/supabase/client";
 import { accentClass, accentFor, dealAccents } from "../lib/theme/accents";
+import { useAccentSeed } from "../lib/theme/use-accent-seed";
 import { formatQuantity } from "../lib/units/format";
 import { useUnit } from "../lib/units/store";
 import type { Database } from "../types/database";
@@ -241,6 +242,9 @@ function MatchesContent({ copy }: { copy: MatchesCopy }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const maxMissing = parseMaxMissing(searchParams.get("missing"));
+  // One seed for the whole page, re-dealt on each visit. The cards only exist
+  // after the matcher responds, so nothing here is in the server HTML.
+  const accentSeed = useAccentSeed();
   const [outcome, setOutcome] = useState<Outcome | null>(null);
 
   const key = `${maxMissing}:${[...pantry].sort((a, b) => a - b).join(",")}`;
@@ -296,7 +300,11 @@ function MatchesContent({ copy }: { copy: MatchesCopy }) {
   // "Missing 1" card collide at the seam without the lookback noticing.
   const sections = SECTIONS.map((s) => {
     const items = matches.filter((m) => m.missing_count === s.missing);
-    return { ...s, items, accents: dealAccents(items.map((m) => m.slug)) };
+    return {
+      ...s,
+      items,
+      accents: dealAccents(items.map((m) => m.slug), accentSeed),
+    };
   });
 
   function selectFilter(value: MaxMissing) {
@@ -326,7 +334,7 @@ function MatchesContent({ copy }: { copy: MatchesCopy }) {
       </div>
 
       <div
-        className={`flex flex-wrap items-center gap-3 ${accentClass(accentFor(copy.path))}`}
+        className={`flex flex-wrap items-center gap-3 ${accentClass(accentFor(copy.path, accentSeed))}`}
       >
         <div
           role="group"
@@ -388,7 +396,7 @@ function MatchesContent({ copy }: { copy: MatchesCopy }) {
           // rebinds --accent for itself, so the two never have to agree.
           <section
             key={s.missing}
-            className={`space-y-3 ${accentClass(accentFor(s.title))}`}
+            className={`space-y-3 ${accentClass(accentFor(s.title, accentSeed))}`}
           >
             {s.missing === 1 && suggestion && (
               <div className="rounded-xl bg-ok-tint px-4 py-3 text-sm text-ok">

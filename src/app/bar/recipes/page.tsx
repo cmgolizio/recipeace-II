@@ -10,7 +10,11 @@ import {
   type RecipeListFilters,
 } from "../../../lib/recipes/queries";
 import { createClient } from "../../../lib/supabase/server";
-import { accentClass, dealAccents } from "../../../lib/theme/accents";
+import {
+  accentClass,
+  dealAccents,
+  randomSeed,
+} from "../../../lib/theme/accents";
 
 export const metadata: Metadata = {
   title: pageTitle("Cocktail recipes"),
@@ -103,7 +107,9 @@ export default async function RecipesPage({
     ...new Set(facetRows.flatMap((r) => r.flavor_tags)),
   ].sort();
 
-  const accents = dealAccents(recipes.map((r) => r.slug));
+  // Dynamically rendered, so this runs per request and the client never
+  // re-executes it — a fresh seed re-deals on every load, free of charge.
+  const accents = dealAccents(recipes.map((r) => r.slug), randomSeed());
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const filtered = !!(
     filters.q ||

@@ -57,17 +57,33 @@ function shuffled(seed: number): Accent[] {
 }
 
 /**
+ * A fresh seed, for a surface that should re-deal on every page load. Never
+ * called during a render that the server has already committed to HTML — see
+ * useAccentSeed for how the two are kept in step.
+ */
+export function randomSeed(): number {
+  return (Math.random() * 0x100000000) >>> 0;
+}
+
+/**
  * Deal one accent per key. Guarantees, by construction:
  *  - counts across the list differ by at most 1 (equal dispersion)
  *  - no two entries within LOOKBACK positions share a colour
  *  - identical output for identical input, on server and client
  *
- * The bag holds all five and is refilled only once empty, which is what keeps
+ * The bag holds all ten and is refilled only once empty, which is what keeps
  * the counts even. The recent-window check is what makes bag boundaries safe —
  * within a single bag every colour is already distinct.
+ *
+ * Without `seed` the deal is derived from the list itself and is therefore
+ * stable — which is what anything rendered into cacheable HTML needs. Pass a
+ * seed to re-deal the same list a different way; the guarantees above hold for
+ * every seed, because the seed only chooses which shuffle the bag starts from.
  */
-export function dealAccents(keys: readonly string[]): Accent[] {
-  const seed = hash(`${keys[0] ?? ""}:${keys.length}`);
+export function dealAccents(
+  keys: readonly string[],
+  seed = hash(`${keys[0] ?? ""}:${keys.length}`),
+): Accent[] {
   const out: Accent[] = [];
   let bag: Accent[] = [];
   let round = 0;
@@ -87,9 +103,12 @@ export function dealAccents(keys: readonly string[]): Accent[] {
   return out;
 }
 
-/** For a lone component with no neighbours to avoid — stable per key. */
-export function accentFor(key: string): Accent {
-  return ACCENTS[hash(key) % ACCENTS.length];
+/**
+ * For a lone component with no neighbours to avoid — stable per key, and
+ * re-picked when a seed is supplied.
+ */
+export function accentFor(key: string, seed = 0): Accent {
+  return ACCENTS[(hash(key) + seed) % ACCENTS.length];
 }
 
 /** The class that rebinds --accent for a subtree (D6). */

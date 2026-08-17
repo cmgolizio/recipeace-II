@@ -11,7 +11,11 @@ import {
   type RecipeListFilters,
 } from "../../../lib/recipes/queries";
 import { createClient } from "../../../lib/supabase/server";
-import { accentClass, dealAccents } from "../../../lib/theme/accents";
+import {
+  accentClass,
+  dealAccents,
+  randomSeed,
+} from "../../../lib/theme/accents";
 
 export const metadata: Metadata = {
   title: pageTitle("Food recipes"),
@@ -84,7 +88,8 @@ export default async function KitchenRecipesPage({
     facetRows.some((r) => r.difficulty === d),
   );
 
-  const accents = dealAccents(recipes.map((r) => r.slug));
+  // Per request, as on the Bar's catalog — see the note there.
+  const accents = dealAccents(recipes.map((r) => r.slug), randomSeed());
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const filtered = !!(
     filters.q ||

@@ -10,6 +10,7 @@ import {
 import { toast } from "../../components/toast/store";
 import { DOMAIN_SURFACE } from "../../lib/recipes/domain";
 import { accentClass, accentFor, dealAccents } from "../../lib/theme/accents";
+import { useAccentSeed } from "../../lib/theme/use-accent-seed";
 import {
   clearShopping,
   removeFromShopping,
@@ -88,11 +89,12 @@ export default function ShoppingPage() {
   const items = useShoppingItems();
   const ready = useShoppingReady();
   const [grouping, setGrouping] = useState<Grouping>("flat");
+  const accentSeed = useAccentSeed();
 
   const groups = byRecipe(items);
   // Grouping is only worth offering once there is something to group by.
   const canGroup = groups.length > 1;
-  const flatAccents = dealAccents(items.map((item) => item.name));
+  const flatAccents = dealAccents(items.map((item) => item.name), accentSeed);
 
   return (
     <div className="space-y-6">
@@ -151,11 +153,14 @@ export default function ShoppingPage() {
           {grouping === "recipe" && canGroup ? (
             <div className="space-y-5">
               {groups.map((group) => {
-                const accents = dealAccents(group.items.map((it) => it.name));
+                const accents = dealAccents(
+                  group.items.map((it) => it.name),
+                  accentSeed,
+                );
                 return (
                 <section
                   key={group.title}
-                  className={accentClass(accentFor(group.title))}
+                  className={accentClass(accentFor(group.title, accentSeed))}
                 >
                   <h2 className="text-sm font-semibold uppercase tracking-wide text-accent-ink">
                     {group.title}

@@ -2,11 +2,10 @@
 
 import { usePantry, usePantryReady } from "../lib/pantry/store";
 import { accentClass, accentFor } from "../lib/theme/accents";
+import { useAccentSeed } from "../lib/theme/use-accent-seed";
 
 const STEPS = ["Add what you own", "See your matches", "Shop the gap"];
 
-// One hero, no neighbours to avoid — stable per key (P2 task 4).
-const ACCENT = accentClass(accentFor("home-hero"));
 
 /**
  * Compact hero for first-time visitors: what the app does, in three steps.
@@ -16,9 +15,11 @@ const ACCENT = accentClass(accentFor("home-hero"));
 export function HomeHero() {
   const pantry = usePantry();
   const ready = usePantryReady();
+  // One hero, no neighbours to avoid — re-picked each visit (P2 task 4).
+  const accent = accentClass(accentFor("home-hero", useAccentSeed()));
   if (!ready || pantry.length > 0) return null;
   return (
-    <section className={`rounded-xl border border-border bg-surface p-5 ${ACCENT}`}>
+    <section className={`rounded-xl border border-border bg-surface p-5 ${accent}`}>
       <h2 className="text-lg font-semibold tracking-tight">
         Add what you have. Discover what you can make.
       </h2>

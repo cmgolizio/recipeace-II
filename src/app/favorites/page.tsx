@@ -18,6 +18,7 @@ import {
 } from "../../lib/recipes/queries";
 import { createClient } from "../../lib/supabase/client";
 import { accentClass, dealAccents } from "../../lib/theme/accents";
+import { useAccentSeed } from "../../lib/theme/use-accent-seed";
 
 // Favorites span both domains: one table, filtered through the recipe join
 // (docs/expansion-plan.md §8.10). The list is always fetched whole and split
@@ -41,6 +42,7 @@ export default function FavoritesPage() {
   const favoritesReady = useFavoritesReady();
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [domain, setDomain] = useState<DomainFilter>("all");
+  const accentSeed = useAccentSeed();
 
   const key = [...favorites].sort((a, b) => a - b).join(",");
 
@@ -130,7 +132,7 @@ export default function FavoritesPage() {
     domain === "all" ? all : all.filter((r) => r.domain === domain);
   // Dealt over what is actually rendered: switching the tab repaints, because
   // colour is positional, not an identity (D5).
-  const accents = dealAccents(recipes.map((r) => r.slug));
+  const accents = dealAccents(recipes.map((r) => r.slug), accentSeed);
   // Only offer the split once there is actually something to split.
   const domains = new Set(all.map((r) => r.domain));
 

@@ -11,6 +11,7 @@ import {
 } from "../lib/recipes/domain";
 import { createClient } from "../lib/supabase/client";
 import { accentClass, accentFor } from "../lib/theme/accents";
+import { useAccentSeed } from "../lib/theme/use-accent-seed";
 
 // Keyed to the pantry the count was computed for, so a stale response never
 // renders against a changed pantry (same pattern as the matches page).
@@ -38,6 +39,7 @@ export function AlmostThereNudge({ domain }: { domain: RecipeDomain }) {
   const pantry = usePantry();
   const ready = usePantryReady();
   const [outcome, setOutcome] = useState<Outcome | null>(null);
+  const accentSeed = useAccentSeed();
 
   // The domain is part of the key: it counts a different catalog, so a
   // response fetched for one side must never render against the other.
@@ -75,7 +77,7 @@ export function AlmostThereNudge({ domain }: { domain: RecipeDomain }) {
     <Link
       href={`${DOMAIN_ROUTES[domain].matches}?missing=1`}
       // One strip, no neighbours to avoid: stable per domain (P2 task 4).
-      className={`block rounded-xl border border-accent-line/40 bg-accent-tint px-4 py-3 text-sm hover:border-accent-line ${accentClass(accentFor(domain))}`}
+      className={`block rounded-xl border border-accent-line/40 bg-accent-tint px-4 py-3 text-sm hover:border-accent-line ${accentClass(accentFor(domain, accentSeed))}`}
     >
       You’re {copy.lead} <span className="font-semibold">{current.count}</span>{" "}
       {current.count === 1 ? DOMAIN_NOUN[domain] : copy.plural} →

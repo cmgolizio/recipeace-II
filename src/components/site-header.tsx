@@ -13,6 +13,7 @@ import {
 import { useShopping } from "../lib/shopping/store";
 import { SITE_NAME } from "../lib/site";
 import { accentClass, accentFor, dealAccents } from "../lib/theme/accents";
+import { useAccentSeed } from "../lib/theme/use-accent-seed";
 import { DomainSwitcher } from "./domain-switcher";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -75,6 +76,10 @@ function MenuLink({
 
 export function SiteHeader() {
   const router = useRouter();
+  // The header outlives every client-side navigation, so a mount-scoped seed
+  // would freeze it for the session. Keyed on the path, it re-deals on each
+  // navigation like every other surface.
+  const accentSeed = useAccentSeed(usePathname());
   const pantry = usePantry();
   const ready = usePantryReady();
   const user = useUser();
@@ -119,7 +124,10 @@ export function SiteHeader() {
     ...(user ? [{ href: "/favorites", label: "favorites" }] : []),
     ...(shopping.length > 0 ? [{ href: "/shopping", label: "shopping" }] : []),
   ];
-  const navAccents = dealAccents(navLinks.map((link) => link.href));
+  const navAccents = dealAccents(
+    navLinks.map((link) => link.href),
+    accentSeed,
+  );
 
   return (
     <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur">
@@ -186,7 +194,7 @@ export function SiteHeader() {
             </>
           ) : (
             <span
-              className={`hidden sm:inline ${accentClass(accentFor("/login"))}`}
+              className={`hidden sm:inline ${accentClass(accentFor("/login", accentSeed))}`}
             >
               <NavLink href="/login">login</NavLink>
             </span>
@@ -244,7 +252,7 @@ export function SiteHeader() {
                     </button>
                   </>
                 ) : (
-                  <div className={accentClass(accentFor("/login"))}>
+                  <div className={accentClass(accentFor("/login", accentSeed))}>
                     <MenuLink
                       href="/login"
                       onNavigate={() => setMenuOpen(false)}

@@ -25,6 +25,7 @@ import {
   dealAccents,
   type Accent,
 } from "../lib/theme/accents";
+import { useAccentSeed } from "../lib/theme/use-accent-seed";
 import type { Tables } from "../types/database";
 
 import { EmptyState } from "./empty-state";
@@ -52,6 +53,7 @@ export function PantryPanel({ domain }: { domain?: RecipeDomain }) {
   // A cache of ingredient details; we render the subset still in the pantry, so
   // there is no need to clear it synchronously when the pantry changes.
   const [cache, setCache] = useState<Ingredient[]>([]);
+  const accentSeed = useAccentSeed();
 
   useEffect(() => {
     // Only fetch details for ids not already cached; skip entirely when the
@@ -93,8 +95,11 @@ export function PantryPanel({ domain }: { domain?: RecipeDomain }) {
   // Two rendered lists, so two deals: the collapsed "also in your pantry" group
   // is a separate block, and dealing across the seam would let the last chip on
   // one shelf collide with the first on the other.
-  const mineAccents = dealAccents(mine.map((it) => String(it.id)));
-  const otherAccents = dealAccents(other.map((it) => String(it.id)));
+  const mineAccents = dealAccents(mine.map((it) => String(it.id)), accentSeed);
+  const otherAccents = dealAccents(
+    other.map((it) => String(it.id)),
+    accentSeed,
+  );
 
   function chip(it: Ingredient, accent: Accent) {
     return (
@@ -122,7 +127,7 @@ export function PantryPanel({ domain }: { domain?: RecipeDomain }) {
   return (
     // The shelf's own accent, which colours its heading and its match CTA. The
     // chips inside each rebind --accent for themselves.
-    <section className={accentClass(accentFor(shelf))}>
+    <section className={accentClass(accentFor(shelf, accentSeed))}>
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-accent-ink">
           {ready ? `${shelf} (${shelfCount})` : shelf}

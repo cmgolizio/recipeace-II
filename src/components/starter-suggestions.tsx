@@ -6,6 +6,7 @@ import { addToPantry, usePantry, usePantryReady } from "../lib/pantry/store";
 import type { RecipeDomain } from "../lib/recipes/domain";
 import { createClient } from "../lib/supabase/client";
 import { accentClass, accentFor, dealAccents } from "../lib/theme/accents";
+import { useAccentSeed } from "../lib/theme/use-accent-seed";
 import type { Database } from "../types/database";
 
 import { toast } from "./toast/store";
@@ -35,6 +36,7 @@ type Outcome = { key: string; starters: Starter[] };
 export function StarterSuggestions({ domain }: { domain?: RecipeDomain }) {
   const pantry = usePantry();
   const ready = usePantryReady();
+  const accentSeed = useAccentSeed();
   const key = domain ?? "all";
   const [outcome, setOutcome] = useState<Outcome | null>(() => {
     const cached = starterCache.get(key);
@@ -67,10 +69,10 @@ export function StarterSuggestions({ domain }: { domain?: RecipeDomain }) {
   const starters = current?.starters;
   if (!show || !starters || starters.length === 0) return null;
 
-  const accents = dealAccents(starters.map((s) => String(s.id)));
+  const accents = dealAccents(starters.map((s) => String(s.id)), accentSeed);
 
   return (
-    <section className={accentClass(accentFor("popular starting points"))}>
+    <section className={accentClass(accentFor("popular starting points", accentSeed))}>
       <h2 className="text-sm font-semibold uppercase tracking-wide text-accent-ink">
         Popular starting points
       </h2>
