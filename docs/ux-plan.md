@@ -224,9 +224,14 @@ the other four to match.
   light mode and all ten do in dark. Use it for **borders and underlines**;
   `--accent-ink` remains the only form for **text and icons**. This narrows
   D2's "text or a thin line" clause to text alone — the rule that raw accents
-  are never text is untouched, and `--accent-line` is never used as a card's
-  only boundary, so the 1.4.11 bar is the right one rather than a floor it has
-  to beat.
+  are never text is untouched.
+  The recipe card's boundary is now this line rather than the neutral
+  `--border`, so 1.4.11's 3:1 is a floor it must clear, not a courtesy.
+  Measured against the surface it encloses: 3.00:1 worst in light, 4.06:1 in
+  dark. The bar-plus-tint affordance below was written before the catalog had
+  photographs; against a photo filling two thirds of the card it is present in
+  the DOM and invisible on screen, and outlining the card is what makes a
+  dealt colour legible.
 
 ### D3. Accents carry no meaning
 

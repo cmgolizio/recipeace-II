@@ -39,13 +39,18 @@
  *   --accent-ink    text or icon.  ≥ 4.5:1 on --background (WCAG 1.4.3).
  *   --accent-line   a thin rule.   ≥ 3:1 on --background (WCAG 1.4.11).
  *
- * --accent-line is the newer of the two derived inks. A 1px border and a 12px
- * label are not the same problem: holding a decorative rule to the text
- * threshold darkened it until it no longer read as the accent at all. It is
- * mixed only as far as 3:1 requires, so it keeps the hue. It is never used for
- * text, and never as a card's only boundary — the neutral --border stays, so
- * the rule is redundant and 1.4.11's 3:1 is the right bar rather than a floor
- * it has to beat.
+ * --accent-line is the newer of the two derived inks. A border and a 12px
+ * label are not the same problem: holding a rule to the text threshold
+ * darkened it until it no longer read as the accent at all. It is mixed only
+ * as far as 3:1 requires, so it keeps the hue, and it is never used for text.
+ *
+ * It *is* the recipe card's boundary, which is why 3:1 is a floor here rather
+ * than a courtesy: 1.4.11 asks exactly that of a boundary. Measured against
+ * the surface the border encloses, the worst case is 3.00:1 in light (where
+ * surface and background are both white) and 4.06:1 in dark (blue on
+ * --surface). A photo fills two thirds of a card, so an accent that lives only
+ * in a 4px edge and a 14% pill wash is present in the DOM and absent to the
+ * eye — outlining the card is what makes the dealt colour legible at all.
  *
  * --accent-ink vs its mode's --background (all ≥ 4.5:1):
  *   light  blue     85%  rgb(48,98,219)     5.39:1    dark  88%  5.43:1

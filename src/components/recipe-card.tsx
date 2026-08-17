@@ -47,7 +47,12 @@ export function RecipeCard({
   return (
     <Link
       href={`/recipes/${recipe.slug}`}
-      className="relative block h-full overflow-hidden rounded-xl border border-border bg-surface transition hover:-translate-y-0.5 hover:border-accent-line"
+      // The whole card is outlined in its accent, not just edged by the bar.
+      // A photo fills the top two thirds, so a 4px sliver and a 14% pill wash
+      // were all the colour a card actually had — technically present and
+      // visually nothing. --accent-line is the token for exactly this: a rule
+      // measured to 1.4.11's 3:1, never to a text threshold.
+      className="relative block h-full overflow-hidden rounded-xl border-2 border-accent-line bg-surface transition hover:-translate-y-0.5 hover:border-accent"
     >
       {/* The card's accent affordance: a 4px fill on the leading edge, dealt by
           the wrapper element's .accent-* class. Decorative and redundant — the
@@ -61,7 +66,7 @@ export function RecipeCard({
           fallback tile is a translucent tint the bar shows through. */}
       <span
         aria-hidden
-        className="absolute inset-y-0 left-0 z-10 w-1 bg-accent"
+        className="absolute inset-y-0 left-0 z-10 w-1.5 bg-accent"
       />
       {hasMedia && (
         <div className="relative aspect-3/2 w-full">
